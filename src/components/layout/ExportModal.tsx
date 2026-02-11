@@ -454,7 +454,94 @@ export function ExportModal() {
     // Action: Export Video (MP4) - Disabled
     // -------------------------------------------------------------------------
     const handleExportVideo = async () => {
-        alert("Video export is currently disabled.")
+        const controller = new AbortController()
+        setAbortController(controller)
+        const signal = controller.signal
+
+        setIsExporting(true)
+
+        try {
+            const projectWidth = 1920
+            const projectHeight = 1920 / (aspectRatio || 1)
+
+            const canvas = document.createElement('canvas')
+            canvas.width = projectWidth
+            canvas.height = projectHeight
+            const ctx = canvas.getContext('2d')
+            if (!ctx) throw new Error('Could not get 2d context')
+
+            const totalFrames = Math.max(1, Math.ceil(duration * fps))
+
+            // 1. Prefetch Video Frames
+            if (signal.aborted) throw new Error('Export cancelled')
+            const videoFrameMap = await prefetchVideoFrames(fps, duration)
+            if (signal.aborted) throw new Error('Export cancelled')
+
+            // 2. Render and collect frames
+            const frames: string[] = []
+            for (let i = 0; i < totalFrames; i++) {
+                if (signal.aborted) throw new Error('Export cancelled')
+
+                const time = i / fps
+                await renderFrame(ctx, time, projectWidth, projectHeight, i, videoFrameMap)
+
+                const base64 = canvas.toDataURL('image/png')
+                frames.push(base64)
+            }
+
+            if (signal.aborted) throw new Error('Export cancelled')
+
+            // 3. Send to API
+            const formData = new FormData()
+            formData.append('fps', fps.toString())
+            formData.append('frameCount', frames.length.toString())
+            frames.forEach((frame, idx) => {
+                formData.append(`frame-${idx}`, frame)
+            })
+
+            const response = await fetch('/api/render-video', {
+                method: 'POST',
+                body: formData,
+                signal
+            })
+
+            if (!response.ok) {
+                // Try to get error message from response
+                const text = await response.text()
+                let errorMsg = 'Failed to render video'
+                try {
+                    const json = JSON.parse(text)
+                    errorMsg = json.error || errorMsg
+                } catch {
+                    errorMsg = text || errorMsg
+                }
+                throw new Error(errorMsg)
+            }
+
+            // 4. Download result
+            const videoBlob = await response.blob()
+            const url = URL.createObjectURL(videoBlob)
+            const link = document.createElement('a')
+            link.download = `project-${Date.now()}.mp4`
+            link.href = url
+            link.click()
+
+            console.log('MP4 export successful')
+
+        } catch (error: any) {
+            if (error.name === 'AbortError' || error.message === 'Export cancelled') {
+                console.log('Video export cancelled by user')
+            } else {
+                console.error('Video export failed details:', error)
+                // If it's a fetch error, we might not have error.message
+                const msg = error.message || (typeof error === 'string' ? error : 'Check network tab for details')
+                alert(`Failed to export Video: ${msg}`)
+            }
+        } finally {
+            setIsExporting(false)
+            setIsOpen(false)
+            setAbortController(null)
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -641,10 +728,10 @@ export function ExportModal() {
                                         <span>Image (Current Frame .png)</span>
                                     </div>
                                 </SelectItem>
-                                <SelectItem value="mp4" disabled>
-                                    <div className="flex items-center gap-2 opacity-50">
+                                <SelectItem value="mp4">
+                                    <div className="flex items-center gap-2">
                                         <Video className="h-4 w-4" />
-                                        <span>Video (.mp4) - Disabled</span>
+                                        <span>Video (.mp4)</span>
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="zip">
