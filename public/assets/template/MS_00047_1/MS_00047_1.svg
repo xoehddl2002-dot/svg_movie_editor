@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<svg width="348" height="819" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 348 819" version="1.1" xml:space="preserve">
+ <g class="layer">
+  <title>Layer 1</title>
+  <rect fill="#FEE361" height="819" id="svg_9" width="348"/>
+  <g id="svg_10">
+   <defs>
+    <path d="m0,0.39l0,132.22l1.29,0c10.48,74.66 83.8,132.49 172.71,132.49s162.23,-57.83 172.71,-132.48l1.29,0l0,-132.23l-348,0z" id="SVGID_1_"/>
+   </defs>
+   <clipPath id="SVGID_2_">
+    <use id="svg_15" overflow="visible" xlink:href="#SVGID_1_"/>
+   </clipPath>
+   <g clip-path="url(#SVGID_2_)" id="svg_16">
+    <image height="282.16" id="svg_1" overflow="visible" preserveAspectRatio="none" width="422.4" x="-38.68" xlink:href="57970BF8.jpg" y="-12.45"/>
+   </g>
+  </g>
+  <g id="svg_11" transform="matrix(1 0 0 1 0 0)">
+   <defs>
+    <path d="m348,818.58l0,-132.22l-1.29,0c-10.48,-74.66 -83.8,-132.49 -172.71,-132.49s-162.23,57.83 -172.71,132.49l-1.29,0l0,132.22l348,0z" id="SVGID_3_"/>
+   </defs>
+   <clipPath id="SVGID_4_">
+    <use id="svg_17" overflow="visible" xlink:href="#SVGID_3_"/>
+   </clipPath>
+   <g clip-path="url(#SVGID_4_)" id="svg_18">
+    <image height="432.26" id="svg_2" overflow="visible" preserveAspectRatio="none" width="647.68" x="-210.33" xlink:href="57970BF9.jpg" y="533.78"/>
+   </g>
+  </g>
+  <polygon fill="#1E3869" id="svg_12" points="274.572,553.75 274.572,409.5 73.428,409.5 73.428,553.75 37.738,553.75 177.192,665.197 
+	310.262,553.75 " transform="matrix(1,0,0,1,0,0)"/>
+  <polygon fill="#1E3869" id="svg_13" points="310.262,265.25 170.808,153.803 37.738,265.25 73.428,265.25 73.428,409.5 274.572,409.5 
+	274.572,265.25 " transform="matrix(1,0,0,1,0,0)"/>
+  <rect fill="#FAB516" height="130.92" id="svg_14" transform="matrix(1,0,0,1,0,0)" width="348" x="0" y="344.04"/>
+  <text fill="#FFFFFF" font-family="&#x27;TmonMonsoriBlack&#x27;" font-size="46" id="svg_4" transform="matrix(1,0,0,1,0,0)" x="132.32" y="590.45">낮게</text>
+  <text fill="#FFFFFF" font-family="&#x27;TmonMonsoriBlack&#x27;" font-size="46" id="svg_3" transform="matrix(1,0,0,1,0,0)" x="111.49" y="535.1">가격은</text>
+  <text fill="#FFFFFF" font-family="&#x27;TmonMonsoriBlack&#x27;" font-size="46" id="svg_6" transform="matrix(1,0,0,1,0,0)" x="132.32" y="315.47">높게</text>
+  <text fill="#FFFFFF" font-family="&#x27;TmonMonsoriBlack&#x27;" font-size="46" id="svg_5" transform="matrix(1,0,0,1,0,0)" x="111.49" y="260.12">만족은</text>
+  <text fill="#010101" font-family="&#x27;SBAggroM&#x27;" font-size="50" id="svg_8" transform="matrix(1,0,0,1,0,0)" x="50.5" y="450.86">잘하는 치과</text>
+  <text fill="#010101" font-family="&#x27;SBAggroM&#x27;" font-size="50" id="svg_7" transform="matrix(1,0,0,1,0,0)" x="80.48" y="395.72">임플란트</text>
+ </g>
+</svg>

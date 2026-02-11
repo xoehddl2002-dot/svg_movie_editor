@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/.idea/.gitignore
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/svg_movie_editor_next.iml
+/.idea/vcs.xml

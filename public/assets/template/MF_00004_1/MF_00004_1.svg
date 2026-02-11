@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 1920 1080" version="1.1" xml:space="preserve">
+ <g class="layer">
+  <title>Layer 1</title>
+  <g id="svg_8" transform="matrix(1 0 0 1 0 0)">
+   <image height="1080" id="svg_1" overflow="visible" preserveAspectRatio="none" transform="matrix(1,0,0,1,0,0)" width="1920" x="0" xlink:href="675122DD.jpg" y="0"/>
+  </g>
+  <g id="svg_9">
+   <defs>
+    <rect height="488.31" id="SVGID_1_" width="651.09" x="336.42" y="425.7"/>
+   </defs>
+   <clipPath id="SVGID_2_">
+    <use id="svg_10" overflow="visible" xlink:href="#SVGID_1_"/>
+   </clipPath>
+   <g clip-path="url(#SVGID_2_)" id="svg_11">
+    <image height="662.69" id="svg_2" overflow="visible" preserveAspectRatio="none" transform="matrix(1,0,0,1,0,0)" width="866.76" x="315.28" xlink:href="675122DF.jpg" y="272.45"/>
+   </g>
+  </g>
+  <text font-family="&#x27;twayfly&#x27;" font-size="54" id="svg_4" transform="matrix(1,0,0,1,0,0)" x="1055.88" y="511.78">바삭하게 튀겨낸 치킨을</text>
+  <text font-family="&#x27;twayfly&#x27;" font-size="54" id="svg_5" transform="matrix(1,0,0,1,0,0)" x="1055.88" y="589.67">매콤한 소스로 볶아 낸</text>
+  <text fill="#D2703C" font-family="&#x27;JSArirang-Regular&#x27;" font-size="67" id="svg_7" x="1055.88" y="861.73">푸짐하고 환상적인 맛!</text>
+  <text fill="#BF3600" font-family="&#x27;ELANDNiceM&#x27;" font-size="107" id="svg_6" transform="matrix(1,0,0,1,0,0)" x="1055.88" y="729.42">깐풍치킨</text>
+  <text fill="#6D3E0F" font-family="&#x27;VITRO-CORE-TTF&#x27;" font-size="124" id="svg_3" transform="matrix(1,0,0,1,0,0)" x="634.5" y="181.03">오늘의 추천</text>
+ </g>
+</svg>

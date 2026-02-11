@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 1920 1080" version="1.1" xml:space="preserve">
+ <g class="layer">
+  <title>Layer 1</title>
+  <rect fill="#F5BB1E" height="1080" id="svg_8" transform="matrix(1,0,0,1,0,0)" width="1920" x="0" y="0"/>
+  <polygon fill="#170D0A" id="svg_9" points="0,918.071 1920,528.091 1920,0 0,0 " transform="matrix(1,0,0,1,0,0)"/>
+  <g id="svg_10">
+   <defs>
+    <path d="m876.95,917.21c0,22.09 -17.91,40 -40,40l-670,0c-22.09,0 -40,-17.91 -40,-40l0,-482c0,-22.09 17.91,-40 40,-40l670,0c22.09,0 40,17.91 40,40l0,482z" id="SVGID_1_"/>
+   </defs>
+   <clipPath id="SVGID_2_">
+    <use id="svg_11" overflow="visible" xlink:href="#SVGID_1_"/>
+   </clipPath>
+   <g clip-path="url(#SVGID_2_)" id="svg_12">
+    <image height="788.97" id="svg_1" overflow="visible" preserveAspectRatio="none" transform="matrix(1,0,0,1,0,0)" width="1051.96" x="67.95" xlink:href="4CE142B8.jpg" y="211.68"/>
+   </g>
+  </g>
+  <text fill="#170D0A" font-family="&#x27;KyoboHandwriting2020&#x27;" font-size="75" id="svg_4" transform="matrix(1 0 0 1 0 0) matrix(0.9723 -0.1822 0.013 0.9999 1043.13 803.284)">치맥의 민족으로 태어난 이상</text>
+  <text fill="#170D0A" font-family="&#x27;GmarketSansTTFBold&#x27;" font-size="110" id="svg_5" transform="matrix(1 0 0 1 0 0) matrix(0.9723 -0.1822 0.013 0.9999 1072.63 931.066)">1인 1닭은 기본!</text>
+  <text fill="#FFFFFF" font-family="&#x27;KyoboHandwriting2020&#x27;" font-size="60" id="svg_7" transform="matrix(1,0,0,1,0,0)" x="178.53" y="160.79">바삭하게 매콤한 소스로 볶아 낸</text>
+  <text fill="#F5BB1E" font-family="&#x27;ELANDNiceM&#x27;" font-size="159" id="svg_6" transform="matrix(1,0,0,1,0,0)" x="225.14" y="330.16">깐풍치킨</text>
+  <text fill="#FFFFFF" font-family="&#x27;ELANDNiceM&#x27;" font-size="201" id="svg_3" transform="matrix(1 0 0 1 0 0) matrix(1 -0.2102 0 1 1027.28 620.569)">탈출불가</text>
+  <text fill="#FFFFFF" font-family="&#x27;ELANDNiceM&#x27;" font-size="201" id="svg_2" transform="matrix(1 0 0 1 0 0) matrix(1 -0.2102 0 1 1027.28 425.569)">치킨주의</text>
+ </g>
+</svg>

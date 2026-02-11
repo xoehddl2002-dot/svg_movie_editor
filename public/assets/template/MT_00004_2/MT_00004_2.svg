@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<svg width="1820" height="118" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" enable-background="new 0 0 1820 118" version="1.1" xml:space="preserve">
+ <g class="layer">
+  <title>Layer 1</title>
+  <rect fill="#F6989A" height="118.01" id="배경3" width="1820"/>
+  <path d="m83.49,0c0,0 -0.26,49.16 0.52,60.24s4.99,57.76 6.99,57.76s1660.51,0 1660.51,0s0.8,-46.72 -0.66,-61.68s-6.08,-53.99 -6.97,-56.32l-1660.39,0z" fill="#FEE6D1" id="배경2"/>
+  <path d="m122.83,0c0,0 -4.85,44.99 -4.82,54.5c0.04,9.51 2.65,56.5 4.82,63.5l1588.02,0c0,0 4.83,-31.13 4.52,-52.5s-1.66,-57.5 -4.52,-65.5l-1588.02,0z" fill="#FFFFFF" id="배경1"/>
+  <text fill="#F6989A" font-family="&#x27;Yeongdo-Rg&#x27;" font-size="72" id="_x31_6자" transform="matrix(1, 0,0,1, 0,0)" x="564.4" y="90.98">마음이 편안해지는 카페</text>
+ </g>
+</svg>
