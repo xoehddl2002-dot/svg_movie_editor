@@ -102,6 +102,7 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
 
     const handleMouseDown = (e: React.MouseEvent, m: TransformMode) => {
         e.stopPropagation();
+        e.preventDefault();
         const pt = getSVGPoint(e.nativeEvent);
         // Calculate current dimensions for startRef
         let currentW: number;

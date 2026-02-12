@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { getStrokedBBox, getBBox } from '../lib/svg/utilities'
+import { hasMatrixTransform, getMatrix, transformBox } from '../lib/svg/math'
 
 export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon'
 
@@ -319,8 +320,8 @@ export const useStore = create<EditorState>((set) => ({
           let bboxString = rootFree;
 
           // Calculate BBox first
+          let bbox: any;
           try {
-            let bbox;
             // Use getStrokedBBox for groups to include all children strokes
             if (tagName === 'g') {
               bbox = getStrokedBBox([element], mockAddSVGElementsFromJson, mockPathActions);
@@ -346,7 +347,25 @@ export const useStore = create<EditorState>((set) => ({
 
           // Parse Transform for rotation only (position is handled by bbox)
           const transform = element.getAttribute('transform');
-          if (transform) {
+
+          // Check for matrix transform and update bbox
+          if (element instanceof SVGGraphicsElement && hasMatrixTransform(element.transform.baseVal)) {
+            try {
+              const matrix = getMatrix(element as SVGGraphicsElement);
+              if (bbox) {
+                const tBox = transformBox(bbox.x, bbox.y, bbox.width, bbox.height, matrix);
+
+                // Update x, y, width, height with transformed values
+                x = tBox.aabox.x * scale;
+                y = tBox.aabox.y * scale;
+                width = tBox.aabox.width * scale;
+                height = tBox.aabox.height * scale;
+                bboxString = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`;
+              }
+            } catch (e) {
+              console.warn("Failed to apply matrix transform", data.id, e);
+            }
+          } else if (transform) {
             const rotateMatch = transform.match(/rotate\(([^)]+)\)/);
             if (rotateMatch) {
               rotation = parseFloat(rotateMatch[1]);

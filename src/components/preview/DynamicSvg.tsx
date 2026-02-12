@@ -95,7 +95,8 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
     return (
         <div
             ref={containerRef}
-            style={{ ...style, width: '100%', height: '100%' }}
+            className="select-none"
+            style={{ ...style, width: '100%', height: '100%', pointerEvents: 'none' }}
             dangerouslySetInnerHTML={{ __html: svgContent }}
         />
     );

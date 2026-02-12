@@ -99,6 +99,8 @@ function VideoClip({ clip, currentTime, isPlaying }: { clip: Clip, currentTime: 
         <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
             <div style={getCropStyle(clip)}>
                 <video
+                    draggable={false}
+                    className="select-none"
                     ref={videoRef}
                     src={clip.src}
                     style={{ ...getMediaStyle(clip), ...getFilterStyle(), pointerEvents: 'none' }}
@@ -291,6 +293,8 @@ export function PreviewPlayer() {
                             <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', ...getFilterStyle() }}>
                                 <div style={getCropStyle(clip)}>
                                     <img
+                                        draggable={false}
+                                        className="select-none"
                                         src={clip.src}
                                         style={getMediaStyle(clip)}
                                         alt=""
@@ -426,7 +430,7 @@ export function PreviewPlayer() {
     }, [tracks, currentTime]);
 
     return (
-        <div className="flex flex-1 flex-col bg-black/5 overflow-hidden">
+        <div className="flex flex-1 flex-col bg-black/5 overflow-hidden select-none">
             <div className="flex-1 overflow-auto flex p-8 bg-black/10">
                 <div
                     id="preview-container"
