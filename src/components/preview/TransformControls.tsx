@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore, type Clip } from '@/store/useStore';
+import { getTextDimensions } from '@/utils/textUtils';
 
 interface TransformControlsProps {
     clip: Clip;
@@ -106,12 +107,9 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
         let currentW: number;
         let currentH: number;
         if (clip.type === 'text') {
-            const fontSize = clip.fontSize || 120;
-            const textContent = clip.text || 'Text';
-            const textLines = textContent.split('\n');
-            const maxLineLength = Math.max(...textLines.map(line => line.length));
-            currentW = maxLineLength * fontSize * 0.6;
-            currentH = textLines.length * fontSize * 1.2;
+            const dims = getTextDimensions(clip);
+            currentW = dims.width;
+            currentH = dims.height;
         } else {
             currentW = clip.width || (projectWidth / 4);
             currentH = clip.height || (projectHeight / 4);
@@ -139,13 +137,9 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
     let baseH: number;
 
     if (clip.type === 'text') {
-        // Auto-calculate text dimensions (same logic as PreviewPlayer)
-        const fontSize = clip.fontSize || 120;
-        const textContent = clip.text || 'Text';
-        const textLines = textContent.split('\n');
-        const maxLineLength = Math.max(...textLines.map(line => line.length));
-        baseW = maxLineLength * fontSize * 0.6;
-        baseH = textLines.length * fontSize * 1.2;
+        const dims = getTextDimensions(clip);
+        baseW = dims.width;
+        baseH = dims.height;
     } else {
         baseW = clip.width || (projectWidth / 4);
         baseH = clip.height || (projectHeight / 4);

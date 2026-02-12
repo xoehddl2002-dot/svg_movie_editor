@@ -16,6 +16,77 @@ export const loadImage = (src: string): Promise<HTMLImageElement> => {
 }
 
 // -------------------------------------------------------------------------
+// Helper: Load SVG Image with Color/Template Data
+// -------------------------------------------------------------------------
+export const loadSvgImage = async (src: string, color?: string, templateData?: any): Promise<HTMLImageElement> => {
+    try {
+        const res = await fetch(src);
+        const text = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, "image/svg+xml");
+        const svgElement = doc.documentElement;
+
+        // Ensure viewBox exists
+        if (!svgElement.getAttribute('viewBox')) {
+            const w = svgElement.getAttribute('width');
+            const h = svgElement.getAttribute('height');
+            if (w && h) {
+                const cleanW = w.replace(/[^0-9.]/g, '');
+                const cleanH = h.replace(/[^0-9.]/g, '');
+                svgElement.setAttribute('viewBox', `0 0 ${cleanW} ${cleanH}`);
+            }
+        }
+
+        // Apply fill color
+        if (color) {
+            const shapeElements = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');
+            shapeElements.forEach(el => {
+                // Check if fill is not explicitly 'none' (simple check)
+                // In a true DOM environment we might check computed style, but here we work with parsed XML.
+                // We'll imply that if it's a shape, we color it unless it has fill="none" explicitly set inline.
+                const currentFill = el.getAttribute('fill');
+                if (currentFill !== 'none') {
+                    el.setAttribute('fill', color);
+                    // Also set style to override potential CSS classes
+                    const style = el.getAttribute('style') || '';
+                    el.setAttribute('style', `${style}; fill: ${color};`);
+                }
+            });
+        }
+
+        // Apply templateData
+        if (templateData && typeof templateData === 'object') {
+            Object.entries(templateData).forEach(([id, data]: [string, any]) => {
+                const element = doc.getElementById(id);
+                if (!element) return;
+
+                if (data.text !== undefined) {
+                    if (element.tagName.toLowerCase() === 'text' || element.tagName.toLowerCase() === 'tspan') {
+                        element.textContent = data.text;
+                    }
+                }
+
+                if (data.fill !== undefined) element.setAttribute('fill', data.fill);
+                if (data.stroke !== undefined) element.setAttribute('stroke', data.stroke);
+                if (data.opacity !== undefined) element.setAttribute('opacity', data.opacity.toString());
+            });
+        }
+
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svgElement);
+        const encodedSvg = encodeURIComponent(svgString);
+        const dataUrl = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
+
+        return loadImage(dataUrl);
+
+    } catch (e) {
+        console.error("Failed to load/parse SVG:", e);
+        // Fallback to original src if parsing fails
+        return loadImage(src);
+    }
+}
+
+// -------------------------------------------------------------------------
 // Helper: Load Video Frame (DOM-based)
 // -------------------------------------------------------------------------
 export const loadVideoFrame = (clip: Clip, projectTime: number): Promise<HTMLVideoElement> => {
@@ -231,6 +302,11 @@ export const renderFrame = async (
                     return await loadImage(dataUrl)
                 }).catch(() => null)
                 if (img) ctx.drawImage(img, 0, 0, w, h)
+
+            } else if (clip.type === 'icon') {
+                // Load SVG with dynamic color/template data
+                const img = await loadSvgImage(clip.src, clip.color, clip.templateData);
+                if (img) ctx.drawImage(img, 0, 0, w, h);
 
             } else if (clip.type === 'video') {
                 // Optimized: Use pre-fetched frame if available

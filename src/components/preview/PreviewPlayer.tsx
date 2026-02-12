@@ -5,6 +5,7 @@ import { useStore, type Clip } from "@/store/useStore"
 import React, { useEffect, useRef, useState } from "react"
 import { DynamicSvg } from "./DynamicSvg"
 import { TransformControls } from "./TransformControls"
+import { getTextDimensions } from "@/utils/textUtils"
 
 const getMediaStyle = (clip: Clip): React.CSSProperties => {
     const flipH = clip.flipH || false
@@ -250,37 +251,9 @@ export function PreviewPlayer() {
 
         // Text specific dimension override
         if (clip.type === 'text') {
-            const fontSize = clip.fontSize || 120;
-            const textContent = clip.text || 'Text';
-            const textLines = textContent.split('\n');
-
-            let maxLineMeasuredWidth = 0;
-            // Create a temporary canvas to measure text
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-
-            if (context) {
-                // Ensure font string matches CSS rendering
-                context.font = `bold ${fontSize}px ${clip.fontFamily || 'sans-serif'}`;
-                textLines.forEach(line => {
-                    const metrics = context.measureText(line);
-                    maxLineMeasuredWidth = Math.max(maxLineMeasuredWidth, metrics.width);
-                });
-            } else {
-                // Fallback estimation
-                textLines.forEach(line => {
-                    let estimatedWidth = 0;
-                    for (let i = 0; i < line.length; i++) {
-                        const code = line.charCodeAt(i);
-                        estimatedWidth += (code < 128) ? 0.6 : 1.2;
-                    }
-                    maxLineMeasuredWidth = Math.max(maxLineMeasuredWidth, estimatedWidth * fontSize);
-                });
-            }
-
-            // Precise dimensions
-            w = maxLineMeasuredWidth;
-            h = textLines.length * fontSize * 1.2; // ~1.2 line height
+            const dims = getTextDimensions(clip);
+            w = dims.width;
+            h = dims.height;
         }
 
         const commonProps = {

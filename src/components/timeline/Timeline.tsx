@@ -34,6 +34,8 @@ export function Timeline() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
             if ((e.key === 'Delete' || e.key === 'Backspace') && selectedClipId) {
                 if (window.confirm("Delete selected item?")) {
                     removeClip(selectedClipId)

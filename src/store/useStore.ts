@@ -112,7 +112,28 @@ export const useStore = create<EditorState>((set) => ({
   setCurrentTime: (time) => set({ currentTime: time }),
   setDuration: (duration) => set({ duration }),
   setZoom: (zoom) => set({ zoom }),
-  setSelectedClipId: (id) => set({ selectedClipId: id }),
+  setSelectedClipId: (id) => set((state) => {
+    // Check if the currently selected clip is a text clip and is empty
+    if (state.selectedClipId && state.selectedClipId !== id) {
+      const currentClip = state.tracks.flatMap(t => t.clips).find(c => c.id === state.selectedClipId);
+      if (currentClip && currentClip.type === 'text') {
+        const textContent = currentClip.text?.trim() || '';
+        if (textContent === '') {
+          // Remove the empty text clip
+          const newTracks = state.tracks.map(track => ({
+            ...track,
+            clips: track.clips.filter(c => c.id !== state.selectedClipId)
+          }));
+          return {
+            tracks: newTracks,
+            selectedClipId: id,
+            editingClipId: state.editingClipId === state.selectedClipId ? null : state.editingClipId
+          };
+        }
+      }
+    }
+    return { selectedClipId: id };
+  }),
   setTimelineHeight: (height) => set({ timelineHeight: height }),
   setAspectRatio: (ratio) => set({ aspectRatio: ratio }),
 
@@ -183,6 +204,21 @@ export const useStore = create<EditorState>((set) => ({
       // Calculate base URL for resolving relative image paths
       const templateBaseUrl = template.svg.substring(0, template.svg.lastIndexOf('/') + 1);
 
+      // Fix relative image paths in SVG
+      const images = svgDoc.querySelectorAll('image');
+      images.forEach(img => {
+        const href = img.getAttribute('href') || img.getAttribute('xlink:href');
+        if (href) {
+          if (!href.startsWith('http') && !href.startsWith('data:') && !href.startsWith('/')) {
+            const absoluteUrl = templateBaseUrl + href;
+            img.setAttribute('href', absoluteUrl);
+            if (img.hasAttribute('xlink:href')) {
+              img.setAttribute('xlink:href', absoluteUrl);
+            }
+          }
+        }
+      });
+
       // Extract global definitions
       let defsString = '';
       const defs = svgDoc.querySelectorAll('defs');
@@ -221,6 +257,8 @@ export const useStore = create<EditorState>((set) => ({
         } else if (nodeName === 'image') {
           if (item.image_id && item.image_id === item.id) {
             type = 'image';
+          } else {
+            type = null;
           }
         } else if (['rect', 'path', 'polygon', 'circle', 'ellipse', 'line', 'polyline'].includes(nodeName)) {
           if (item.shapes_id && item.shapes_id === item.id) {
