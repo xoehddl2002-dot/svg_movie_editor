@@ -326,15 +326,15 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
 
                 <Button
                     variant="destructive"
-                    className="w-full flex items-center justify-center gap-2 mb-10"
+                    className="w-full h-12 flex items-center justify-center gap-2 mb-10 bg-red-600 hover:bg-red-700 text-white font-bold shadow-md hover:shadow-lg transition-all"
                     onClick={() => {
                         if (window.confirm("Are you sure you want to delete this resource?")) {
                             removeClip(clip.id);
                         }
                     }}
                 >
-                    <Trash2 className="h-4 w-4" />
-                    Delete Resource
+                    <Trash2 className="h-5 w-5" />
+                    DELETE RESOURCE
                 </Button>
             </div>
         </div>

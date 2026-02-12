@@ -202,7 +202,7 @@ export function Timeline() {
         if (!data) return
 
         try {
-            const { type, src, customPath, name, templateData, templateCategory } = JSON.parse(data)
+            const { type, src, customPath, name, templateData, templateCategory, viewBox } = JSON.parse(data)
 
             // Adjust aspect ratio based on template category
             if (templateCategory === 'F') setAspectRatio(1920 / 1080)
@@ -284,8 +284,25 @@ export function Timeline() {
                 width = 600;
                 height = 150;
             } else if (type === 'shape') {
-                width = 200;
-                height = 200;
+                if (viewBox) {
+                    const [_x, _y, vW, vH] = viewBox.split(' ').map(Number);
+                    if (!isNaN(vW) && !isNaN(vH) && vH > 0) {
+                        const aspect = vW / vH;
+                        if (aspect > 1) {
+                            width = 200;
+                            height = 200 / aspect;
+                        } else {
+                            height = 200;
+                            width = 200 * aspect;
+                        }
+                    } else {
+                        width = 200;
+                        height = 200;
+                    }
+                } else {
+                    width = 200;
+                    height = 200;
+                }
             }
 
 
@@ -361,6 +378,7 @@ export function Timeline() {
                 src,
                 text: type === 'text' ? 'New Text' : undefined,
                 customPath,
+                viewBox,
                 templateData,
                 volume: type === 'video' || type === 'audio' ? 1 : undefined,
                 // Add calculated dimensions
