@@ -8,12 +8,12 @@ import { useStore, type Clip } from "@/store/useStore"
 import { imageToDataURL } from '@/utils/dataUrl'
 // import { FFmpeg } from '@ffmpeg/ffmpeg'
 // import { fetchFile, toBlobURL } from '@ffmpeg/util'
-import JSZip from 'jszip'
+
 
 export function ExportModal() {
     const [isOpen, setIsOpen] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
-    const [format, setFormat] = useState<'mp4' | 'png' | 'zip'>('png')
+    const [format, setFormat] = useState<'mp4' | 'png'>('png')
     const [fps, setFps] = useState<number>(30)
 
     // Store access
@@ -393,9 +393,9 @@ export function ExportModal() {
                     if (videoImg) ctx.drawImage(videoImg, 0, 0, w, h)
 
                 } else if (clip.type === 'shape') {
-                    // ... same shape logic ...
-                    // Simplified for brevity, reusing previous logic logic structure
-                    if (clip.src) {
+                    const isPrimitive = ['Rectangle', 'Circle', 'Triangle', 'Star', 'Arrow Right', 'Heart', 'Arrow'].includes(clip.src) || !!clip.customPath
+
+                    if (!isPrimitive && clip.src) {
                         const img = await loadImage(clip.src).catch(async () => {
                             const dataUrl = await imageToDataURL(clip.src)
                             return await loadImage(dataUrl)
@@ -403,19 +403,27 @@ export function ExportModal() {
                         if (img) ctx.drawImage(img, 0, 0, w, h)
                     } else {
                         ctx.fillStyle = clip.color || 'white'
-                        if (clip.name === 'Rectangle') {
+                        const shapeType = clip.src
+
+                        if (shapeType === 'Rectangle') {
                             ctx.fillRect(0, 0, w, h)
-                        } else if (clip.name === 'Circle') {
+                        } else if (shapeType === 'Circle') {
                             ctx.beginPath()
                             ctx.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, 2 * Math.PI)
                             ctx.fill()
                         } else {
-                            const pathData = clip.customPath || getShapePath(clip.name)
+                            const pathData = clip.customPath || getShapePath(shapeType)
                             if (pathData) {
                                 const p = new Path2D(pathData)
                                 ctx.save()
                                 ctx.scale(w / 100, h / 100)
-                                ctx.fill(p)
+                                if (shapeType === 'Arrow') {
+                                    ctx.strokeStyle = clip.color || 'white'
+                                    ctx.lineWidth = 5
+                                    ctx.stroke(p)
+                                } else {
+                                    ctx.fill(p)
+                                }
                                 ctx.restore()
                             }
                         }
@@ -448,6 +456,32 @@ export function ExportModal() {
             }
             ctx.restore()
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Shared: Export State & Cancellation
+    // -------------------------------------------------------------------------
+    const [abortController, setAbortController] = useState<AbortController | null>(null)
+
+    // Prevent closing/refreshing while exporting
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isExporting) {
+                e.preventDefault()
+                e.returnValue = ''
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [isExporting])
+
+    const handleCancel = () => {
+        if (abortController) {
+            abortController.abort()
+        }
+        setIsExporting(false)
+        setIsOpen(false)
+        setAbortController(null)
     }
 
     // -------------------------------------------------------------------------
@@ -544,115 +578,7 @@ export function ExportModal() {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Action: Export ZIP (Frames sequence) - Enabled
-    // -------------------------------------------------------------------------
-    const [abortController, setAbortController] = useState<AbortController | null>(null)
 
-    // Prevent closing/refreshing while exporting
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isExporting) {
-                e.preventDefault()
-                e.returnValue = ''
-            }
-        }
-        window.addEventListener('beforeunload', handleBeforeUnload)
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    }, [isExporting])
-
-    const handleCancel = () => {
-        if (abortController) {
-            abortController.abort()
-        }
-        setIsExporting(false)
-        setIsOpen(false)
-        setAbortController(null)
-    }
-
-    // Action: Export ZIP
-    const handleExportZip = async () => {
-        const controller = new AbortController()
-        setAbortController(controller)
-        const signal = controller.signal
-
-        setIsExporting(true)
-
-        try {
-            const projectWidth = 1920
-            const projectHeight = 1920 / (aspectRatio || 1)
-
-            const canvas = document.createElement('canvas')
-            canvas.width = projectWidth
-            canvas.height = projectHeight
-            const ctx = canvas.getContext('2d')
-            if (!ctx) throw new Error('Could not get 2d context')
-
-            const totalFrames = Math.max(1, Math.ceil(duration * fps))
-            console.log(`Starting ZIP export: ${duration}s @ ${fps}fps = ${totalFrames} frames`)
-
-            // 1. Prefetch Video Frames
-            // setProgressText('Extracting video frames...')
-            // We should pass signal to prefetch if possible, or check it after
-            if (signal.aborted) throw new Error('Export cancelled')
-            const videoFrameMap = await prefetchVideoFrames(fps, duration)
-            if (signal.aborted) throw new Error('Export cancelled')
-
-            const zip = new JSZip()
-            const framesFolder = zip.folder("frames")
-            if (!framesFolder) throw new Error("Failed to create zip folder")
-
-            // 2. Render All Frames
-            for (let i = 0; i < totalFrames; i++) {
-                if (signal.aborted) throw new Error('Export cancelled')
-
-                const time = i / fps
-
-                // setProgressText(`Rendering frame ${i + 1}/${totalFrames}`)
-                // setProgress(Math.round((i / totalFrames) * 80))
-
-                await renderFrame(ctx, time, projectWidth, projectHeight, i, videoFrameMap)
-
-                const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
-                if (!blob) throw new Error(`Failed to capture frame ${i}`)
-
-                // Add to ZIP
-                framesFolder.file(`frame_${i.toString().padStart(4, '0')}.png`, blob)
-            }
-
-            if (signal.aborted) throw new Error('Export cancelled')
-
-            // 3. Generate ZIP
-            // setProgressText('Compressing files...')
-            // setProgress(90)
-
-            const content = await zip.generateAsync({ type: "blob" })
-
-            // 4. Download
-            if (signal.aborted) throw new Error('Export cancelled')
-
-            // @ts-ignore
-            const url = URL.createObjectURL(content)
-            const link = document.createElement('a')
-            link.download = `project-frames-${Date.now()}.zip`
-            link.href = url
-            link.click()
-
-            console.log('ZIP export successful')
-
-        } catch (error: any) {
-            if (error.message === 'Export cancelled') {
-                console.log('Export cancelled by user')
-            } else {
-                console.error('ZIP export failed:', error)
-                alert('Failed to export ZIP. Check console.')
-            }
-        } finally {
-            setIsExporting(false)
-            setIsOpen(false)
-            setAbortController(null)
-        }
-    }
 
     // -------------------------------------------------------------------------
     // Action: Export Image (Current Frame)
@@ -693,7 +619,6 @@ export function ExportModal() {
 
     const handleExport = () => {
         if (format === 'mp4') return handleExportVideo()
-        if (format === 'zip') return handleExportZip()
         return handleExportImage()
     }
 
@@ -715,7 +640,7 @@ export function ExportModal() {
                         <Label>Format</Label>
                         <Select
                             value={format}
-                            onValueChange={(v: 'mp4' | 'png' | 'zip') => setFormat(v)}
+                            onValueChange={(v: 'mp4' | 'png') => setFormat(v)}
                             disabled={isExporting}
                         >
                             <SelectTrigger>
@@ -734,17 +659,12 @@ export function ExportModal() {
                                         <span>Video (.mp4)</span>
                                     </div>
                                 </SelectItem>
-                                <SelectItem value="zip">
-                                    <div className="flex items-center gap-2">
-                                        <FileArchive className="h-4 w-4" />
-                                        <span>Frames Sequence (.zip)</span>
-                                    </div>
-                                </SelectItem>
+
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {(format === 'mp4' || format === 'zip') && (
+                    {(format === 'mp4') && (
                         <div className="space-y-2">
                             <Label>Frame Rate (FPS)</Label>
                             <Select

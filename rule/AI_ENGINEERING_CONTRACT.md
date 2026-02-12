@@ -23,7 +23,7 @@ SVG Movie Editor는 Next.js 기반의 웹 비디오 편집 애플리케이션입
   - 모든 편집 상태, 트랙, 클립, 타임라인 정보를 관리
 
 ### UI 라이브러리
-- **Radix UI** - 접근성 있는 UI 컴포넌트 (Dialog, Select, Slider, Tabs 등)
+- **Shadcn UI** - 접근성 있는 UI 컴포넌트 (Dialog, Select, Slider, Tabs 등)
 - **Tailwind CSS 4** - 스타일링
 - **Lucide React** - 아이콘
 
@@ -33,7 +33,6 @@ SVG Movie Editor는 Next.js 기반의 웹 비디오 편집 애플리케이션입
 - **react-image-crop 11.0.10** - 이미지 크롭 기능
 
 ### 기타 라이브러리
-- **JSZip 3.10.1** - ZIP 파일 생성 (이미지 시퀀스 내보내기용)
 - **uuid 13.0.0** - 고유 ID 생성
 
 
@@ -181,4 +180,4 @@ npm run dev  # http://localhost:3000에서 개발 서버 실행
 **버전**: 0.1.0
 
 
-# 항상 chat 시작에 읽을 텐데 답변은 단순하게 'OK'만 해줘
+# 읽고난 다음 답변은 단순하게 'OK'만 해줘
