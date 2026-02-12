@@ -95,7 +95,7 @@ export function ShapeTab({ shapeImages, onDragStart }: ShapeTabProps) {
                             key={`icon-${i}`}
                             className="aspect-square flex items-center justify-center hover:bg-accent cursor-grab relative group transition-colors"
                             draggable
-                            onDragStart={(e) => onDragStart(e, 'shape', src)}
+                            onDragStart={(e) => onDragStart(e, 'icon', src)}
                         >
                             <CardContent className="p-2 w-full h-full flex items-center justify-center">
                                 <img src={src} className="w-full h-full object-contain pointer-events-none" alt="Icon" />

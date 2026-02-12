@@ -11,6 +11,47 @@ import { Settings, X, Trash2 } from "lucide-react"
 const DEFAULT_FILTER = { brightness: 1, contrast: 1, saturate: 1, blur: 0 }
 const fonts = ['Inter', 'Roboto', 'Arial', 'Times New Roman', 'Courier New']
 
+interface ColorPickerProps {
+    value?: string
+    onChange: (value: string) => void
+}
+
+function ColorPicker({ value, onChange }: ColorPickerProps) {
+    const presets = ['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
+
+    return (
+        <div className="space-y-2">
+            <div className="flex gap-2 flex-wrap">
+                {presets.map(color => (
+                    <div
+                        key={color}
+                        className={`w-6 h-6 rounded-full cursor-pointer border ${value === color ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => onChange(color)}
+                    />
+                ))}
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="relative w-9 h-9 flex-shrink-0 rounded-md overflow-hidden border border-input shadow-sm">
+                    <input
+                        type="color"
+                        value={value || '#000000'}
+                        onChange={(e) => onChange(e.target.value)}
+                        className="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] cursor-pointer p-0 border-0"
+                    />
+                </div>
+                <Input
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="h-9 font-mono text-xs"
+                    placeholder="#000000"
+                    maxLength={9}
+                />
+            </div>
+        </div>
+    )
+}
+
 interface ClipPropertiesProps {
     clip: Clip
 }
@@ -51,7 +92,7 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                 )}
 
                 {/* Position & Size */}
-                {(clip.type === 'image' || clip.type === 'text' || clip.type === 'video' || clip.type === 'shape') && (
+                {(clip.type === 'image' || clip.type === 'text' || clip.type === 'video' || clip.type === 'shape' || clip.type === 'icon') && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Transform</Label>
                         <div className="grid grid-cols-2 gap-4">
@@ -146,16 +187,10 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                         </div>
                         <div className="space-y-2">
                             <Label>Color</Label>
-                            <div className="flex gap-2 flex-wrap">
-                                {['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'].map(color => (
-                                    <div
-                                        key={color}
-                                        className={`w-6 h-6 rounded-full cursor-pointer border ${clip.color === color ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => updateClip(clip.id, { color })}
-                                    />
-                                ))}
-                            </div>
+                            <ColorPicker
+                                value={clip.color}
+                                onChange={(color) => updateClip(clip.id, { color })}
+                            />
                         </div>
                     </div>
                 )}
@@ -253,21 +288,15 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                 )}
 
                 {/* Shape Properties */}
-                {clip.type === 'shape' && (!clip.src || (!clip.src.includes('/') && !clip.src.includes('.'))) && (
+                {clip.type === 'shape' && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Appearance</Label>
                         <div className="space-y-2">
                             <Label>Color</Label>
-                            <div className="flex gap-2 flex-wrap">
-                                {['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'].map(color => (
-                                    <div
-                                        key={color}
-                                        className={`w-6 h-6 rounded-full cursor-pointer border ${clip.color === color ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => updateClip(clip.id, { color })}
-                                    />
-                                ))}
-                            </div>
+                            <ColorPicker
+                                value={clip.color}
+                                onChange={(color) => updateClip(clip.id, { color })}
+                            />
                         </div>
                     </div>
                 )}
@@ -300,20 +329,14 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                                 {data.fill !== undefined && (
                                     <div className="space-y-1">
                                         <Label className="text-[10px]">Color</Label>
-                                        <div className="flex gap-1 flex-wrap">
-                                            {['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'].map(color => (
-                                                <div
-                                                    key={color}
-                                                    className={`w-5 h-5 rounded-full cursor-pointer border ${data.fill === color ? 'ring-1 ring-primary ring-offset-1' : ''}`}
-                                                    style={{ backgroundColor: color }}
-                                                    onClick={() => {
-                                                        const newData = { ...clip.templateData };
-                                                        newData[id] = { ...newData[id], fill: color };
-                                                        updateClip(clip.id, { templateData: newData });
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
+                                        <ColorPicker
+                                            value={data.fill}
+                                            onChange={(color) => {
+                                                const newData = { ...clip.templateData };
+                                                newData[id] = { ...newData[id], fill: color };
+                                                updateClip(clip.id, { templateData: newData });
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </div>

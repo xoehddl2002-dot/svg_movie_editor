@@ -253,10 +253,33 @@ export function PreviewPlayer() {
             const fontSize = clip.fontSize || 120;
             const textContent = clip.text || 'Text';
             const textLines = textContent.split('\n');
-            const maxLineLength = Math.max(...textLines.map(line => line.length));
 
-            // Estimate dimensions (rough approximation)
-            w = maxLineLength * fontSize * 0.6; // ~0.6 width per char
+            let maxLineMeasuredWidth = 0;
+            // Create a temporary canvas to measure text
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            if (context) {
+                // Ensure font string matches CSS rendering
+                context.font = `bold ${fontSize}px ${clip.fontFamily || 'sans-serif'}`;
+                textLines.forEach(line => {
+                    const metrics = context.measureText(line);
+                    maxLineMeasuredWidth = Math.max(maxLineMeasuredWidth, metrics.width);
+                });
+            } else {
+                // Fallback estimation
+                textLines.forEach(line => {
+                    let estimatedWidth = 0;
+                    for (let i = 0; i < line.length; i++) {
+                        const code = line.charCodeAt(i);
+                        estimatedWidth += (code < 128) ? 0.6 : 1.2;
+                    }
+                    maxLineMeasuredWidth = Math.max(maxLineMeasuredWidth, estimatedWidth * fontSize);
+                });
+            }
+
+            // Precise dimensions
+            w = maxLineMeasuredWidth;
             h = textLines.length * fontSize * 1.2; // ~1.2 line height
         }
 
@@ -331,7 +354,7 @@ export function PreviewPlayer() {
                                     fontFamily: clip.fontFamily || 'sans-serif',
                                     fontWeight: 'bold',
                                     textShadow: '0 0.2px 0.4px rgba(0,0,0,0.5)',
-                                    whiteSpace: 'pre-wrap',
+                                    whiteSpace: 'nowrap',
                                     textAlign: 'center'
                                 }}
                             >
@@ -339,8 +362,9 @@ export function PreviewPlayer() {
                             </div>
                         </foreignObject>
                     )
+                case 'icon':
                 case 'shape':
-                    if (clip.src && (clip.src.toLowerCase().split('?')[0].endsWith('.svg') || clip.src.includes('blob:'))) {
+                    if (clip.type === 'icon' || (clip.src && (clip.src.toLowerCase().split('?')[0].endsWith('.svg') || clip.src.includes('blob:') || clip.src.startsWith('data:image/svg+xml')))) {
                         return (
                             <foreignObject
                                 x={0}
@@ -352,6 +376,7 @@ export function PreviewPlayer() {
                                 <DynamicSvg
                                     src={clip.src}
                                     templateData={clip.templateData}
+                                    fill={clip.color}
                                 />
                             </foreignObject>
                         )

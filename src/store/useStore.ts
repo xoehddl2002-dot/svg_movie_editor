@@ -1,6 +1,7 @@
 import { create } from 'zustand'
+import { getStrokedBBox, getBBox } from '../lib/svg/utilities'
 
-export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape'
+export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon'
 
 export interface Clip {
   id: string
@@ -122,62 +123,284 @@ export const useStore = create<EditorState>((set) => ({
 
   initProjectWithTemplate: async (template) => {
     let jsonData = template.json;
-    if (typeof template.json === 'string' && !template.json.trim().startsWith('{')) {
+    if (typeof template.json === 'string') {
       try {
         const res = await fetch(template.json);
         jsonData = await res.json();
       } catch (err) {
-        console.error("Failed to fetch template JSON metadata:", err);
-      }
-    } else if (typeof template.json === 'string') {
-      try {
-        jsonData = JSON.parse(template.json);
-      } catch (err) {
-        console.error("Failed to parse template JSON string:", err);
+        console.error("Failed to fetch template JSON:", err);
+        return;
       }
     }
+
+    let svgDoc: Document;
+    try {
+      const res = await fetch(template.svg);
+      const svgText = await res.text();
+      const parser = new DOMParser();
+      svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+    } catch (err) {
+      console.error("Failed to fetch or parse template SVG:", err);
+      return;
+    }
+
+    const { v4: uuidv4 } = await import('uuid');
 
     set((state) => {
       let ratio = 16 / 9;
       if (template.category === 'F') ratio = 1920 / 1080;
-      else if (template.category === 'S') ratio = 348 / 819;
+      else if (template.category === 'S') ratio = 1080 / 1920;
       else if (template.category === 'T') ratio = 1820 / 118;
 
       const projectWidth = 1920;
-      const projectHeight = 1920 / ratio;
 
-      const initialTracks: Track[] = [
-        {
-          id: 'audio-1',
-          type: 'audio',
-          clips: []
-        },
-        {
-          id: 'video-1',
-          type: 'video',
-          clips: []
-        },
-        {
-          id: 'track-1',
-          type: 'shape',
-          clips: [
-            {
-              id: 'initial-template',
-              trackId: 'track-1',
-              type: 'shape',
-              start: 0,
-              duration: state.duration,
-              name: template.name,
-              src: template.svg,
-              templateData: jsonData,
-              x: 0,
-              y: 0,
-              width: projectWidth,
-              height: projectHeight
-            }
-          ]
+      // Extract SVG dimensions to calculate scale factor
+      const rootElement = svgDoc.documentElement;
+      let svgWidth = 1920;
+      let svgHeight = 1080;
+      const viewBoxAttr = rootElement.getAttribute('viewBox');
+      const widthAttr = rootElement.getAttribute('width');
+      const heightAttr = rootElement.getAttribute('height');
+
+      if (viewBoxAttr) {
+        const parts = viewBoxAttr.split(/\s+|,/).filter(Boolean).map(parseFloat);
+        if (parts.length === 4) {
+          svgWidth = parts[2];
+          svgHeight = parts[3];
         }
+      } else if (widthAttr && heightAttr) {
+        svgWidth = parseFloat(widthAttr);
+        svgHeight = parseFloat(heightAttr);
+      }
+
+      // Calculate Scale Factor
+      const scale = projectWidth / svgWidth;
+
+      if (svgWidth && svgHeight) {
+        ratio = svgWidth / svgHeight;
+      }
+
+      // Calculate base URL for resolving relative image paths
+      const templateBaseUrl = template.svg.substring(0, template.svg.lastIndexOf('/') + 1);
+
+      // Extract global definitions
+      let defsString = '';
+      const defs = svgDoc.querySelectorAll('defs');
+      defs.forEach(el => {
+        defsString += new XMLSerializer().serializeToString(el);
+      });
+      const styles = svgDoc.querySelectorAll('style');
+      styles.forEach(el => {
+        if (!el.closest('defs')) {
+          defsString += new XMLSerializer().serializeToString(el);
+        }
+      });
+
+      const rootFree = svgDoc.documentElement.getAttribute('viewBox') || `0 0 ${svgWidth} ${svgHeight}`;
+
+      // Helper to determine clip type and validity from JSON item
+      interface TempClipData {
+        element: Element;
+        item: any;
+        type: ResourceType;
+        id: string; // SVG ID
+      }
+
+      const validClips: TempClipData[] = [];
+      const items = jsonData.item || {};
+
+      Object.entries(items).forEach(([key, item]: [string, any]) => {
+        const element = svgDoc.getElementById(key);
+        if (!element) return; // Skip if element not found in SVG
+
+        const nodeName = item.nodeName?.toLowerCase();
+        let type: ResourceType | null = 'icon';
+
+        if (nodeName === 'text') {
+          type = 'text';
+        } else if (nodeName === 'image') {
+          if (item.image_id && item.image_id === item.id) {
+            type = 'image';
+          }
+        } else if (['rect', 'path', 'polygon', 'circle', 'ellipse', 'line', 'polyline'].includes(nodeName)) {
+          if (item.shapes_id && item.shapes_id === item.id) {
+            type = 'shape';
+          }
+        }
+
+        if (type) {
+          validClips.push({ element, item, type, id: key });
+        }
+      });
+
+      // Sort by DOM order to ensure correct layering (Back to Front)
+      validClips.sort((a, b) => {
+        const position = a.element.compareDocumentPosition(b.element);
+        if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1; // a comes before b
+        if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;  // b comes before a
+        return 0;
+      });
+
+      // Reverse to get Front-to-Back order for tracks (Track 0 is Top/Front)
+      const orderedClips = [...validClips].reverse();
+
+      const newClips: Clip[] = [];
+
+      // Append SVG to DOM for BBox calculations
+      const hiddenContainer = document.createElement('div');
+      hiddenContainer.style.visibility = 'hidden';
+      hiddenContainer.style.position = 'absolute';
+      hiddenContainer.style.width = '0';
+      hiddenContainer.style.height = '0';
+      hiddenContainer.style.overflow = 'hidden';
+      hiddenContainer.appendChild(rootElement);
+      document.body.appendChild(hiddenContainer);
+
+      const mockAddSVGElementsFromJson = (data: any) => {
+        const el = document.createElementNS("http://www.w3.org/2000/svg", data.element);
+        if (data.attr) {
+          Object.entries(data.attr).forEach(([k, v]) => el.setAttribute(k, v as string));
+        }
+        return el;
+      };
+      const mockPathActions = {
+        resetOrientation: (path: any) => { }
+      };
+
+      try {
+        orderedClips.forEach((data) => {
+          const { element, type, item } = data;
+          const tagName = element.tagName.toLowerCase();
+
+          let x = 0, y = 0, width = 100, height = 100, rotation = 0, opacity = 1;
+          let src = '';
+          let fill: string | undefined;
+          let textContent = '';
+          let fontFamily = 'sans-serif';
+          let fontSize = 24;
+          let bboxString = rootFree;
+
+          // Calculate BBox first
+          try {
+            let bbox;
+            // Use getStrokedBBox for groups to include all children strokes
+            if (tagName === 'g') {
+              bbox = getStrokedBBox([element], mockAddSVGElementsFromJson, mockPathActions);
+            } else {
+              bbox = getBBox(element);
+            }
+
+            if (bbox) {
+              x = bbox.x * scale;
+              y = bbox.y * scale;
+              width = bbox.width * scale;
+              height = bbox.height * scale;
+              bboxString = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`;
+            } else {
+              width = 200;
+              height = 200;
+            }
+          } catch (e) {
+            console.warn("Failed to calculate BBox for", data.id, e);
+            width = 200;
+            height = 200;
+          }
+
+          // Parse Transform for rotation only (position is handled by bbox)
+          const transform = element.getAttribute('transform');
+          if (transform) {
+            const rotateMatch = transform.match(/rotate\(([^)]+)\)/);
+            if (rotateMatch) {
+              rotation = parseFloat(rotateMatch[1]);
+            }
+          }
+
+          // Common Attributes
+          opacity = parseFloat(element.getAttribute('opacity') || '1');
+
+          if (type === 'text') {
+            // Font size needs scaling but x/y are from bbox
+            fontSize = (parseFloat(element.getAttribute('font-size') || '24')) * scale;
+            fontFamily = element.getAttribute('font-family') || 'sans-serif';
+            fill = element.getAttribute('fill') || '#000000';
+            textContent = element.textContent || element.innerHTML || '';
+          } else if (type === 'image') {
+            src = 'https://placehold.co/600x400'; // Default placeholder
+
+            let href = element.getAttribute('href') || element.getAttribute('xlink:href');
+            if (href) {
+              if (!href.startsWith('http') && !href.startsWith('data:') && !href.startsWith('/')) {
+                href = templateBaseUrl + href;
+              }
+              src = href;
+            }
+          } else if (type === 'icon' || type === 'shape') {
+            if (type === 'shape') {
+              fill = element.getAttribute('fill') || '#000000';
+
+              // Find fill from shapes_id element
+              const shapesId = item.shapes_id;
+              if (shapesId) {
+                const shapeElement = svgDoc.getElementById(shapesId);
+                if (shapeElement) {
+                  const shapeFill = shapeElement.getAttribute('fill');
+                  if (shapeFill) {
+                    fill = shapeFill;
+                  }
+                }
+              }
+            }
+
+            const serialized = new XMLSerializer().serializeToString(element);
+            const svgContent = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='${bboxString}'>${defsString}${serialized}</svg>`;
+            src = `data:image/svg+xml;utf8,${encodeURIComponent(svgContent)}`;
+          }
+
+          const clip: Clip = {
+            id: uuidv4(),
+            trackId: '',
+            type: type as ResourceType,
+            start: 0,
+            duration: state.duration,
+            name: item.id || data.id,
+            src: src,
+            text: textContent,
+            fontFamily,
+            fontSize,
+            color: fill,
+            x,
+            y,
+            width,
+            height,
+            rotation,
+            opacity,
+            templateData: { [data.id]: item }
+          };
+          newClips.push(clip);
+        });
+      } finally {
+        // Clean up DOM
+        if (hiddenContainer.parentNode) {
+          hiddenContainer.parentNode.removeChild(hiddenContainer);
+        }
+      }
+
+      // Create tracks
+      const initialTracks: Track[] = [
+        { id: 'audio-1', type: 'audio', clips: [] },
+        { id: 'video-1', type: 'video', clips: [] }
       ];
+
+      // Assign to tracks
+      newClips.forEach((clip, index) => {
+        const trackId = `track-${index}`;
+        clip.trackId = trackId;
+        initialTracks.push({
+          id: trackId,
+          type: clip.type === 'text' ? 'text' : 'shape',
+          clips: [clip]
+        });
+      });
 
       return {
         tracks: initialTracks,

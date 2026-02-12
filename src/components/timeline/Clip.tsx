@@ -1,6 +1,6 @@
 import React from "react"
 import type { Clip as ClipType } from "@/store/useStore"
-import { FileVideo, Image as ImageIcon, Music, Type, Shapes, LayoutTemplate } from "lucide-react"
+import { FileVideo, Image as ImageIcon, Music, Type, Shapes, LayoutTemplate, Smile } from "lucide-react"
 
 interface ClipProps {
     clip: ClipType
@@ -16,21 +16,22 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
     const x = clip.start * zoom
 
     const getClipColor = (clip: ClipType) => {
-        if (clip.templateData) return '#0d9488' // Teal for Templates
+        // if (clip.templateData) return '#0d9488' // Teal for Templates - Removed to allow resource specific colors
 
         switch (clip.type) {
             case 'video': return '#3b82f6' // Blue
             case 'audio': return '#22c55e' // Green
             case 'image': return '#a855f7' // Purple
             case 'text': return '#06b6d4' // Cyan
-            case 'shape': return '#f97316' // Orange
+            case 'shape': return '#f97316' // Orange for Basic Shapes
+            case 'icon': return '#14b8a6' // Teal for Icons
             default: return '#6b7280' // Gray
         }
     }
 
     const getIcon = (clip: ClipType) => {
         const props = { className: "h-3 w-3 text-white/90 mr-1" }
-        if (clip.templateData) return <LayoutTemplate {...props} />
+        // if (clip.templateData) return <LayoutTemplate {...props} />
 
         switch (clip.type) {
             case 'video': return <FileVideo {...props} />
@@ -38,6 +39,7 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
             case 'image': return <ImageIcon {...props} />
             case 'text': return <Type {...props} />
             case 'shape': return <Shapes {...props} />
+            case 'icon': return <Smile {...props} />
             default: return <LayoutTemplate {...props} />
         }
     }

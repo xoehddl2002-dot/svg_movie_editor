@@ -214,7 +214,7 @@ export function Timeline() {
             const x = e.clientX - rect.left
             const dropTime = Math.max(0, x / zoom)
 
-            const videoDuration = type === 'image' || type === 'text' || type === 'shape' ? duration : 10
+            const videoDuration = type === 'image' || type === 'text' || type === 'shape' || type === 'icon' ? duration : 10
             const clipId = uuidv4()
 
             // Calculate dimensions based on resource type
@@ -283,7 +283,7 @@ export function Timeline() {
             } else if (type === 'text') {
                 width = 600;
                 height = 150;
-            } else if (type === 'shape') {
+            } else if (type === 'shape' || type === 'icon') {
                 if (viewBox) {
                     const [_x, _y, vW, vH] = viewBox.split(' ').map(Number);
                     if (!isNaN(vW) && !isNaN(vH) && vH > 0) {
@@ -344,7 +344,8 @@ export function Timeline() {
                 'audio': '오디오',
                 'image': '이미지',
                 'text': '텍스트',
-                'shape': '도형'
+                'shape': '도형',
+                'icon': '아이콘'
             };
 
             // Find the maximum sequence number for this type

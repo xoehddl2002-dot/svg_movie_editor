@@ -4,9 +4,10 @@ interface DynamicSvgProps {
     src: string;
     style?: React.CSSProperties;
     templateData?: any;
+    fill?: string;
 }
 
-export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateData }: DynamicSvgProps) {
+export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateData, fill }: DynamicSvgProps) {
     const [svgContent, setSvgContent] = useState<string>('');
     const containerRef = useRef<HTMLDivElement>(null);
     const lastAppliedDataRef = useRef<string>('');
@@ -48,10 +49,30 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
         svgElement.setAttribute('height', '100%');
         svgElement.setAttribute('preserveAspectRatio', 'none');
 
+        // Apply fill color if provided
+        if (fill) {
+            const shapeElements = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');
+            shapeElements.forEach(el => {
+                const svgEl = el as SVGElement;
+
+                // Get computed style to check actual visibility/color
+                const computedStyle = window.getComputedStyle(el);
+                const computedFill = computedStyle.fill;
+
+                // If it's not explicitly none, override it
+                if (computedFill !== 'none') {
+                    // Set both attribute and style to ensure override
+                    el.setAttribute('fill', fill);
+                    svgEl.style.fill = fill;
+                }
+            });
+        }
+
         // Apply templateData items to elements by ID
         const dataKey = JSON.stringify(templateData || {});
-        if (dataKey === lastAppliedDataRef.current) return;
-        lastAppliedDataRef.current = dataKey;
+        // Note: we removed the optimization check (lastAppliedDataRef) because 'fill' prop change might need re-run 
+        // effectively, but actually fill is handled above. 
+        // Let's keep templateData application robust.
 
         if (templateData && typeof templateData === 'object') {
             Object.entries(templateData).forEach(([id, data]: [string, any]) => {
@@ -69,7 +90,7 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
                 if (data.opacity !== undefined) element.setAttribute('opacity', data.opacity.toString());
             });
         }
-    }, [svgContent, templateData]);
+    }, [svgContent, templateData, fill]);
 
     return (
         <div
