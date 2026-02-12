@@ -356,10 +356,10 @@ export function PreviewPlayer() {
                             </foreignObject>
                         )
                     }
-                    if (clip.name === 'Rectangle') {
+                    if (clip.src === 'Rectangle') {
                         return <rect {...commonProps} fill={clip.color || 'white'} />
                     }
-                    if (clip.name === 'Circle') {
+                    if (clip.src === 'Circle') {
                         const cx = w / 2
                         const cy = h / 2
                         const rRadius = Math.min(w, h) / 2
@@ -373,16 +373,18 @@ export function PreviewPlayer() {
                         )
                     }
                     return (
-                        <g {...commonProps}>
-                            <svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none">
-                                <path
-                                    d={clip.customPath || getShapePath(clip.name)}
-                                    fill={clip.color || 'white'}
-                                    stroke={clip.name === 'Arrow' ? (clip.color || 'white') : 'none'}
-                                    strokeWidth={clip.name === 'Arrow' ? 5 : 0}
-                                />
-                            </svg>
-                        </g>
+                        <svg
+                            {...commonProps}
+                            viewBox="0 0 100 100"
+                            preserveAspectRatio="none"
+                        >
+                            <path
+                                d={clip.customPath || getShapePath(clip.src)}
+                                fill={clip.color || 'white'}
+                                stroke={clip.src === 'Arrow' ? (clip.color || 'white') : 'none'}
+                                strokeWidth={clip.src === 'Arrow' ? 5 : 0}
+                            />
+                        </svg>
                     )
                 default:
                     return null

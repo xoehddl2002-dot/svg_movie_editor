@@ -321,12 +321,43 @@ export function Timeline() {
                 }
             }
 
+            // Generate dynamic Korean clip name based on type and count
+            const typeNameMap: Record<string, string> = {
+                'video': '비디오',
+                'audio': '오디오',
+                'image': '이미지',
+                'text': '텍스트',
+                'shape': '도형'
+            };
+
+            // Find the maximum sequence number for this type
+            const allClips = tracks.flatMap(t => t.clips);
+            const typeClips = allClips.filter(c => c.type === type);
+
+            // Extract sequence numbers from existing clips of the same type
+            const typeName = typeNameMap[type] || type;
+            const pattern = new RegExp(`^새\\s+${typeName}\\s+클립\\s+(\\d+)$`);
+            let maxSequence = 0;
+
+            typeClips.forEach(clip => {
+                const match = clip.name.match(pattern);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (num > maxSequence) {
+                        maxSequence = num;
+                    }
+                }
+            });
+
+            const sequenceNumber = maxSequence + 1;
+            const generatedName = `새 ${typeName} 클립 ${sequenceNumber}`;
+
             const newClipData = {
                 id: clipId,
                 type,
                 start: dropTime,
                 duration: videoDuration,
-                name: name || (type === 'text' ? src : (customPath ? 'Custom Shape' : 'New Clip')),
+                name: name || (type === 'text' ? src : (customPath ? 'Custom Shape' : generatedName)),
                 src,
                 text: type === 'text' ? 'New Text' : undefined,
                 customPath,
