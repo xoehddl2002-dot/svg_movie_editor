@@ -1,0 +1,340 @@
+
+import { Clip, Track } from "@/store/useStore"
+import { imageToDataURL } from '@/utils/dataUrl'
+
+// -------------------------------------------------------------------------
+// Helper: Load Image
+// -------------------------------------------------------------------------
+export const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => resolve(img)
+        img.onerror = (e) => reject(e)
+        img.src = src
+    })
+}
+
+// -------------------------------------------------------------------------
+// Helper: Load Video Frame (DOM-based)
+// -------------------------------------------------------------------------
+export const loadVideoFrame = (clip: Clip, projectTime: number): Promise<HTMLVideoElement> => {
+    return new Promise((resolve, reject) => {
+        const video = document.createElement('video')
+        video.crossOrigin = 'anonymous'
+        video.src = clip.src
+        video.muted = true
+
+        // Calculate exact time in video
+        const videoTime = (projectTime - clip.start) + (clip.mediaStart || 0)
+
+        video.currentTime = videoTime
+
+        // Wait for seek to complete
+        video.onseeked = () => resolve(video)
+        video.onerror = (e) => reject(e)
+
+        // Must trigger load
+        video.load()
+    })
+}
+
+// -------------------------------------------------------------------------
+// Helper: Get Shape Path
+// -------------------------------------------------------------------------
+export const getShapePath = (shapeName: string): string => {
+    switch (shapeName) {
+        case 'Triangle': return 'M 50 0 L 100 100 L 0 100 Z'
+        case 'Star': return 'M 50 0 L 61 35 L 98 35 L 68 57 L 79 91 L 50 70 L 21 91 L 32 57 L 2 35 L 39 35 Z'
+        case 'Arrow Right': return 'M 0 20 L 60 20 L 60 0 L 100 50 L 60 100 L 60 80 L 0 80 Z'
+        case 'Heart': return 'M 50 90 L 48 88 C 10 55 0 35 0 20 C 0 10 10 0 25 0 C 35 0 45 10 50 20 C 55 10 65 0 75 0 C 90 0 100 10 100 20 C 100 35 90 55 52 88 L 50 90 Z'
+        case 'Arrow': return 'M 50 0 L 50 70 M 50 70 L 20 40 M 50 70 L 80 40'
+        default: return ''
+    }
+}
+
+// -------------------------------------------------------------------------
+// Helper: Pre-fetch Video Frames API
+// -------------------------------------------------------------------------
+export const prefetchVideoFrames = async (fps: number, duration: number, tracks: Track[]) => {
+    const videoClips = tracks
+        .flatMap(t => t.clips)
+        .filter(c => c.type === 'video')
+
+    // Group by source to avoid redundant requests
+    const uniqueSources = Array.from(new Set(videoClips.map(c => c.src)))
+    const frameMap = new Map<string, HTMLImageElement>()
+
+    const totalFrames = Math.max(1, Math.ceil(duration * fps))
+
+    for (const src of uniqueSources) {
+        // Find all clips using this source
+        const clips = videoClips.filter(c => c.src === src)
+
+        // Calculate needed timestamps for this video source
+        // We need to know which frames in the project correspond to which time in the video
+        const neededTimestamps: number[] = []
+        const timestampToFrameIndexMap = new Map<number, number[]>()
+
+        for (let i = 0; i < totalFrames; i++) {
+            const projectTime = i / fps
+
+            // Check if any clip active at this time uses this source
+            const activeClip = clips.find(c => projectTime >= c.start && projectTime < c.start + c.duration)
+
+            if (activeClip) {
+                const videoTime = (projectTime - activeClip.start) + (activeClip.mediaStart || 0)
+                neededTimestamps.push(videoTime)
+
+                if (!timestampToFrameIndexMap.has(videoTime)) {
+                    timestampToFrameIndexMap.set(videoTime, [])
+                }
+                timestampToFrameIndexMap.get(videoTime)?.push(i)
+            }
+        }
+
+        if (neededTimestamps.length === 0) continue
+
+        // Fetch frames from API
+        try {
+            const response = await fetch('/api/extract-frames', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    videoPath: src,
+                    timestamps: neededTimestamps,
+                    // Optional: size: '1920x?' to query high res if needed, but default/auto might be safer
+                })
+            })
+
+            if (!response.ok) throw new Error('Failed to fetch frames')
+
+            const data = await response.json()
+            const images: string[] = data.images
+
+            // Map back to project frame indices
+            // API returns images in order of sorted timestamps (as per our API logic roughly? 
+            // Wait, API logic sorts file names. If we pass timestamps, we should verify execution order or matching.)
+            // Actually the API logic sorts by filename timestamp.
+            // We should sort our neededTimestamps to match API return order.
+
+            const sortedUniqueTimestamps = Array.from(new Set(neededTimestamps)).sort((a, b) => a - b)
+
+            // Load images
+            await Promise.all(images.map(async (base64, idx) => {
+                const img = await loadImage(base64)
+                const videoTime = sortedUniqueTimestamps[idx]
+
+                // Assign this image to all source clips that use this videoTime
+                const projectIndices = timestampToFrameIndexMap.get(videoTime)
+                if (projectIndices) {
+                    projectIndices.forEach(pIdx => {
+                        frameMap.set(`${src}_${pIdx}`, img)
+                    })
+                }
+            }))
+
+        } catch (e) {
+            console.error(`Failed to load frames for ${src}`, e)
+        }
+    }
+
+    return frameMap
+}
+
+// -------------------------------------------------------------------------
+// Core: Render Frame to Canvas
+// -------------------------------------------------------------------------
+export const renderFrame = async (
+    ctx: CanvasRenderingContext2D,
+    projectTime: number,
+    projectWidth: number,
+    projectHeight: number,
+    tracks: Track[], // Added tracks argument
+    frameIndex?: number,
+    videoFrameMap?: Map<string, HTMLImageElement>
+) => {
+    // Fill background (Black)
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, projectWidth, projectHeight)
+
+    // Get Active Clips
+    const activeClips = tracks
+        .flatMap((track, trackIndex) => track.clips.map(clip => ({ ...clip, trackOrder: trackIndex })))
+        .filter(clip => projectTime >= clip.start && projectTime < clip.start + clip.duration)
+        .sort((a, b) => b.trackOrder - a.trackOrder)
+
+    // Draw Loop
+    for (const clip of activeClips) {
+        ctx.save()
+
+        // Dimensions
+        const x = clip.x || 0
+        const y = clip.y || 0
+        const w = clip.width || (projectWidth / 4)
+        const h = clip.height || (projectHeight / 4)
+        const r = clip.rotation || 0
+        const opacity = clip.opacity ?? 1
+
+        ctx.globalAlpha = opacity
+
+        // Transforms
+        // Standard Canvas Rotation around center
+        const cx = x + w / 2
+        const cy = y + h / 2
+
+        // Apply Clip Transforms (including rotation)
+        ctx.translate(cx, cy)
+        ctx.rotate((r * Math.PI) / 180)
+        ctx.translate(-cx, -cy)
+
+        // Crop Logic (Zoom to Crop) implementation for Canvas
+        // Need to clip the area then draw scaled image
+        const crop = clip.crop
+
+        if (crop) {
+            // 1. Clip the drawing area to the box
+            ctx.beginPath()
+            ctx.rect(x, y, w, h)
+            ctx.clip()
+
+            // 2. Transform the context to "Zoom" into the crop
+            // Scale so that crop area fills w, h
+            const scaleX = 100 / crop.width
+            const scaleY = 100 / crop.height
+
+            // Move origin to box top-left
+            ctx.translate(x, y)
+            // Scale
+            ctx.scale(scaleX, scaleY)
+            // Move back by crop offset
+            ctx.translate(-(w * crop.x / 100), -(h * crop.y / 100))
+
+        } else {
+            // No crop, just translate to x,y so we draw at correct pos
+            ctx.translate(x, y)
+        }
+
+        // Flip
+        const flipH = clip.flipH ? -1 : 1
+        const flipV = clip.flipV ? -1 : 1
+        ctx.scale(flipH, flipV)
+        // If flipped, need to adjust position? 
+        if (flipH === -1) ctx.translate(-w, 0)
+        if (flipV === -1) ctx.translate(0, -h)
+
+
+        try {
+            if (clip.type === 'image') {
+                const img = await loadImage(clip.src).catch(async () => {
+                    const dataUrl = await imageToDataURL(clip.src)
+                    return await loadImage(dataUrl)
+                }).catch(() => null)
+                if (img) ctx.drawImage(img, 0, 0, w, h)
+
+            } else if (clip.type === 'video') {
+                // Optimized: Use pre-fetched frame if available
+                let videoImg: HTMLImageElement | HTMLVideoElement | null = null
+
+                if (videoFrameMap && frameIndex !== undefined) {
+                    videoImg = videoFrameMap.get(`${clip.src}_${frameIndex}`) || null
+                }
+
+                if (!videoImg) {
+                    // Fallback to DOM-based if not in map
+                    videoImg = await loadVideoFrame(clip, projectTime).catch(() => null)
+                }
+
+                if (videoImg) ctx.drawImage(videoImg, 0, 0, w, h)
+
+            } else if (clip.type === 'shape') {
+                const isPrimitive = ['Rectangle', 'Circle', 'Triangle', 'Star', 'Arrow Right', 'Heart', 'Arrow'].includes(clip.src) || !!clip.customPath
+
+                if (!isPrimitive && clip.src) {
+                    const img = await loadImage(clip.src).catch(async () => {
+                        const dataUrl = await imageToDataURL(clip.src)
+                        return await loadImage(dataUrl)
+                    }).catch(() => null)
+                    if (img) ctx.drawImage(img, 0, 0, w, h)
+                } else {
+                    ctx.fillStyle = clip.color || 'white'
+                    const shapeType = clip.src
+
+                    if (shapeType === 'Rectangle') {
+                        ctx.fillRect(0, 0, w, h)
+                    } else if (shapeType === 'Circle') {
+                        ctx.beginPath()
+                        ctx.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, 2 * Math.PI)
+                        ctx.fill()
+                    } else {
+                        const pathData = clip.customPath || getShapePath(shapeType)
+                        if (pathData) {
+                            const p = new Path2D(pathData)
+                            ctx.save()
+
+                            let viewX = 0
+                            let viewY = 0
+                            let viewW = 100
+                            let viewH = 100
+
+                            if (clip.viewBox) {
+                                const parts = clip.viewBox.trim().split(/\s+/)
+                                if (parts.length === 4) {
+                                    const [vx, vy, vw, vh] = parts.map(Number)
+                                    if (!isNaN(vx) && !isNaN(vy) && !isNaN(vw) && !isNaN(vh) && vw > 0 && vh > 0) {
+                                        viewX = vx
+                                        viewY = vy
+                                        viewW = vw
+                                        viewH = vh
+                                    }
+                                }
+                            }
+
+                            const scaleX = w / viewW
+                            const scaleY = h / viewH
+
+                            // Transform context to map viewBox to (0,0)-(w,h)
+                            ctx.scale(scaleX, scaleY)
+                            ctx.translate(-viewX, -viewY)
+
+                            if (shapeType === 'Arrow') {
+                                ctx.strokeStyle = clip.color || 'white'
+                                ctx.lineWidth = 5
+                                ctx.stroke(p)
+                            } else {
+                                ctx.fillStyle = clip.color || 'white'
+                                ctx.fill(p)
+                            }
+                            ctx.restore()
+                        }
+                    }
+                }
+
+            } else if (clip.type === 'text') {
+                // ... text logic ...
+                const fontSize = clip.fontSize || 120
+                const text = clip.text || 'Text'
+                const color = clip.color || 'white'
+                const fontFamily = clip.fontFamily || 'sans-serif'
+
+                ctx.font = `bold ${fontSize}px ${fontFamily}`
+                ctx.fillStyle = color
+                ctx.textAlign = 'center'
+                ctx.textBaseline = 'middle'
+
+                const lines = text.split('\n')
+                const lineHeight = fontSize * 1.2
+                const totalHeight = lines.length * lineHeight
+
+                lines.forEach((line, i) => {
+                    const yOffset = (i * lineHeight) - (totalHeight / 2) + (lineHeight / 2)
+                    ctx.fillText(line, w / 2, h / 2 + yOffset)
+                })
+            }
+
+        } catch (drawErr) {
+            console.error(`Failed to draw clip ${clip.id}:`, drawErr)
+        }
+        ctx.restore()
+    }
+}

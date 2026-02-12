@@ -375,7 +375,7 @@ export function PreviewPlayer() {
                     return (
                         <svg
                             {...commonProps}
-                            viewBox="0 0 100 100"
+                            viewBox={clip.viewBox || "0 0 100 100"}
                             preserveAspectRatio="none"
                         >
                             <path

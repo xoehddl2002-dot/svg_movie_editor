@@ -126,10 +126,33 @@ export function ShapeTab({ shapeImages, onDragStart }: ShapeTabProps) {
                         draggable
                         onDragStart={(e) => {
                             if (customSvg.trim()) {
+                                // Calculate viewBox for custom path
+                                const div = document.createElement('div')
+                                div.innerHTML = `<svg><path d="${customSvg}"/></svg>`
+                                const path = div.querySelector('path')
+                                let viewBox = '0 0 100 100' // Default fallback
+
+                                if (path) {
+                                    // We need to append to body to measure
+                                    div.style.position = 'absolute'
+                                    div.style.visibility = 'hidden'
+                                    document.body.appendChild(div)
+                                    try {
+                                        const bbox = path.getBBox()
+                                        // Add some padding or just use exact bbox
+                                        viewBox = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`
+                                    } catch (err) {
+                                        console.warn('Failed to measure custom path bbox', err)
+                                    } finally {
+                                        document.body.removeChild(div)
+                                    }
+                                }
+
                                 e.dataTransfer.setData("application/json", JSON.stringify({
                                     type: 'shape',
                                     src: 'custom',
-                                    customPath: customSvg
+                                    customPath: customSvg,
+                                    viewBox: viewBox
                                 }))
                             }
                         }}

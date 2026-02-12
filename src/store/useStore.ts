@@ -27,6 +27,7 @@ export interface Clip {
   // Media specific
   mediaStart?: number // seconds offset into source video
   customPath?: string // SVG path data for custom shapes
+  viewBox?: string // SVG viewbox for custom shapes
   crop?: {
     x: number // percentage 0-100
     y: number // percentage 0-100
