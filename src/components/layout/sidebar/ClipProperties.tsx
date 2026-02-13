@@ -80,7 +80,7 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                     />
                 </div>
 
-                {(clip.type === 'image' || clip.type === 'video' || clip.type === 'audio') && (
+                {(clip.type === 'image' || clip.type === 'frame' || clip.type === 'video' || clip.type === 'audio') && (
                     <Button
                         variant="outline"
                         className="w-full flex items-center justify-center gap-2"
@@ -92,7 +92,7 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                 )}
 
                 {/* Position & Size */}
-                {(clip.type === 'image' || clip.type === 'text' || clip.type === 'video' || clip.type === 'shape' || clip.type === 'icon') && (
+                {(clip.type === 'image' || clip.type === 'frame' || clip.type === 'text' || clip.type === 'video' || clip.type === 'shape' || clip.type === 'icon') && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Transform</Label>
                         <div className="grid grid-cols-2 gap-4">
@@ -235,7 +235,7 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                 )}
 
                 {/* Image Edit (Crop & Filter) */}
-                {clip.type === 'image' && (
+                {(clip.type === 'image' || clip.type === 'frame') && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Image Edit</Label>
 

@@ -1,6 +1,6 @@
 
 import { getStrokedBBox, getBBox } from './svg/utilities'
-import { hasMatrixTransform, getMatrix, transformBox } from './svg/math'
+import { hasNonIdentityTransform, getMatrix, transformBox, deltaTransformPoint } from './svg/math'
 import { config } from '../lib/config'
 import type { Clip, Track, ResourceType } from '../store/useStore'
 
@@ -143,8 +143,8 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 type = null;
             }
         } else if (nodeName === 'g' && item.image_id) {
-            // Cropped Image Support (G tag acting as image wrapper)
-            type = 'image';
+            // Cropped Image Support (G tag acting as frame wrapper)
+            type = 'frame';
         } else if (['rect', 'path', 'polygon', 'circle', 'ellipse', 'line', 'polyline'].includes(nodeName)) {
             if (item.shapes_id && item.shapes_id === item.id) {
                 type = 'shape';
@@ -190,12 +190,84 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
         resetOrientation: (path: any) => { }
     };
 
+
+
     try {
         orderedClips.forEach((data) => {
             const { element, type, item } = data;
+
+            let rotation = 0;
+
+            // Calculate Global Visual Center (before flattening) to preserve alignment
+            let visualCx = 0;
+            let visualCy = 0;
+            try {
+                const rootMatrix = getMatrix(element as SVGGraphicsElement);
+                const rootBBox = (element as SVGGraphicsElement).getBBox();
+                const lCx = rootBBox.x + rootBBox.width / 2;
+                const lCy = rootBBox.y + rootBBox.height / 2;
+                visualCx = rootMatrix.a * lCx + rootMatrix.c * lCy + rootMatrix.e;
+                visualCy = rootMatrix.b * lCx + rootMatrix.d * lCy + rootMatrix.f;
+            } catch (e) { }
+
+            // Parse Transform for rotation only (position is handled by bbox)
+            const isGroupType = ['icon', 'shape', 'frame'].includes(type || '');
+            const elementsToFlatten = [element, ...Array.from(element.querySelectorAll('*'))];
+
+            elementsToFlatten.forEach(ele => {
+                if (ele instanceof SVGGraphicsElement && hasNonIdentityTransform(ele.transform.baseVal)) {
+                    const matrix = getMatrix(ele)
+                    const m = deltaTransformPoint(matrix)
+                    const scaleX = m.scaleX
+                    const scaleY = m.scaleY
+                    const translateX = m.translateX
+                    const translateY = m.translateY
+
+                    // Accumulate rotation selectively:
+                    // 1. Root element rotation is always captured.
+                    // 2. For group types, capture internal rotation if it's a consolidation target.
+                    if (ele === element) {
+                        rotation += m.angle;
+                    }
+
+                    // Flatten scale/translate if NO rotation (or if it's a group consolidation)
+                    if (!m.angle || ele === element) {
+                        let newX = 0
+                        let newY = 0
+                        const nodeName = ele.nodeName.toLowerCase();
+
+                        // For basic images/rects, we bake into x/y attributes
+                        if (['rect', 'image', 'video', 'use', 'foreignobject'].includes(nodeName)) {
+                            const attrX = parseFloat(ele.getAttribute('x') || '0');
+                            const attrY = parseFloat(ele.getAttribute('y') || '0');
+                            newX = attrX * scaleX + translateX;
+                            newY = attrY * scaleY + translateY;
+                            ele.setAttribute('x', newX.toString())
+                            ele.setAttribute('y', newY.toString())
+
+                            const attrW = parseFloat(ele.getAttribute('width') || '0');
+                            const attrH = parseFloat(ele.getAttribute('height') || '0');
+                            ele.setAttribute('width', (attrW * scaleX).toString())
+                            ele.setAttribute('height', (attrH * scaleY).toString())
+                        } else if (nodeName === 'text') {
+                            const currentFontSize = parseFloat(ele.getAttribute("font-size") || '16');
+                            ele.setAttribute("font-size", (currentFontSize * scaleY).toString());
+                            const attrX = parseFloat(ele.getAttribute('x') || '0');
+                            const attrY = parseFloat(ele.getAttribute('y') || '0');
+                            ele.setAttribute('x', (attrX * scaleX + translateX).toString());
+                            ele.setAttribute('y', (attrY * scaleY + translateY).toString());
+                        }
+
+                        // For group types, we strip internal transforms so they consolidate to the root
+                        // (Rotation is added to the Clip property, translation/scale are baked into attributes)
+                        ele.setAttribute('transform', `matrix(1,0,0,1,0,0)`)
+                    }
+                }
+            })
+
             const tagName = element.tagName.toLowerCase();
 
-            let x = 0, y = 0, width = 100, height = 100, rotation = 0, opacity = 1;
+            let x = 0, y = 0, width = 100, height = 100, opacity = 1;
             let src = '';
             let fill: string | undefined;
             let textContent = '';
@@ -215,10 +287,18 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 }
 
                 if (bbox) {
-                    x = bbox.x * scale;
-                    y = bbox.y * scale;
                     width = bbox.width * scale;
                     height = bbox.height * scale;
+
+                    // Aligin Editor Box Center with Original Visual Center
+                    if (visualCx) {
+                        x = visualCx * scale - width / 2;
+                        y = visualCy * scale - height / 2;
+                    } else {
+                        x = bbox.x * scale;
+                        y = bbox.y * scale;
+                    }
+
                     bboxString = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`;
                 } else {
                     width = 200;
@@ -230,27 +310,6 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 height = 200;
             }
 
-            // Parse Transform for rotation only (position is handled by bbox)
-            const transform = element.getAttribute('transform');
-
-            // Check for matrix transform and update bbox
-            if (element instanceof SVGGraphicsElement && hasMatrixTransform(element.transform.baseVal)) {
-                try {
-                    const matrix = getMatrix(element as SVGGraphicsElement);
-                    if (bbox) {
-                        const tBox = transformBox(bbox.x, bbox.y, bbox.width, bbox.height, matrix);
-
-                        // Update x, y, width, height with transformed values
-                        x = tBox.aabox.x * scale;
-                        y = tBox.aabox.y * scale;
-                        width = tBox.aabox.width * scale;
-                        height = tBox.aabox.height * scale;
-                        bboxString = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`;
-                    }
-                } catch (e) {
-                    console.warn("Failed to apply matrix transform", data.id, e);
-                }
-            }
 
 
             // Common Attributes
@@ -269,256 +328,15 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 // Default crop for all images (Full Image)
                 crop = { x: 0, y: 0, width: 100, height: 100 };
 
-                // SPECIAL HANDLING FOR CROPPED IMAGE (G tag with image_id)
-                if (tagName === 'g' && item.image_id) {
-                    const imageElement = element.querySelector(`image[image_id="${item.image_id}"]`) as SVGImageElement;
+            } else if (type === 'icon' || type === 'shape' || type === 'frame') {
 
-                    if (imageElement) {
-                        let href = imageElement.getAttribute('href') || imageElement.getAttribute('xlink:href');
-
-                        // Try to find image path from image-list using item.image.id
-                        let imagePathFromList = '';
-                        if (item.image && item.image.id && jsonData['image-list']) {
-                            const targetImageId = item.image.id;
-                            const imageList = jsonData['image-list'];
-                            for (const [path, images] of Object.entries(imageList)) {
-                                if (Array.isArray(images) && images.some((img: any) => img.id === targetImageId)) {
-                                    imagePathFromList = path;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (imagePathFromList) {
-                            src = imagePathFromList;
-                            if (src.startsWith('/template')) {
-                                src = `${config.RESOURCE_BASE_PATH}${src}`;
-                            }
-                        } else if (href) {
-                            if (!href.startsWith('http') && !href.startsWith('data:') && !href.startsWith('/')) {
-                                href = templateBaseUrl + href;
-                            }
-                            src = href;
-                        }
-
-
-
-                        // --- Deep Search & Flatten Logic ---
-                        // Replaced specific logic with generic transform flattening.
-                        // 1. Clone element to temp SVG
-                        // 2. Traverse clone, extract rotation from ALL transforms, sum them up.
-                        // 3. Strip rotation from transforms (keep scale/translate).
-                        // 4. Measure unrotated BBox -> width/height.
-                        // 5. Calculate Center -> position (x,y).
-
-                        const tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                        tempSvg.style.visibility = 'hidden';
-                        tempSvg.style.position = 'absolute';
-                        document.body.appendChild(tempSvg);
-
-                        // Clone the entire Clip element (g.layer child)
-                        const clone = element.cloneNode(true) as SVGGraphicsElement;
-                        tempSvg.appendChild(clone);
-
-                        let totalRotation = 0;
-
-                        // Helper to process element and children recursively
-                        const processNode = (node: SVGElement) => {
-                            if (node instanceof SVGGraphicsElement) {
-                                const transformAttr = node.getAttribute('transform');
-                                if (transformAttr || hasMatrixTransform(node.transform?.baseVal)) {
-                                    // Get matrix (using getMatrix helper which handles consolidation)
-                                    // However, getMatrix works on live DOM with baseVal. 
-                                    // Our clone is in tempSvg, so it should work.
-
-                                    try {
-                                        const matrix = getMatrix(node);
-
-                                        // Extract Angle involved in this transform
-                                        const angle = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
-
-                                        if (angle !== 0) {
-                                            totalRotation += angle;
-
-                                            // Create Unrotated Matrix (Scale + Translate)
-                                            // Remove rotation: M_new = M * R_inv? 
-                                            // Simpler: Just extract scale and translation from M.
-                                            // Assumption: No skew/shear.
-
-                                            const sx = Math.sqrt(matrix.a * matrix.a + matrix.b * matrix.b);
-                                            const sy = Math.sqrt(matrix.c * matrix.c + matrix.d * matrix.d);
-
-                                            // Apply stripped matrix
-                                            node.setAttribute('transform', `matrix(${sx}, 0, 0, ${sy}, ${matrix.e}, ${matrix.f})`);
-                                        }
-                                    } catch (e) {
-                                        console.warn("Failed to process transform", e);
-                                    }
-                                }
-                            }
-                            // Traverse children
-                            for (let i = 0; i < node.children.length; i++) {
-                                processNode(node.children[i] as SVGElement);
-                            }
-                        };
-
-                        processNode(clone);
-
-                        if (totalRotation !== 0) {
-                            rotation = totalRotation;
-                        }
-
-                        // Measure Unrotated BBox
-                        try {
-                            const unrotatedBBox = clone.getBBox();
-
-                            // Calculate Scale from the Root Clone's stripped matrix
-                            const cloneMatrix = getMatrix(clone);
-                            const rootSx = Math.sqrt(cloneMatrix.a * cloneMatrix.a + cloneMatrix.b * cloneMatrix.b);
-                            const rootSy = Math.sqrt(cloneMatrix.c * cloneMatrix.c + cloneMatrix.d * cloneMatrix.d);
-
-                            width = unrotatedBBox.width * rootSx * scale;
-                            height = unrotatedBBox.height * rootSy * scale;
-
-                            // Calculate Position
-                            // We want the Editor Box Center to match the Visual Center of the Original SVG Element.
-
-                            // Visual Center of Original SVG Element:
-                            // 1. Clone original (with all transforms).
-                            // 2. Measure its BBox (in local space).
-                            // 3. Apply its Root Transform (to map center to global space).
-
-                            const originalClone = element.cloneNode(true) as SVGGraphicsElement;
-                            tempSvg.appendChild(originalClone);
-
-                            const rootMatrix = getMatrix(originalClone);
-                            const origBBox = originalClone.getBBox();
-
-                            // Local Center (relative to element's coordinate system)
-                            const origCx = origBBox.x + origBBox.width / 2;
-                            const origCy = origBBox.y + origBBox.height / 2;
-
-                            // Global Center (apply Root Transform)
-                            const finalCx = rootMatrix.a * origCx + rootMatrix.c * origCy + rootMatrix.e;
-                            const finalCy = rootMatrix.b * origCx + rootMatrix.d * origCy + rootMatrix.f;
-
-                            // Align Editor Box Center
-                            x = finalCx * scale - width / 2;
-                            y = finalCy * scale - height / 2;
-
-                            tempSvg.removeChild(originalClone);
-
-                        } catch (e) {
-                            console.warn("Failed to measure bbox", e);
-                        } finally {
-                            if (document.body.contains(tempSvg)) {
-                                document.body.removeChild(tempSvg);
-                            }
-                        }
-
-                        // END Deep Flatten Logic
-
-                        // Mask Sizing Override: Ensure clip size matches the defs > * size (Mask)
-                        const clipPathNode = element.querySelector('g[clip-path]');
-                        const clipPathAttr = clipPathNode?.getAttribute('clip-path');
-
-                        if (clipPathAttr) {
-                            const clipPathId = clipPathAttr.replace(/url\(['"]?#([^'"]+)['"]?\)/, '$1');
-                            const clipPathElement = element.querySelector(`#${clipPathId}`) || svgDoc.getElementById(clipPathId);
-                            if (clipPathElement) {
-                                let geometryNode: SVGGraphicsElement | null = null;
-
-                                // Helper to resolve USE tags or find Geometry
-                                const findGeometry = (node: Element): SVGGraphicsElement | null => {
-                                    if (node.tagName.toLowerCase() === 'use') {
-                                        const href = node.getAttribute('href') || node.getAttribute('xlink:href');
-                                        if (href && href.startsWith('#')) {
-                                            const target = element.querySelector(`#${href.substring(1)}`);
-                                            if (target && target instanceof SVGGraphicsElement) {
-                                                return target;
-                                            }
-                                        }
-                                    } else if (['rect', 'path', 'polygon', 'circle', 'ellipse', 'line', 'polyline'].includes(node.tagName.toLowerCase()) && node instanceof SVGGraphicsElement) {
-                                        return node;
-                                    }
-                                    return null;
-                                }
-
-                                for (const child of Array.from(clipPathElement.children)) {
-                                    const geo = findGeometry(child);
-                                    if (geo) {
-                                        geometryNode = geo;
-                                        break;
-                                    }
-                                }
-
-                                if (geometryNode) {
-                                    try {
-                                        const tempSvgMask = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                                        tempSvgMask.style.visibility = 'hidden';
-                                        tempSvgMask.style.position = 'absolute';
-                                        document.body.appendChild(tempSvgMask);
-
-                                        const maskClone = document.importNode(geometryNode, true);
-                                        tempSvgMask.appendChild(maskClone);
-
-                                        // Measure Mask
-                                        const maskBBox = maskClone.getBBox();
-
-                                        // Measure Image (the element inside the G tag)
-                                        // create a clone of imageElement to measure it in the same context
-                                        const imageClone = document.importNode(imageElement, true);
-                                        tempSvgMask.appendChild(imageClone);
-                                        const imageBBox = imageClone.getBBox();
-
-
-                                        // Calculate Scale/Position for the Clip (based on Mask)
-                                        width = maskBBox.width * scale;
-                                        height = maskBBox.height * scale;
-                                        x = maskBBox.x * scale;
-                                        y = maskBBox.y * scale;
-
-                                        // Calculate Crop (Intersection relative to Image)
-                                        // Crop values are percentages (0-100)
-                                        if (imageBBox.width > 0 && imageBBox.height > 0) {
-                                            crop = {
-                                                x: ((maskBBox.x - imageBBox.x) / imageBBox.width) * 100,
-                                                y: ((maskBBox.y - imageBBox.y) / imageBBox.height) * 100,
-                                                width: (maskBBox.width / imageBBox.width) * 100,
-                                                height: (maskBBox.height / imageBBox.height) * 100
-                                            };
-                                        }
-
-                                        // Also update bboxString used for viewBox if needed, 
-                                        // keeping it consistent with the visual area
-                                        bboxString = `${maskBBox.x} ${maskBBox.y} ${maskBBox.width} ${maskBBox.height}`;
-
-                                        document.body.removeChild(tempSvgMask);
-                                    } catch (e) {
-                                        console.warn("Failed to measure mask", e);
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        // Standard Image Tag
-                        let href = element.getAttribute('href') || element.getAttribute('xlink:href');
-                        if (href) {
-                            if (!href.startsWith('http') && !href.startsWith('data:') && !href.startsWith('/')) {
-                                href = templateBaseUrl + href;
-                            }
-                            src = href;
-                        }
-                    }
-                }
-            } else if (type === 'icon' || type === 'shape') {
                 if (type === 'shape') {
                     fill = element.getAttribute('fill') || '#000000';
 
                     // Find fill from shapes_id element
                     const shapesId = item.shapes_id;
                     if (shapesId) {
-                        const shapeElement = svgDoc.getElementById(shapesId);
+                        const shapeElement = element.querySelector(`#${shapesId}`);
                         if (shapeElement) {
                             const shapeFill = shapeElement.getAttribute('fill');
                             if (shapeFill) {
@@ -530,7 +348,7 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
 
                 const serialized = new XMLSerializer().serializeToString(element);
                 const svgContent = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='${bboxString}'>${defsString}${serialized}</svg>`;
-                src = `data:image/svg+xml;utf8,${encodeURIComponent(svgContent)}`;
+                src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
             }
 
             const clip: Clip = {
@@ -583,7 +401,7 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
         clip.trackId = trackId;
         initialTracks.push({
             id: trackId,
-            type: clip.type === 'text' ? 'text' : 'shape',
+            type: clip.type,
             clips: [clip]
         });
     });

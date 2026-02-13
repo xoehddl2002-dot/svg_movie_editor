@@ -51,7 +51,7 @@ export function EditModal() {
                         {currentClip.type === 'video' && (
                             <VideoEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
                         )}
-                        {currentClip.type === 'image' && (
+                        {(currentClip.type === 'image' || currentClip.type === 'frame') && (
                             <ImageEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
                         )}
                         {currentClip.type === 'audio' && (

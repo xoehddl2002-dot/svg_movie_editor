@@ -25,7 +25,8 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
     // Transform state
     const [flipH, setFlipH] = useState(clip.flipH || false)
     const [flipV, setFlipV] = useState(clip.flipV || false)
-    const [rotation, setRotation] = useState(clip.rotation || 0)
+    const [rotation, setRotation] = useState(0) // Initialize to 0
+    const [rotationChanged, setRotationChanged] = useState(false)
 
     // Crop state
     const [crop, setCrop] = useState<Crop | undefined>(() => {
@@ -38,20 +39,31 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
     const videoRef = useRef<HTMLVideoElement>(null)
 
     const handleSave = () => {
-        onUpdate({
+        const updates: Partial<Clip> = {
             mediaStart: start,
             duration: duration,
             opacity: opacity / 100,
             flipH,
             flipV,
-            rotation,
             crop: crop as any
-        })
+        }
+
+        if (rotationChanged) {
+            updates.rotation = rotation;
+        }
+
+        onUpdate(updates)
         onClose()
     }
 
-    const rotateLeft = () => setRotation(r => ((r - 90) % 360 + 360) % 360)
-    const rotateRight = () => setRotation(r => (r + 90) % 360)
+    const rotateLeft = () => {
+        setRotation(r => ((r - 90) % 360 + 360) % 360)
+        setRotationChanged(true)
+    }
+    const rotateRight = () => {
+        setRotation(r => (r + 90) % 360)
+        setRotationChanged(true)
+    }
     const toggleFlipH = () => setFlipH(f => !f)
     const toggleFlipV = () => setFlipV(f => !f)
 

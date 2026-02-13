@@ -286,21 +286,30 @@ export function PreviewPlayer() {
                             <AudioClip clip={clip} currentTime={currentTime} isPlaying={isPlaying} />
                         </foreignObject>
                     )
+                case 'frame':
                 case 'image':
                     console.log('[PreviewPlayer] Rendering image:', clip.name, 'src:', clip.src)
                     return (
                         <foreignObject {...commonProps}>
                             <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', ...getFilterStyle() }}>
                                 <div style={getCropStyle(clip)}>
-                                    <img
-                                        draggable={false}
-                                        className="select-none"
-                                        src={clip.src}
-                                        style={getMediaStyle(clip)}
-                                        alt=""
-                                        onError={(e) => console.error('[PreviewPlayer] Image load error:', clip.src, e)}
-                                        onLoad={() => console.log('[PreviewPlayer] Image loaded successfully:', clip.src)}
-                                    />
+                                    {clip.type === 'frame' ? (
+                                        <DynamicSvg
+                                            src={clip.src}
+                                            templateData={clip.templateData}
+                                            fill={clip.color}
+                                        />
+                                    ) : (
+                                        <img
+                                            draggable={false}
+                                            className="select-none"
+                                            src={clip.src}
+                                            style={getMediaStyle(clip)}
+                                            alt=""
+                                            onError={(e) => console.error('[PreviewPlayer] Image load error:', clip.src, e)}
+                                            onLoad={() => console.log('[PreviewPlayer] Image loaded successfully:', clip.src)}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </foreignObject>

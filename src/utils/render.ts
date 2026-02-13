@@ -296,7 +296,7 @@ export const renderFrame = async (
 
 
         try {
-            if (clip.type === 'image') {
+            if (clip.type === 'image' || clip.type === 'frame') {
                 const img = await loadImage(clip.src).catch(async () => {
                     const dataUrl = await imageToDataURL(clip.src)
                     return await loadImage(dataUrl)

@@ -82,14 +82,15 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
     // Transform state
     const [flipH, setFlipH] = useState(clip.flipH || false)
     const [flipV, setFlipV] = useState(clip.flipV || false)
-    const [rotation, setRotation] = useState(clip.rotation || 0)
+    const [rotation, setRotation] = useState(0) // Initialize to 0, independent of clip.rotation
+    const [rotationChanged, setRotationChanged] = useState(false)
 
     // Crop state
     const [crop, setCrop] = useState<Crop | undefined>(() => {
         if (!clip.crop) return undefined
         return transformCrop(
             { ...clip.crop, unit: '%' } as Crop,
-            clip.rotation || 0,
+            0, // Use 0 rotation for the editor view
             clip.flipH || false,
             clip.flipV || false,
             false
@@ -107,7 +108,7 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
             // Transform View Crop -> Original Crop
             finalCrop = transformCrop(
                 crop,
-                rotation,
+                rotation, // Use local editor rotation (which starts at 0)
                 flipH,
                 flipV,
                 true
@@ -132,20 +133,31 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
             }
         }
 
-        onUpdate({
+        const updates: Partial<Clip> = {
             duration: duration,
             flipH,
             flipV,
-            rotation,
             crop: finalCrop as any,
             width: newWidth,
             height: newHeight
-        })
+        }
+
+        if (rotationChanged) {
+            updates.rotation = rotation;
+        }
+
+        onUpdate(updates)
         onClose()
     }
 
-    const rotateLeft = () => setRotation(r => ((r - 90) % 360 + 360) % 360)
-    const rotateRight = () => setRotation(r => (r + 90) % 360)
+    const rotateLeft = () => {
+        setRotation(r => ((r - 90) % 360 + 360) % 360)
+        setRotationChanged(true)
+    }
+    const rotateRight = () => {
+        setRotation(r => (r + 90) % 360)
+        setRotationChanged(true)
+    }
     const toggleFlipH = () => setFlipH(f => !f)
     const toggleFlipV = () => setFlipV(f => !f)
 

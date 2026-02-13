@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { processTemplate } from '../utils/template'
 
-export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon'
+export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon' | 'frame'
 
 export interface Clip {
   id: string

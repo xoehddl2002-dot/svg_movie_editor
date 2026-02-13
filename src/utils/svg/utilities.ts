@@ -8,7 +8,7 @@
 
 import { NS } from "./namespaces";
 import {
-    hasMatrixTransform,
+    hasNonIdentityTransform,
     transformListToTransform,
     transformBox,
 } from "./math";
@@ -811,7 +811,7 @@ export const convertToPath = (elem: any, attrs: any, svgCanvas: any) => {
         // Reorient if it has a matrix
         if (eltrans) {
             const tlist = path.transform.baseVal;
-            if (hasMatrixTransform(tlist)) {
+            if (hasNonIdentityTransform(tlist)) {
                 svgCanvas.pathActions.resetOrientation(path);
             }
         }
@@ -893,7 +893,7 @@ export const getBBoxWithTransform = function (
 
     const tlist = elem.transform.baseVal;
     const angle = getRotationAngleFromTransformList(tlist);
-    const hasMatrixXForm = hasMatrixTransform(tlist);
+    const hasMatrixXForm = hasNonIdentityTransform(tlist);
 
     if (angle || hasMatrixXForm) {
         let goodBb: any = false;
