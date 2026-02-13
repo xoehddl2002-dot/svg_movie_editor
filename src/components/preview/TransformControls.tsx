@@ -146,15 +146,123 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
         baseH = clip.height || (projectHeight / 4);
     }
 
+    // Apply mask/crop to visual bounds
+    let maskX = 0;
+    let maskY = 0;
+    let maskW = 100;
+    let maskH = 100;
+
+    if (clip.mask) {
+        maskX = clip.mask.x;
+        maskY = clip.mask.y;
+        maskW = clip.mask.width;
+        maskH = clip.mask.height;
+    }
+
+    const visualX = x + (baseW * maskX / 100);
+    const visualY = y + (baseH * maskY / 100);
+    const visualW = baseW * (maskW / 100);
+    const visualH = baseH * (maskH / 100);
+
     const r = clip.rotation || 0;
 
-    const w = baseW;
-    const h = baseH;
-    const displayX = x;
-    const displayY = y;
+    // For rendering, we use visual bounds, but rotation pivot remains at clip center
+    // However, the group transform rotates around the CLIP center (x + baseW/2, y + baseH/2)
+    // So we just need to draw the rect relative to x,y in that local space.
+
+    // In local space of the group (origin at project 0,0 but rotated around pivot):
+    // The rect should be drawn at the visual coordinates.
+    // Since the group transform handles the rotation around the pivot, 
+    // we just need to provide the coordinates relative to the project origin.
+
+    const displayX = visualX;
+    const displayY = visualY;
+    const w = visualW;
+    const h = visualH;
 
     const handleSize = 12;
     const halfHandle = handleSize / 2;
+
+    // Scaling factors for logic
+    const scaleFactorX = maskW / 100;
+    const scaleFactorY = maskH / 100;
+
+    // Override calculate logic for mouse move
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!mode || !startRef.current || !svgRef.current) return;
+
+            const pt = getSVGPoint(e);
+            const start = startRef.current;
+            const dx = pt.x - start.mouseX;
+            const dy = pt.y - start.mouseY;
+
+            if (mode === 'move') {
+                updateClip(clip.id, {
+                    x: start.clipX + dx,
+                    y: start.clipY + dy
+                });
+            } else if (mode === 'rotate') {
+                const centerX = clip.x! + (clip.width! || (projectWidth / 4)) / 2;
+                const centerY = clip.y! + (clip.height! || (projectHeight / 4)) / 2;
+
+                // For text, we calculate center differently if needed, but standard logic uses x/y/w/h
+                // Because we don't have per-frame update of w/h in startRef for rotation pivot, 
+                // we use current clip props which is fine.
+
+                const angle = Math.atan2(pt.y - centerY, pt.x - centerX) * (180 / Math.PI);
+                updateClip(clip.id, { rotation: angle + 90 });
+            } else if (mode.startsWith('scale')) {
+                // Apply scale factor compensation for masked clips
+                const effDx = dx / scaleFactorX;
+                const effDy = dy / scaleFactorY;
+
+                let newX = start.clipX;
+                let newY = start.clipY;
+                let newW = start.clipW;
+                let newH = start.clipH;
+
+                if (mode.includes('e')) newW = Math.max(10, start.clipW + effDx);
+                if (mode.includes('s')) newH = Math.max(10, start.clipH + effDy);
+                if (mode.includes('w')) {
+                    const delta = Math.min(effDx, start.clipW - 10);
+                    newX = start.clipX + delta;
+                    newW = start.clipW - delta;
+                }
+                if (mode.includes('n')) {
+                    const delta = Math.min(effDy, start.clipH - 10);
+                    newY = start.clipY + delta;
+                    newH = start.clipH - delta;
+                }
+
+                // For text clips, update fontSize instead of width/height
+                if (clip.type === 'text') {
+                    const originalFontSize = start.clipFontSize || 120;
+                    const scaleRatio = Math.max(newW / start.clipW, newH / start.clipH);
+                    const newFontSize = Math.max(10, originalFontSize * scaleRatio);
+                    updateClip(clip.id, { fontSize: newFontSize });
+                } else {
+                    updateClip(clip.id, { x: newX, y: newY, width: newW, height: newH });
+                }
+            }
+        };
+
+        const handleMouseUp = () => {
+            setMode(null);
+            startRef.current = null;
+        };
+
+        if (mode) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [mode, clip, updateClip, svgRef, projectWidth, projectHeight, scaleFactorX, scaleFactorY]);
+
 
     const renderHandle = (cx: number, cy: number, m: TransformMode, cursor: string) => (
         <rect
@@ -170,8 +278,12 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
         />
     );
 
+    // Pivot for rotation is always the CLIP center, regardless of mask
+    const pivotX = x + baseW / 2;
+    const pivotY = y + baseH / 2;
+
     return (
-        <g className="transform-controls-layer" transform={`rotate(${r}, ${displayX + w / 2}, ${displayY + h / 2})`}>
+        <g className="transform-controls-layer" transform={`rotate(${r}, ${pivotX}, ${pivotY})`}>
             {/* Selection Border */}
             <rect
                 x={displayX}
@@ -185,7 +297,7 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
                 onMouseDown={(e) => handleMouseDown(e, 'move')}
             />
 
-            {/* Scale Handles - Only for non-text clips */}
+            {/* Scale Handles - Only for non-text clips or as desired */}
             {clip.type !== 'text' && (
                 <>
                     {/* Corner Handles */}
@@ -199,6 +311,16 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
                     {renderHandle(displayX + w / 2, displayY + h, 'scale-s', 'ns-resize')}
                     {renderHandle(displayX, displayY + h / 2, 'scale-w', 'ew-resize')}
                     {renderHandle(displayX + w, displayY + h / 2, 'scale-e', 'ew-resize')}
+                </>
+            )}
+
+            {/* Text simple handles if needed, or re-use above with 'text' check */}
+            {clip.type === 'text' && (
+                <>
+                    {renderHandle(displayX, displayY, 'scale-nw', 'nwse-resize')}
+                    {renderHandle(displayX + w, displayY, 'scale-ne', 'nesw-resize')}
+                    {renderHandle(displayX, displayY + h, 'scale-sw', 'nesw-resize')}
+                    {renderHandle(displayX + w, displayY + h, 'scale-se', 'nwse-resize')}
                 </>
             )}
 

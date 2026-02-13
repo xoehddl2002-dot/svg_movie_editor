@@ -81,6 +81,22 @@ export const useExportVideo = (): UseExportVideoReturn => {
                 formData.append(`frame-${idx}`, frame)
             })
 
+            // Collect audio tracks
+            const audioClips = tracks
+                .filter(t => t.type === 'audio')
+                .flatMap(t => t.clips)
+                .map(clip => ({
+                    src: clip.src,
+                    start: clip.start,
+                    duration: clip.duration,
+                    mediaStart: clip.mediaStart || 0,
+                    volume: clip.volume ?? 1
+                }));
+
+            if (audioClips.length > 0) {
+                formData.append('audioTracks', JSON.stringify(audioClips));
+            }
+
             const response = await fetch('/api/render-video', {
                 method: 'POST',
                 body: formData,
