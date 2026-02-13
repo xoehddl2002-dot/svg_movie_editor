@@ -157,8 +157,8 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 type = null;
             }
         } else if (nodeName === 'g' && item.image_id) {
-            // Cropped Image Support (G tag acting as frame wrapper)
-            type = 'frame';
+            // Cropped Image Support (G tag acting as mask wrapper)
+            type = 'mask';
         } else if (['rect', 'path', 'polygon', 'circle', 'ellipse', 'line', 'polyline'].includes(nodeName)) {
             if (item.shapes_id && item.shapes_id === item.id) {
                 type = 'shape';
@@ -204,8 +204,6 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
         resetOrientation: (path: any) => { }
     };
 
-
-
     try {
         orderedClips.forEach((data) => {
             const { element, type, item } = data;
@@ -225,7 +223,6 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
             } catch (e) { }
 
             // Parse Transform for rotation only (position is handled by bbox)
-            const isGroupType = ['icon', 'shape', 'frame'].includes(type || '');
             const elementsToFlatten = [element, ...Array.from(element.querySelectorAll('*'))];
 
             elementsToFlatten.forEach(ele => {
@@ -237,20 +234,15 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                     const translateX = m.translateX
                     const translateY = m.translateY
 
-                    // Accumulate rotation selectively:
-                    // 1. Root element rotation is always captured.
-                    // 2. For group types, capture internal rotation if it's a consolidation target.
                     if (ele === element) {
                         rotation += m.angle;
                     }
 
-                    // Flatten scale/translate if NO rotation (or if it's a group consolidation)
                     if (!m.angle || ele === element) {
                         let newX = 0
                         let newY = 0
                         const nodeName = ele.nodeName.toLowerCase();
 
-                        // For basic images/rects, we bake into x/y attributes
                         if (['rect', 'image', 'video', 'use', 'foreignobject'].includes(nodeName)) {
                             const attrX = parseFloat(ele.getAttribute('x') || '0');
                             const attrY = parseFloat(ele.getAttribute('y') || '0');
@@ -272,8 +264,6 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                             ele.setAttribute('y', (attrY * scaleY + translateY).toString());
                         }
 
-                        // For group types, we strip internal transforms so they consolidate to the root
-                        // (Rotation is added to the Clip property, translation/scale are baked into attributes)
                         ele.setAttribute('transform', `matrix(1,0,0,1,0,0)`)
                     }
                 }
@@ -288,12 +278,11 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
             let fontFamily = 'sans-serif';
             let fontSize = 24;
             let bboxString = rootFree;
-            let crop: any = undefined;
+            let mask: any = undefined;
 
             // Calculate BBox first
             let bbox: any;
             try {
-                // Use getStrokedBBox for groups to include all children strokes
                 if (tagName === 'g') {
                     bbox = getStrokedBBox([element], mockAddSVGElementsFromJson, mockPathActions);
                 } else {
@@ -304,7 +293,6 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                     width = bbox.width * scale;
                     height = bbox.height * scale;
 
-                    // Aligin Editor Box Center with Original Visual Center
                     if (visualCx) {
                         x = visualCx * scale - width / 2;
                         y = visualCy * scale - height / 2;
@@ -324,38 +312,26 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 height = 200;
             }
 
-
-
             // Common Attributes
             opacity = parseFloat(element.getAttribute('opacity') || '1');
 
             if (type === 'text') {
-                // Font size needs scaling but x/y are from bbox
                 fontSize = (parseFloat(element.getAttribute('font-size') || '24')) * scale;
                 fontFamily = element.getAttribute('font-family') || 'sans-serif';
                 fill = element.getAttribute('fill') || '#000000';
                 textContent = element.textContent || element.innerHTML || '';
             } else if (type === 'image') {
-                // Default placeholder (transparent 1x1 pixel)
                 src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-
-                // Default crop for all images (Full Image)
-                crop = { x: 0, y: 0, width: 100, height: 100 };
-
-            } else if (type === 'icon' || type === 'shape' || type === 'frame') {
-
+                mask = { x: 0, y: 0, width: 100, height: 100 };
+            } else if (type === 'icon' || type === 'shape' || type === 'mask') {
                 if (type === 'shape') {
                     fill = element.getAttribute('fill') || '#000000';
-
-                    // Find fill from shapes_id element
                     const shapesId = item.shapes_id;
                     if (shapesId) {
                         const shapeElement = element.querySelector(`#${shapesId}`);
                         if (shapeElement) {
                             const shapeFill = shapeElement.getAttribute('fill');
-                            if (shapeFill) {
-                                fill = shapeFill;
-                            }
+                            if (shapeFill) fill = shapeFill;
                         }
                     }
                 }
@@ -383,9 +359,7 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 height,
                 rotation,
                 opacity,
-                crop, // Add crop to clip
-                templateData: { [data.id]: item },
-                // Editor attributes
+                mask,
                 editor_move: item.editor_move === 'true',
                 editor_scale: item.editor_scale === 'true',
                 editor_rotate: item.editor_rotate === 'true',
@@ -397,19 +371,16 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
             newClips.push(clip);
         });
     } finally {
-        // Clean up DOM
         if (hiddenContainer.parentNode) {
             hiddenContainer.parentNode.removeChild(hiddenContainer);
         }
     }
 
-    // Create tracks
     const initialTracks: Track[] = [
         { id: 'audio-1', type: 'audio', clips: [] },
         { id: 'video-1', type: 'video', clips: [] }
     ];
 
-    // Assign to tracks
     newClips.forEach((clip, index) => {
         const trackId = `track-${index}`;
         clip.trackId = trackId;

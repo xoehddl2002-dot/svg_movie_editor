@@ -4,7 +4,7 @@ import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Film, Scissors, Maximize2, Crop as CropIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw } from "lucide-react"
+import { Film, Scissors, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw } from "lucide-react"
 import { Clip } from "@/store/useStore"
 import { cn } from "@/lib/utils"
 // @ts-ignore
@@ -28,13 +28,13 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
     const [rotation, setRotation] = useState(0) // Initialize to 0
     const [rotationChanged, setRotationChanged] = useState(false)
 
-    // Crop state
-    const [crop, setCrop] = useState<Crop | undefined>(() => {
-        if (!clip.crop) return undefined
-        return { ...clip.crop, unit: '%' } as Crop
+    // Mask state
+    const [mask, setMask] = useState<Crop | undefined>(() => {
+        if (!clip.mask) return undefined
+        return { ...clip.mask, unit: '%' } as Crop
     })
-
-
+    const [maskShape, setMaskShape] = useState<'rect' | 'circle'>(clip.mask?.shape || 'rect')
+    const [cornerRadius, setCornerRadius] = useState(clip.mask?.cornerRadius || 0)
 
     const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -45,7 +45,11 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
             opacity: opacity / 100,
             flipH,
             flipV,
-            crop: crop as any
+            mask: {
+                ...(mask as any),
+                shape: maskShape,
+                cornerRadius
+            }
         }
 
         if (rotationChanged) {
@@ -68,8 +72,8 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
     const toggleFlipV = () => setFlipV(f => !f)
 
     const onVideoLoaded = () => {
-        if (!crop && !clip.crop) {
-            setCrop({
+        if (!mask && !clip.mask) {
+            setMask({
                 unit: '%',
                 width: 100,
                 height: 100,
@@ -98,8 +102,9 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
 
                     <div className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 max-w-full max-h-full overflow-visible">
                         <ReactCrop
-                            crop={crop}
-                            onChange={(_: PixelCrop, percentCrop: PercentCrop) => setCrop(percentCrop)}
+                            crop={mask}
+                            onChange={(_: PixelCrop, percentCrop: PercentCrop) => setMask(percentCrop)}
+                            circularCrop={maskShape === 'circle'}
                             className="max-w-full max-h-[60vh]"
                         >
                             <video
@@ -127,7 +132,7 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
                         <div className="px-4 pt-4 shrink-0">
                             <TabsList className="w-full grid grid-cols-2">
                                 <TabsTrigger value="general">Properties</TabsTrigger>
-                                <TabsTrigger value="transform">Edit & Transform</TabsTrigger>
+                                <TabsTrigger value="transform">Mask & Transform</TabsTrigger>
                             </TabsList>
                         </div>
 
@@ -173,13 +178,49 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
                             </TabsContent>
 
                             <TabsContent value="transform" className="mt-0 space-y-6">
-                                {/* Crop & Transform Section */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-                                        <CropIcon className="w-4 h-4" />
-                                        Transform
+                                        <MaskIcon className="w-4 h-4" />
+                                        Mask Area
                                     </div>
                                     <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Shape</Label>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant={maskShape === 'rect' ? 'secondary' : 'outline'}
+                                                    size="sm"
+                                                    className="flex-1"
+                                                    onClick={() => setMaskShape('rect')}
+                                                >
+                                                    Rectangle
+                                                </Button>
+                                                <Button
+                                                    variant={maskShape === 'circle' ? 'secondary' : 'outline'}
+                                                    size="sm"
+                                                    className="flex-1"
+                                                    onClick={() => setMaskShape('circle')}
+                                                >
+                                                    Circle
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {maskShape === 'rect' && (
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between">
+                                                    <Label className="text-xs">Corner Radius</Label>
+                                                    <span className="text-xs font-mono text-muted-foreground">{cornerRadius}%</span>
+                                                </div>
+                                                <Slider
+                                                    value={[cornerRadius]}
+                                                    max={50}
+                                                    step={1}
+                                                    onValueChange={([v]) => setCornerRadius(v)}
+                                                />
+                                            </div>
+                                        )}
+
                                         <div className="space-y-2">
                                             <Label className="text-xs">Rotation</Label>
                                             <div className="flex gap-2">

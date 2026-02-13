@@ -66,8 +66,21 @@ export const loadSvgImage = async (src: string, color?: string, templateData?: a
                     }
                 }
 
+                // Geometric Attributes
+                if (data.width !== undefined) element.setAttribute('width', data.width.toString());
+                if (data.height !== undefined) element.setAttribute('height', data.height.toString());
+                if (data.x !== undefined) element.setAttribute('x', data.x.toString());
+                if (data.y !== undefined) element.setAttribute('y', data.y.toString());
+                if (data.rx !== undefined) element.setAttribute('rx', data.rx.toString());
+                if (data.ry !== undefined) element.setAttribute('ry', data.ry.toString());
+                if (data.r !== undefined) element.setAttribute('r', data.r.toString());
+                if (data.cx !== undefined) element.setAttribute('cx', data.cx.toString());
+                if (data.cy !== undefined) element.setAttribute('cy', data.cy.toString());
+                if (data.d !== undefined) element.setAttribute('d', data.d);
+
                 if (data.fill !== undefined) element.setAttribute('fill', data.fill);
                 if (data.stroke !== undefined) element.setAttribute('stroke', data.stroke);
+                if (data.strokeWidth !== undefined) element.setAttribute('stroke-width', data.strokeWidth.toString());
                 if (data.opacity !== undefined) element.setAttribute('opacity', data.opacity.toString());
             });
         }
@@ -259,28 +272,42 @@ export const renderFrame = async (
         ctx.rotate((r * Math.PI) / 180)
         ctx.translate(-cx, -cy)
 
-        // Crop Logic (Zoom to Crop) implementation for Canvas
+        // Mask Logic (Zoom to Mask) implementation for Canvas
         // Need to clip the area then draw scaled image
-        const crop = clip.crop
+        const mask = clip.mask
 
-        if (crop) {
-            // 1. Clip the drawing area to the box
+        if (mask) {
+            // 1. Clip the drawing area to the box, respecting shape and corner radius
             ctx.beginPath()
-            ctx.rect(x, y, w, h)
+            if (mask.shape === 'circle') {
+                ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, 2 * Math.PI)
+            } else if (mask.cornerRadius) {
+                const radius = (mask.cornerRadius / 100) * Math.min(w, h)
+                ctx.roundRect(x, y, w, h, radius)
+            } else {
+                ctx.rect(x, y, w, h)
+            }
             ctx.clip()
 
             // 2. Transform the context to "Zoom" into the crop
-            // Scale so that crop area fills w, h
-            const scaleX = 100 / crop.width
-            const scaleY = 100 / crop.height
+            // Scale so that crop        if (mask) {
+            const scaleX = 100 / mask.width
+            const scaleY = 100 / mask.height
 
-            // Move origin to box top-left
-            ctx.translate(x, y)
-            // Scale
+            // Adjust coordinates to zoom into the masked area
+            let offX = x
+            let offY = y
+            let clipWidth = w
+            let clipHeight = h
+
+            offX -= (mask.x / 100) * clipWidth * scaleX
+            offY -= (mask.y / 100) * clipHeight * scaleY
+
+            clipWidth *= scaleX
+            clipHeight *= scaleY
+
+            ctx.translate(offX, offY)
             ctx.scale(scaleX, scaleY)
-            // Move back by crop offset
-            ctx.translate(-(w * crop.x / 100), -(h * crop.y / 100))
-
         } else {
             // No crop, just translate to x,y so we draw at correct pos
             ctx.translate(x, y)
@@ -296,7 +323,7 @@ export const renderFrame = async (
 
 
         try {
-            if (clip.type === 'image' || clip.type === 'frame') {
+            if (clip.type === 'image' || clip.type === 'mask') {
                 const img = await loadImage(clip.src).catch(async () => {
                     const dataUrl = await imageToDataURL(clip.src)
                     return await loadImage(dataUrl)

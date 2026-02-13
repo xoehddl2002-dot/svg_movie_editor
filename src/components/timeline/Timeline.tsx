@@ -216,14 +216,14 @@ export function Timeline() {
             const x = e.clientX - rect.left
             const dropTime = Math.max(0, x / zoom)
 
-            const videoDuration = type === 'image' || type === 'frame' || type === 'text' || type === 'shape' || type === 'icon' ? duration : 10
+            const videoDuration = type === 'image' || type === 'mask' || type === 'text' || type === 'shape' || type === 'icon' ? duration : 10
             const clipId = uuidv4()
 
             // Calculate dimensions based on resource type
             let width = 500; // Default fallback
             let height = 500;
 
-            if (type === 'image' || type === 'frame') {
+            if (type === 'image' || type === 'mask') {
                 try {
                     const img = new Image();
                     img.src = src;

@@ -39,7 +39,7 @@ SVG Movie Editor는 Next.js 기반의 웹 비디오 편집 애플리케이션입
 ## 핵심 개념
 
 ### Track (트랙)
-트랙은 클립을 담는 레이어입니다. 각 트랙은 특정 타입(video, audio, image, text, shape)을 가질 수 있습니다.
+트랙은 클립을 담는 레이어입니다. 각 트랙은 특정 타입(video, audio, image, text, shape, mask)을 가질 수 있습니다.
 
 ### Clip (클립)
 클립은 타임라인 상의 개별 미디어 요소입니다. 시작 시간, 길이, 위치, 크기, 회전 등 다양한 속성을 가집니다.

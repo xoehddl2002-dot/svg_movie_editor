@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Image as ImageIcon, Maximize2, Crop as CropIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, Clock } from "lucide-react"
+import { Image as ImageIcon, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, Clock } from "lucide-react"
 import { Clip } from "@/store/useStore"
 import { cn } from "@/lib/utils"
 // @ts-ignore
@@ -17,8 +18,8 @@ interface ImageEditorProps {
     onClose: () => void
 }
 
-function transformCrop(crop: Crop, rotation: number, flipH: boolean, flipV: boolean, inverse: boolean): Crop {
-    let { x, y, width: w, height: h } = crop;
+function transformMask(mask: Crop, rotation: number, flipH: boolean, flipV: boolean, inverse: boolean): Crop {
+    let { x, y, width: w, height: h } = mask;
 
     // Normalize rotation
     const rot = (rotation % 360 + 360) % 360;
@@ -85,46 +86,46 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
     const [rotation, setRotation] = useState(0) // Initialize to 0, independent of clip.rotation
     const [rotationChanged, setRotationChanged] = useState(false)
 
-    // Crop state
-    const [crop, setCrop] = useState<Crop | undefined>(() => {
-        if (!clip.crop) return undefined
-        return transformCrop(
-            { ...clip.crop, unit: '%' } as Crop,
+    // Mask state
+    const [mask, setMask] = useState<Crop | undefined>(() => {
+        if (!clip.mask) return undefined
+        return transformMask(
+            { ...clip.mask, unit: '%' } as Crop,
             0, // Use 0 rotation for the editor view
             clip.flipH || false,
             clip.flipV || false,
             false
         )
     })
+    const [cornerRadius, setCornerRadius] = useState(clip.mask?.cornerRadius || 0)
 
     const imgRef = useRef<HTMLImageElement>(null)
 
+    const handleMaskChange = (_: PixelCrop, percentCrop: PercentCrop) => {
+        setMask(percentCrop);
+    };
+
     const handleSave = () => {
-        let finalCrop = undefined;
+        let finalMask = undefined;
         let newWidth = clip.width;
         let newHeight = clip.height;
 
-        if (crop) {
-            // Transform View Crop -> Original Crop
-            finalCrop = transformCrop(
-                crop,
-                rotation, // Use local editor rotation (which starts at 0)
+        if (mask) {
+            // Transform View Mask -> Original Mask
+            finalMask = transformMask(
+                mask,
+                rotation, // ImageEditor doesn't have baseRotation from SVG
                 flipH,
                 flipV,
                 true
-            )
+            ) as any
+            finalMask.cornerRadius = cornerRadius;
 
-            // Adjust clip dimensions based on crop and natural aspect ratio
+            // Adjust clip dimensions based on mask and natural aspect ratio
             const img = imgRef.current;
             if (img && img.naturalWidth && img.naturalHeight) {
                 const naturalAR = img.naturalWidth / img.naturalHeight;
-                // Target Aspect Ratio = (Crop Width px / Crop Height px)
-                // = (naturalW * cropW% / naturalH * cropH%)
-                // = naturalAR * (cropW / cropH)
-                // Note: finalCrop is in % relative to original dimensions (100x100), 
-                // so we can use its width/height directly as ratio modifiers.
-
-                const targetAR = naturalAR * (finalCrop.width / finalCrop.height);
+                const targetAR = naturalAR * (finalMask.width / finalMask.height);
 
                 // Keep current width (or default), adjust height
                 const currentWidth = clip.width || 500;
@@ -137,7 +138,7 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
             duration: duration,
             flipH,
             flipV,
-            crop: finalCrop as any,
+            mask: finalMask as any,
             width: newWidth,
             height: newHeight
         }
@@ -163,9 +164,9 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
 
     const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget;
-        // If no crop exists AND this is the first load, set full crop
-        if (!crop && !clip.crop) {
-            setCrop({
+        // If no mask exists AND this is the first load, set full mask
+        if (!mask && !clip.mask) {
+            setMask({
                 unit: '%',
                 width: 100,
                 height: 100,
@@ -194,9 +195,9 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
 
                     <div className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 max-w-full max-h-full overflow-visible">
                         <ReactCrop
-                            crop={crop}
-                            onChange={(_: PixelCrop, percentCrop: PercentCrop) => setCrop(percentCrop)}
-                            className="max-w-full max-h-[60vh]"
+                            crop={mask}
+                            onChange={handleMaskChange}
+                            className="max-w-full max-h-[60vh] relative"
                         >
                             <img
                                 ref={imgRef}
@@ -206,7 +207,7 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
                                 onLoad={onImageLoad}
                                 style={{
                                     transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) rotate(${rotation}deg)`,
-                                    transition: 'transform 0.3s ease-in-out'
+                                    transition: 'transform 0.3s ease-in-out',
                                 }}
                             />
                         </ReactCrop>
@@ -249,13 +250,25 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
                             </TabsContent>
 
                             <TabsContent value="transform" className="mt-0 space-y-6">
-                                {/* Crop & Transform Section */}
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-                                        <CropIcon className="w-4 h-4" />
-                                        Transform
+                                        <MaskIcon className="w-4 h-4" />
+                                        Crop & Transform
                                     </div>
                                     <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <Label className="text-xs">Corner Radius</Label>
+                                                <span className="text-xs font-mono text-muted-foreground">{cornerRadius}%</span>
+                                            </div>
+                                            <Slider
+                                                value={[cornerRadius]}
+                                                max={50}
+                                                step={1}
+                                                onValueChange={([v]) => setCornerRadius(v)}
+                                            />
+                                        </div>
+
                                         <div className="space-y-2">
                                             <Label className="text-xs">Rotation</Label>
                                             <div className="flex gap-2">

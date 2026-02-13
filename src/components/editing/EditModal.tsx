@@ -6,6 +6,7 @@ import {
 import { useStore, type Clip } from "@/store/useStore"
 import { VideoEditor } from "./VideoEditor"
 import { ImageEditor } from "./ImageEditor"
+import { MaskEditor } from "./MaskEditor"
 import { AudioEditor } from "./AudioEditor"
 
 export function EditModal() {
@@ -51,8 +52,11 @@ export function EditModal() {
                         {currentClip.type === 'video' && (
                             <VideoEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
                         )}
-                        {(currentClip.type === 'image' || currentClip.type === 'frame') && (
+                        {currentClip.type === 'image' && (
                             <ImageEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
+                        )}
+                        {currentClip.type === 'mask' && (
+                            <MaskEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
                         )}
                         {currentClip.type === 'audio' && (
                             <AudioEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />

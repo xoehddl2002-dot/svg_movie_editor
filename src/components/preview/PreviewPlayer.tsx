@@ -12,10 +12,10 @@ const getMediaStyle = (clip: Clip): React.CSSProperties => {
     const flipV = clip.flipV || false
     const rotation = clip.rotation || 0
 
-    const crop = clip.crop
+    const mask = clip.mask
     let transformOrigin = 'center center'
-    if (crop) {
-        transformOrigin = `${crop.x + crop.width / 2}% ${crop.y + crop.height / 2}%`
+    if (mask) {
+        transformOrigin = `${mask.x + mask.width / 2}% ${mask.y + mask.height / 2}%`
     }
 
     return {
@@ -27,30 +27,36 @@ const getMediaStyle = (clip: Clip): React.CSSProperties => {
     }
 }
 
-const getCropStyle = (clip: Clip): React.CSSProperties => {
-    const crop = clip.crop
-    if (!crop) {
+const getMaskStyle = (clip: Clip): React.CSSProperties => {
+    const mask = clip.mask
+    if (!mask) {
         return {
             width: '100%',
             height: '100%'
         }
     }
 
-    // crop.x, y, width, height are in percentages
-    // We want to scale the view so that the crop area fills the container (100% x 100%)
-    // Scale factor = 100 / crop.width
-    // Translation = -crop.x, -crop.y
-    // Order: Translate then Scale (in CSS transform syntax: scale() translate())
+    const scaleX = 100 / mask.width
+    const scaleY = 100 / mask.height
 
-    const scaleX = 100 / crop.width
-    const scaleY = 100 / crop.height
-
-    return {
-        width: '100%',
-        height: '100%',
-        transformOrigin: '0 0',
-        transform: `scale(${scaleX}, ${scaleY}) translate(-${crop.x}%, -${crop.y}%)`
+    const style: React.CSSProperties = {
+        width: `${mask.width}%`,
+        height: `${mask.height}%`,
+        position: 'absolute',
+        top: `${mask.y}%`,
+        left: `${mask.x}%`,
+        overflow: 'hidden'
     }
+
+    // Apply shape and corner radius
+    if (mask.shape === 'circle') {
+        style.borderRadius = '50%'
+        style.clipPath = 'circle(50% at 50% 50%)'
+    } else if (mask.cornerRadius !== undefined) {
+        style.borderRadius = `${mask.cornerRadius}%`
+    }
+
+    return style
 }
 
 function VideoClip({ clip, currentTime, isPlaying }: { clip: Clip, currentTime: number, isPlaying: boolean }) {
@@ -97,7 +103,7 @@ function VideoClip({ clip, currentTime, isPlaying }: { clip: Clip, currentTime: 
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-            <div style={getCropStyle(clip)}>
+            <div style={getMaskStyle(clip)}>
                 <video
                     draggable={false}
                     className="select-none"
@@ -286,32 +292,34 @@ export function PreviewPlayer() {
                             <AudioClip clip={clip} currentTime={currentTime} isPlaying={isPlaying} />
                         </foreignObject>
                     )
-                case 'frame':
+                case 'mask':
                 case 'image':
-                    console.log('[PreviewPlayer] Rendering image:', clip.name, 'src:', clip.src)
+
                     return (
                         <foreignObject {...commonProps}>
-                            <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', ...getFilterStyle() }}>
-                                <div style={getCropStyle(clip)}>
-                                    {clip.type === 'frame' ? (
-                                        <DynamicSvg
-                                            src={clip.src}
-                                            templateData={clip.templateData}
-                                            fill={clip.color}
-                                        />
-                                    ) : (
-                                        <img
-                                            draggable={false}
-                                            className="select-none"
-                                            src={clip.src}
-                                            style={getMediaStyle(clip)}
-                                            alt=""
-                                            onError={(e) => console.error('[PreviewPlayer] Image load error:', clip.src, e)}
-                                            onLoad={() => console.log('[PreviewPlayer] Image loaded successfully:', clip.src)}
-                                        />
-                                    )}
+                            {clip.type === 'mask' ? (
+                                <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                                    <DynamicSvg
+                                        src={clip.src}
+                                        templateData={clip.templateData}
+                                        fill={clip.color}
+                                        mask={clip.mask}
+                                        filter={clip.filter}
+                                    />
                                 </div>
-                            </div>
+                            ) : (
+                                <div style={getMaskStyle(clip)}>
+                                    <img
+                                        draggable={false}
+                                        className="select-none"
+                                        src={clip.src}
+                                        style={getMediaStyle(clip)}
+                                        alt=""
+                                        onError={(e) => console.error('[PreviewPlayer] Image load error:', clip.src, e)}
+                                        onLoad={() => console.log('[PreviewPlayer] Image loaded successfully:', clip.src)}
+                                    />
+                                </div>
+                            )}
                         </foreignObject>
                     )
                 case 'text':

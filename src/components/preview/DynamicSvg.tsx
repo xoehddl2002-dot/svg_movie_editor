@@ -5,9 +5,18 @@ interface DynamicSvgProps {
     style?: React.CSSProperties;
     templateData?: any;
     fill?: string;
+    mask?: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        shape?: 'rect' | 'circle',
+        cornerRadius?: number
+    };
+    filter?: { brightness: number, contrast: number, saturate: number, blur: number };
 }
 
-export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateData, fill }: DynamicSvgProps) {
+export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateData, fill, mask, filter }: DynamicSvgProps) {
     const [svgContent, setSvgContent] = useState<string>('');
     const containerRef = useRef<HTMLDivElement>(null);
     const lastAppliedDataRef = useRef<string>('');
@@ -54,14 +63,9 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
             const shapeElements = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');
             shapeElements.forEach(el => {
                 const svgEl = el as SVGElement;
-
-                // Get computed style to check actual visibility/color
                 const computedStyle = window.getComputedStyle(el);
                 const computedFill = computedStyle.fill;
-
-                // If it's not explicitly none, override it
                 if (computedFill !== 'none') {
-                    // Set both attribute and style to ensure override
                     el.setAttribute('fill', fill);
                     svgEl.style.fill = fill;
                 }
@@ -69,11 +73,6 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
         }
 
         // Apply templateData items to elements by ID
-        const dataKey = JSON.stringify(templateData || {});
-        // Note: we removed the optimization check (lastAppliedDataRef) because 'fill' prop change might need re-run 
-        // effectively, but actually fill is handled above. 
-        // Let's keep templateData application robust.
-
         if (templateData && typeof templateData === 'object') {
             Object.entries(templateData).forEach(([id, data]: [string, any]) => {
                 const element = svgElement.getElementById(id);
@@ -85,12 +84,58 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
                     }
                 }
 
+                // Geometric Attributes
+                if (data.width !== undefined) element.setAttribute('width', data.width.toString());
+                if (data.height !== undefined) element.setAttribute('height', data.height.toString());
+                if (data.x !== undefined) element.setAttribute('x', data.x.toString());
+                if (data.y !== undefined) element.setAttribute('y', data.y.toString());
+                if (data.rx !== undefined) element.setAttribute('rx', data.rx.toString());
+                if (data.ry !== undefined) element.setAttribute('ry', data.ry.toString());
+                if (data.r !== undefined) element.setAttribute('r', data.r.toString());
+                if (data.cx !== undefined) element.setAttribute('cx', data.cx.toString());
+                if (data.cy !== undefined) element.setAttribute('cy', data.cy.toString());
+                if (data.d !== undefined) element.setAttribute('d', data.d);
+
                 if (data.fill !== undefined) element.setAttribute('fill', data.fill);
                 if (data.stroke !== undefined) element.setAttribute('stroke', data.stroke);
+                if (data.strokeWidth !== undefined) element.setAttribute('stroke-width', data.strokeWidth.toString());
                 if (data.opacity !== undefined) element.setAttribute('opacity', data.opacity.toString());
             });
         }
-    }, [svgContent, templateData, fill]);
+
+        // Apply mask and filter to the image element
+        const imgElement = svgElement.querySelector('image');
+        if (imgElement) {
+            if (mask) {
+                const scaleX = 100 / mask.width;
+                const scaleY = 100 / mask.height;
+
+                // Get existing transform to preserve rotation
+                const existingTransform = imgElement.getAttribute('transform') || '';
+                imgElement.style.transformOrigin = '0 0';
+                imgElement.style.transform = `${existingTransform} scale(${scaleX}, ${scaleY}) translate(-${mask.x}%, -${mask.y}%)`;
+
+                // Handle Mask Shape and Corner Radius
+                if (mask.shape === 'circle') {
+                    // Use clip-path for circle mask
+                    imgElement.style.clipPath = 'circle(50% at 50% 50%)';
+                    imgElement.style.borderRadius = '50%';
+                } else {
+                    imgElement.style.clipPath = '';
+                    if (mask.cornerRadius !== undefined) {
+                        imgElement.style.borderRadius = `${mask.cornerRadius}%`;
+                    } else {
+                        imgElement.style.borderRadius = '0';
+                    }
+                }
+            }
+
+            if (filter) {
+                const { brightness, contrast, saturate, blur } = filter;
+                imgElement.style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(${blur}px)`;
+            }
+        }
+    }, [svgContent, templateData, fill, mask, filter]);
 
     return (
         <div

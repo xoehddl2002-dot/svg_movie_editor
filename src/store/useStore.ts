@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { processTemplate } from '../utils/template'
 
-export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon' | 'frame'
+export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon' | 'mask'
 
 export interface Clip {
   id: string
@@ -29,11 +29,13 @@ export interface Clip {
   mediaStart?: number // seconds offset into source video
   customPath?: string // SVG path data for custom shapes
   viewBox?: string // SVG viewbox for custom shapes
-  crop?: {
+  mask?: {
     x: number // percentage 0-100
     y: number // percentage 0-100
     width: number // percentage 0-100
     height: number // percentage 0-100
+    shape?: 'rect' | 'circle'
+    cornerRadius?: number // percentage
   }
   filter?: {
     brightness: number // 1 is normal
