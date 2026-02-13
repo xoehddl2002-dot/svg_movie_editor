@@ -25,6 +25,7 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
             case 'text': return '#06b6d4' // Cyan
             case 'shape': return '#f97316' // Orange for Basic Shapes
             case 'icon': return '#14b8a6' // Teal for Icons
+            case 'frame': return '#ec4899' // Pink for Frame
             default: return '#6b7280' // Gray
         }
     }
@@ -40,6 +41,7 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
             case 'text': return <Type {...props} />
             case 'shape': return <Shapes {...props} />
             case 'icon': return <Smile {...props} />
+            case 'frame': return <LayoutTemplate {...props} />
             default: return <LayoutTemplate {...props} />
         }
     }

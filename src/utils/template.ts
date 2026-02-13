@@ -2,6 +2,7 @@
 import { getStrokedBBox, getBBox } from './svg/utilities'
 import { hasNonIdentityTransform, getMatrix, transformBox, deltaTransformPoint } from './svg/math'
 import { config } from '../lib/config'
+import { urlToDataURL } from './dataUrl'
 import type { Clip, Track, ResourceType } from '../store/useStore'
 
 export interface TemplateData {
@@ -78,20 +79,33 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
     // Calculate base URL for resolving relative image paths
     const templateBaseUrl = template.svg.substring(0, template.svg.lastIndexOf('/') + 1);
 
-    // Fix relative image paths in SVG
+    // Inline all image paths in SVG for robust exporting (especially PNG via canvas)
     const images = svgDoc.querySelectorAll('image');
-    images.forEach(img => {
+    for (const img of Array.from(images)) {
         const href = img.getAttribute('href') || img.getAttribute('xlink:href');
         if (href) {
-            if (!href.startsWith('http') && !href.startsWith('data:') && !href.startsWith('/')) {
-                const absoluteUrl = templateBaseUrl + href;
-                img.setAttribute('href', absoluteUrl);
-                if (img.hasAttribute('xlink:href')) {
-                    img.setAttribute('xlink:href', absoluteUrl);
+            try {
+                let absoluteUrl = href;
+                if (!href.startsWith('http') && !href.startsWith('data:') && !href.startsWith('/')) {
+                    absoluteUrl = templateBaseUrl + href;
                 }
+
+                // Convert to Data URL to avoid cross-origin issues during canvas rendering
+                if (!absoluteUrl.startsWith('data:')) {
+                    const dataUrl = await urlToDataURL(absoluteUrl).catch(err => {
+                        console.warn(`[template.ts] Image inlining failed for ${absoluteUrl}:`, err);
+                        return absoluteUrl; // Fallback to absolute URL if conversion fails
+                    });
+                    img.setAttribute('href', dataUrl);
+                    if (img.hasAttribute('xlink:href')) {
+                        img.setAttribute('xlink:href', dataUrl);
+                    }
+                }
+            } catch (err) {
+                console.warn(`[template.ts] Failed to process image ${href}:`, err);
             }
         }
-    });
+    }
 
     // Extract global definitions
     let defsString = '';
