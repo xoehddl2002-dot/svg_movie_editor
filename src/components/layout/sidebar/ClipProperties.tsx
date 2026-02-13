@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Settings, X, Trash2 } from "lucide-react"
+import { Settings, X, Trash2, Info } from "lucide-react"
+import { loadFont } from "@/utils/fonts"
+import { useState, useEffect } from "react"
 
 const DEFAULT_FILTER = { brightness: 1, contrast: 1, saturate: 1, blur: 0 }
-const fonts = ['Inter', 'Roboto', 'Arial', 'Times New Roman', 'Courier New']
 
 interface ColorPickerProps {
     value?: string
@@ -56,8 +57,18 @@ interface ClipPropertiesProps {
     clip: Clip
 }
 
-export function ClipProperties({ clip }: ClipPropertiesProps) {
+export function ClipProperties({ clip }: { clip: Clip }) {
     const { setSelectedClipId, updateClip, removeClip, setEditingClipId } = useStore()
+    const [fonts, setFonts] = useState<string[]>([])
+
+    useEffect(() => {
+        fetch('/api/fonts')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) setFonts(data)
+            })
+            .catch(err => console.error('Failed to fetch fonts:', err))
+    }, [])
 
     return (
         <div className="p-4 space-y-6">
@@ -151,9 +162,15 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Typography</Label>
                         <div className="space-y-2">
-                            <Label>Content</Label>
+                            <div className="flex items-center justify-between">
+                                <Label>Content</Label>
+                                <span className="text-[10px] font-mono text-muted-foreground">
+                                    {(clip.text || '').length} / {clip.max_length ?? 15}
+                                </span>
+                            </div>
                             <Input
                                 value={clip.text || ''}
+                                maxLength={clip.max_length ?? 15}
                                 onChange={(e) => updateClip(clip.id, { text: e.target.value })}
                             />
                         </div>
@@ -165,7 +182,13 @@ export function ClipProperties({ clip }: ClipPropertiesProps) {
                                         key={font}
                                         variant={clip.fontFamily === font ? "default" : "outline"}
                                         size="sm"
-                                        onClick={() => updateClip(clip.id, { fontFamily: font })}
+                                        onClick={async () => {
+                                            await loadFont({
+                                                family: font,
+                                                url: `/assets/font/${font}.woff`
+                                            });
+                                            updateClip(clip.id, { fontFamily: font });
+                                        }}
                                         style={{ fontFamily: font }}
                                         className="h-8 text-xs"
                                     >

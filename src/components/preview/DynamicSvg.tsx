@@ -14,9 +14,10 @@ interface DynamicSvgProps {
         cornerRadius?: number
     };
     filter?: { brightness: number, contrast: number, saturate: number, blur: number };
+    onLoad?: () => void;
 }
 
-export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateData, fill, mask, filter }: DynamicSvgProps) {
+export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateData, fill, mask, filter, onLoad }: DynamicSvgProps) {
     const [svgContent, setSvgContent] = useState<string>('');
     const containerRef = useRef<HTMLDivElement>(null);
     const lastAppliedDataRef = useRef<string>('');
@@ -32,33 +33,40 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
                 const cleanSvg = text.replace(/<\?xml.*?\?>/i, '').trim();
                 setSvgContent(cleanSvg);
             })
-            .catch(err => console.error("Failed to load SVG:", err));
+            .catch(err => {
+                console.error("Failed to load SVG:", err);
+                onLoad?.(); // Still call onLoad to avoid blocking playback on error
+            });
     }, [src]);
 
     useEffect(() => {
-        if (!svgContent || !containerRef.current) return;
+        if (!svgContent || !containerRef.current) {
+            if (!src) onLoad?.(); // If no src, it's "ready"
+            return;
+        }
 
         const svgElement = containerRef.current.querySelector('svg');
-        if (!svgElement) return;
+        if (!svgElement) {
+            onLoad?.();
+            return;
+        }
 
+        // ... (existing processing code) ...
         // Ensure viewBox exists for proper scaling
         if (!svgElement.getAttribute('viewBox')) {
             const w = svgElement.getAttribute('width');
             const h = svgElement.getAttribute('height');
             if (w && h) {
-                // If it has px or other units, strip them for the viewBox
                 const cleanW = w.replace(/[^0-9.]/g, '');
                 const cleanH = h.replace(/[^0-9.]/g, '');
                 svgElement.setAttribute('viewBox', `0 0 ${cleanW} ${cleanH}`);
             }
         }
 
-        // Set dimensions to fill container
         svgElement.setAttribute('width', '100%');
         svgElement.setAttribute('height', '100%');
         svgElement.setAttribute('preserveAspectRatio', 'none');
 
-        // Apply fill color if provided
         if (fill) {
             const shapeElements = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');
             shapeElements.forEach(el => {
@@ -72,19 +80,15 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
             });
         }
 
-        // Apply templateData items to elements by ID
         if (templateData && typeof templateData === 'object') {
             Object.entries(templateData).forEach(([id, data]: [string, any]) => {
                 const element = svgElement.getElementById(id);
                 if (!element) return;
-
                 if (data.text !== undefined) {
                     if (element.tagName.toLowerCase() === 'text' || element.tagName.toLowerCase() === 'tspan') {
                         element.textContent = data.text;
                     }
                 }
-
-                // Geometric Attributes
                 if (data.width !== undefined) element.setAttribute('width', data.width.toString());
                 if (data.height !== undefined) element.setAttribute('height', data.height.toString());
                 if (data.x !== undefined) element.setAttribute('x', data.x.toString());
@@ -103,21 +107,15 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
             });
         }
 
-        // Apply mask and filter to the image element
         const imgElement = svgElement.querySelector('image');
         if (imgElement) {
             if (mask) {
                 const scaleX = 100 / mask.width;
                 const scaleY = 100 / mask.height;
-
-                // Get existing transform to preserve rotation
                 const existingTransform = imgElement.getAttribute('transform') || '';
                 imgElement.style.transformOrigin = '0 0';
                 imgElement.style.transform = `${existingTransform} scale(${scaleX}, ${scaleY}) translate(-${mask.x}%, -${mask.y}%)`;
-
-                // Handle Mask Shape and Corner Radius
                 if (mask.shape === 'circle') {
-                    // Use clip-path for circle mask
                     imgElement.style.clipPath = 'circle(50% at 50% 50%)';
                     imgElement.style.borderRadius = '50%';
                 } else {
@@ -129,12 +127,14 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
                     }
                 }
             }
-
             if (filter) {
                 const { brightness, contrast, saturate, blur } = filter;
                 imgElement.style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(${blur}px)`;
             }
         }
+
+        // Call onLoad when processing is finished
+        onLoad?.();
     }, [svgContent, templateData, fill, mask, filter]);
 
     return (

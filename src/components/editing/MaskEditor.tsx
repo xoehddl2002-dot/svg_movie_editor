@@ -20,6 +20,7 @@ interface MaskEditorProps {
 }
 
 export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
+
     const [duration, setDuration] = useState(clip.duration || 5)
 
     // Transform state
@@ -281,8 +282,35 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         Mask Area
                                     </div>
                                     <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Rotation</Label>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <Label className="text-xs">Rotation</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <Input
+                                                        type="number"
+                                                        value={Math.round(rotation)}
+                                                        onChange={(e) => {
+                                                            const val = Number(e.target.value);
+                                                            setRotation(val);
+                                                            setRotationChanged(true);
+                                                        }}
+                                                        className="h-6 w-16 text-xs text-right p-1"
+                                                    />
+                                                    <span className="text-xs text-muted-foreground">°</span>
+                                                </div>
+                                            </div>
+
+                                            <Slider
+                                                value={[rotation]}
+                                                min={0}
+                                                max={360}
+                                                step={1}
+                                                onValueChange={([v]) => {
+                                                    setRotation(v);
+                                                    setRotationChanged(true);
+                                                }}
+                                            />
+
                                             <div className="flex gap-2">
                                                 <Button variant="outline" size="sm" className="flex-1" onClick={rotateLeft}>
                                                     <RotateCcw className="w-4 h-4 mr-2" />

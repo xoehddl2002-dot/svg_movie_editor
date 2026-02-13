@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Film, Scissors, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw } from "lucide-react"
@@ -128,10 +129,10 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
 
                 {/* Right: Properties Panel */}
                 <div className="w-[400px] shrink-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden border-l">
-                    <Tabs defaultValue="general" className="flex-1 flex flex-col">
+                    <Tabs defaultValue={clip.attr_rock ? "transform" : "general"} className="flex-1 flex flex-col">
                         <div className="px-4 pt-4 shrink-0">
                             <TabsList className="w-full grid grid-cols-2">
-                                <TabsTrigger value="general">Properties</TabsTrigger>
+                                {!clip.attr_rock && <TabsTrigger value="general">Properties</TabsTrigger>}
                                 <TabsTrigger value="transform">Mask & Transform</TabsTrigger>
                             </TabsList>
                         </div>
@@ -221,8 +222,35 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
                                             </div>
                                         )}
 
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Rotation</Label>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <Label className="text-xs">Rotation</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <Input
+                                                        type="number"
+                                                        value={Math.round(rotation)}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                            const val = Number(e.target.value);
+                                                            setRotation(val);
+                                                            setRotationChanged(true);
+                                                        }}
+                                                        className="h-6 w-16 text-xs text-right p-1"
+                                                    />
+                                                    <span className="text-xs text-muted-foreground">°</span>
+                                                </div>
+                                            </div>
+
+                                            <Slider
+                                                value={[rotation]}
+                                                min={0}
+                                                max={360}
+                                                step={1}
+                                                onValueChange={([v]) => {
+                                                    setRotation(v);
+                                                    setRotationChanged(true);
+                                                }}
+                                            />
+
                                             <div className="flex gap-2">
                                                 <Button variant="outline" size="sm" className="flex-1" onClick={rotateLeft}>
                                                     <RotateCcw className="w-4 h-4 mr-2" />

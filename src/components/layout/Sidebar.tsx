@@ -53,7 +53,7 @@ export function Sidebar() {
         ? tracks.flatMap(t => t.clips).find(c => c.id === selectedClipId)
         : null
 
-    if (selectedClip) {
+    if (selectedClip && selectedClip.attr_rock !== true) {
         return (
             <div className="flex h-full w-80 flex-col border-r bg-background prevent-deselect">
                 <ScrollArea className="h-full">

@@ -2,14 +2,34 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
-
-const fonts = ['Inter', 'Roboto', 'Arial', 'Times New Roman', 'Courier New']
+import { useEffect, useState } from "react"
+import { loadFont } from "@/utils/fonts"
 
 interface TextTabProps {
     onDragStart: (e: React.DragEvent, type: string, src: string) => void
 }
 
 export function TextTab({ onDragStart }: TextTabProps) {
+    const [fonts, setFonts] = useState<string[]>([])
+
+    useEffect(() => {
+        fetch('/api/fonts')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setFonts(data)
+                    // Pre-load fonts for preview
+                    data.forEach(font => {
+                        loadFont({
+                            family: font,
+                            url: `/assets/font/${font}.woff`
+                        });
+                    });
+                }
+            })
+            .catch(err => console.error('Failed to fetch fonts:', err))
+    }, [])
+
     return (
         <ScrollArea className="h-full">
             <div className="p-4 space-y-2 pb-20">

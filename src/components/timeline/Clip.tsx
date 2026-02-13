@@ -1,5 +1,4 @@
-import React from "react"
-import type { Clip as ClipType } from "@/store/useStore"
+import { useStore, type Clip as ClipType } from "@/store/useStore"
 import { FileVideo, Image as ImageIcon, Music, Type, Shapes, LayoutTemplate, Smile } from "lucide-react"
 
 interface ClipProps {
@@ -12,6 +11,7 @@ interface ClipProps {
 }
 
 export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResizeStart }: ClipProps) {
+    const { setEditingClipId } = useStore()
     const width = clip.duration * zoom
     const x = clip.start * zoom
 
@@ -51,6 +51,12 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
             transform={`translate(${x}, 5)`}
             className={`cursor-grab active:cursor-grabbing group`}
             onMouseDown={(e) => onDragStart?.(e, clip.id)}
+            onDoubleClick={(e) => {
+                e.stopPropagation();
+                if (clip.type === 'image' || clip.type === 'mask' || clip.type === 'video' || clip.type === 'audio') {
+                    setEditingClipId(clip.id);
+                }
+            }}
         >
             <rect
                 width={width}

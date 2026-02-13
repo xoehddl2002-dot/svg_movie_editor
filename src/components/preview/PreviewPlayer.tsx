@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut, Search } from "lucide-react"
+import { Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut, Search, Loader2 } from "lucide-react"
 import { useStore, type Clip } from "@/store/useStore"
 import React, { useEffect, useRef, useState } from "react"
 import { DynamicSvg } from "./DynamicSvg"
@@ -59,7 +59,7 @@ const getMaskStyle = (clip: Clip): React.CSSProperties => {
     return style
 }
 
-function VideoClip({ clip, currentTime, isPlaying }: { clip: Clip, currentTime: number, isPlaying: boolean }) {
+function VideoClip({ clip, currentTime, isPlaying, onReady }: { clip: Clip, currentTime: number, isPlaying: boolean, onReady?: (id: string) => void }) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const relativeTime = currentTime - clip.start
     const mediaTime = relativeTime + (clip.mediaStart || 0)
@@ -114,14 +114,17 @@ function VideoClip({ clip, currentTime, isPlaying }: { clip: Clip, currentTime: 
                     playsInline
                     preload="auto"
                     onError={(e) => console.error('[PreviewPlayer] Video load error:', clip.src, e)}
-                    onLoadedData={() => console.log('[PreviewPlayer] Video loaded successfully:', clip.src)}
+                    onLoadedData={() => {
+                        console.log('[PreviewPlayer] Video loaded successfully:', clip.src);
+                        onReady?.(clip.id);
+                    }}
                 />
             </div>
         </div>
     )
 }
 
-function AudioClip({ clip, currentTime, isPlaying }: { clip: Clip, currentTime: number, isPlaying: boolean }) {
+function AudioClip({ clip, currentTime, isPlaying, onReady }: { clip: Clip, currentTime: number, isPlaying: boolean, onReady?: (id: string) => void }) {
     const mediaRef = useRef<HTMLMediaElement>(null)
     const relativeTime = currentTime - clip.start
     const mediaTime = relativeTime + (clip.mediaStart || 0)
@@ -176,6 +179,7 @@ function AudioClip({ clip, currentTime, isPlaying }: { clip: Clip, currentTime: 
             ref={mediaRef as React.RefObject<HTMLAudioElement>}
             src={clip.src}
             preload="auto"
+            onLoadedData={() => onReady?.(clip.id)}
         />
     )
 }
@@ -193,9 +197,55 @@ export function PreviewPlayer() {
         setSelectedClipId
     } = useStore()
     const [isPlaying, setIsPlaying] = useState(false)
+    const [readyAssets, setReadyAssets] = useState<Set<string>>(new Set())
     const requestRef = useRef<number | null>(null)
     const lastTimeRef = useRef<number>(0)
     const svgRef = useRef<SVGSVGElement>(null)
+
+    const handleReady = (id: string) => {
+        setReadyAssets(prev => new Set(prev).add(id))
+    }
+
+    // Reset ready assets when time changes significantly (seeking)
+    useEffect(() => {
+        if (!isPlaying) {
+            setReadyAssets(new Set())
+        }
+    }, [currentTime, isPlaying])
+
+    const activeClips = React.useMemo(() => {
+        return tracks
+            .flatMap((track, trackIndex) => track.clips.map(clip => ({ ...clip, trackOrder: trackIndex })))
+            .filter(clip => currentTime >= clip.start && currentTime < clip.start + clip.duration)
+            .sort((a, b) => b.trackOrder - a.trackOrder)
+    }, [tracks, currentTime]);
+
+    const isReady = React.useMemo(() => {
+        // Clips that need explicit loading
+        const clipsRequiringLoading = activeClips.filter(c =>
+            ['video', 'audio', 'image', 'mask', 'icon', 'shape'].includes(c.type)
+        );
+        return clipsRequiringLoading.every(c => readyAssets.has(c.id));
+    }, [activeClips, readyAssets]);
+
+    // Automatically mark non-async assets as ready
+    useEffect(() => {
+        const nonAsyncIds = activeClips
+            .filter(c =>
+                c.type === 'text' ||
+                (c.type === 'shape' && !c.src?.toLowerCase().endsWith('.svg'))
+            )
+            .map(c => c.id)
+            .filter(id => !readyAssets.has(id));
+
+        if (nonAsyncIds.length > 0) {
+            setReadyAssets(prev => {
+                const next = new Set(prev);
+                nonAsyncIds.forEach(id => next.add(id));
+                return next;
+            });
+        }
+    }, [activeClips, readyAssets]);
 
     const togglePlay = () => {
         if (!isPlaying) {
@@ -209,6 +259,12 @@ export function PreviewPlayer() {
             const animate = (time: number) => {
                 const deltaTime = (time - lastTimeRef.current) / 1000
                 lastTimeRef.current = time
+
+                // ONLY advance time if resources are ready
+                if (!isReady) {
+                    requestRef.current = requestAnimationFrame(animate)
+                    return
+                }
 
                 const now = useStore.getState().currentTime
                 const nextTime = now + deltaTime
@@ -228,7 +284,7 @@ export function PreviewPlayer() {
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current)
         }
-    }, [isPlaying, setCurrentTime])
+    }, [isPlaying, isReady, setCurrentTime])
 
     const formatTime = (seconds: number) => {
         const date = new Date(0)
@@ -283,13 +339,13 @@ export function PreviewPlayer() {
                 case 'video':
                     return (
                         <foreignObject {...commonProps}>
-                            <VideoClip clip={clip} currentTime={currentTime} isPlaying={isPlaying} />
+                            <VideoClip clip={clip} currentTime={currentTime} isPlaying={isPlaying} onReady={() => handleReady(clip.id)} />
                         </foreignObject>
                     )
                 case 'audio':
                     return (
                         <foreignObject x={0} y={0} width={0} height={0}>
-                            <AudioClip clip={clip} currentTime={currentTime} isPlaying={isPlaying} />
+                            <AudioClip clip={clip} currentTime={currentTime} isPlaying={isPlaying} onReady={() => handleReady(clip.id)} />
                         </foreignObject>
                     )
                 case 'mask':
@@ -305,6 +361,7 @@ export function PreviewPlayer() {
                                         fill={clip.color}
                                         mask={clip.mask}
                                         filter={clip.filter}
+                                        onLoad={() => handleReady(clip.id)}
                                     />
                                 </div>
                             ) : (
@@ -315,8 +372,14 @@ export function PreviewPlayer() {
                                         src={clip.src}
                                         style={getMediaStyle(clip)}
                                         alt=""
-                                        onError={(e) => console.error('[PreviewPlayer] Image load error:', clip.src, e)}
-                                        onLoad={() => console.log('[PreviewPlayer] Image loaded successfully:', clip.src)}
+                                        onLoad={() => {
+                                            console.log('[PreviewPlayer] Image loaded successfully:', clip.src);
+                                            handleReady(clip.id);
+                                        }}
+                                        onError={(e) => {
+                                            console.error('[PreviewPlayer] Image load error:', clip.src, e);
+                                            handleReady(clip.id); // Also count as ready to avoid stuck playback
+                                        }}
                                     />
                                 </div>
                             )}
@@ -371,6 +434,7 @@ export function PreviewPlayer() {
                                     src={clip.src}
                                     templateData={clip.templateData}
                                     fill={clip.color}
+                                    onLoad={() => handleReady(clip.id)}
                                 />
                             </foreignObject>
                         )
@@ -426,6 +490,14 @@ export function PreviewPlayer() {
                     e.stopPropagation();
                     setSelectedClipId(clip.id);
                 }}
+                onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    if (clip.type === 'image' || clip.type === 'mask' || clip.type === 'video' || clip.type === 'audio') {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore - setEditingClipId is in store but might not be in type correctly or just to be safe
+                        useStore.getState().setEditingClipId(clip.id);
+                    }
+                }}
                 className="cursor-pointer"
             >
                 {renderInner()}
@@ -438,13 +510,6 @@ export function PreviewPlayer() {
             </g>
         )
     }
-
-    const activeClips = React.useMemo(() => {
-        return tracks
-            .flatMap((track, trackIndex) => track.clips.map(clip => ({ ...clip, trackOrder: trackIndex })))
-            .filter(clip => currentTime >= clip.start && currentTime < clip.start + clip.duration)
-            .sort((a, b) => b.trackOrder - a.trackOrder)
-    }, [tracks, currentTime]);
 
     return (
         <div className="flex flex-1 flex-col bg-black/5 overflow-hidden select-none">
@@ -469,6 +534,13 @@ export function PreviewPlayer() {
                         {activeClips.length === 0 && (
                             <div className="absolute inset-0 flex items-center justify-center text-white/20 pointer-events-none">
                                 <span>No active clips</span>
+                            </div>
+                        )}
+
+                        {isPlaying && !isReady && (
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-lg">
+                                <Loader2 className="h-10 w-10 text-primary animate-spin mb-2" />
+                                <span className="text-white text-xs font-medium">Loading resources...</span>
                             </div>
                         )}
 

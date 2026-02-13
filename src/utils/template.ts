@@ -235,9 +235,16 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                     const translateX = m.translateX
                     const translateY = m.translateY
 
+
+                    // if (type === 'mask' && ele.tagName === 'image') {
+                    //     element.setAttribute('transform', ele.getAttribute('transform') || '');
+                    //     ele.removeAttribute('transform');
+                    // }
+
                     if (ele === element) {
                         rotation += m.angle;
                     }
+
 
                     if (!m.angle || ele === element) {
                         let newX = 0
@@ -367,7 +374,7 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 attr_rock: item.attr_rock === 'true',
                 image_id: item.image_id,
                 shapes_id: item.shapes_id,
-                max_length: item.max_length ? parseInt(item.max_length, 10) : undefined
+                max_length: item.max_length ? parseInt(item.max_length, 10) : (type === 'text' ? 15 : undefined)
             };
             newClips.push(clip);
         });

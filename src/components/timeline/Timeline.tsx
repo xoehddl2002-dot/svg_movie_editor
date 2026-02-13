@@ -380,6 +380,7 @@ export function Timeline() {
                 name: name || (type === 'text' ? src : (customPath ? 'Custom Shape' : generatedName)),
                 src,
                 text: type === 'text' ? 'New Text' : undefined,
+                fontFamily: type === 'text' ? src : undefined,
                 customPath,
                 viewBox,
                 templateData,
@@ -390,6 +391,15 @@ export function Timeline() {
                 x: (1920 - width) / 2, // Center horizontally roughly (assuming 1920 base)
                 y: (1080 - height) / 2  // Center vertically roughly
             };
+
+            // Auto-load font if text clip
+            if (type === 'text') {
+                const { loadFont } = require('@/utils/fonts');
+                loadFont({
+                    family: src,
+                    url: `/assets/font/${src}.woff`
+                });
+            }
 
             if (createNewTrack) {
                 // Use the type of the item being dropped to organize tracks

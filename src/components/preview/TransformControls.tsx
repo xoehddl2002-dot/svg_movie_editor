@@ -101,6 +101,11 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
     }, [mode, clip, updateClip, svgRef]);
 
     const handleMouseDown = (e: React.MouseEvent, m: TransformMode) => {
+        // Check permissions
+        if (m === 'move' && clip.editor_move === false) return;
+        if (m === 'rotate' && clip.editor_rotate === false) return;
+        if (m?.startsWith('scale') && clip.editor_scale === false) return;
+
         e.stopPropagation();
         e.preventDefault();
         const pt = getSVGPoint(e.nativeEvent);
@@ -264,14 +269,14 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
     }, [mode, clip, updateClip, svgRef, projectWidth, projectHeight, scaleFactorX, scaleFactorY]);
 
 
-    const renderHandle = (cx: number, cy: number, m: TransformMode, cursor: string) => (
+    const renderHandle = (cx: number, cy: number, m: TransformMode, cursor: string, color: string = "#00d9ff") => (
         <rect
             x={cx - halfHandle}
             y={cy - halfHandle}
             width={handleSize}
             height={handleSize}
             fill="white"
-            stroke="#00d9ff"
+            stroke={color}
             strokeWidth={3}
             style={{ cursor }}
             onMouseDown={(e) => handleMouseDown(e, m)}
@@ -282,6 +287,9 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
     const pivotX = x + baseW / 2;
     const pivotY = y + baseH / 2;
 
+    const isLocked = clip.editor_move === false && clip.editor_scale === false && clip.editor_rotate === false;
+    const controlColor = isLocked ? "#888888" : "#00d9ff";
+
     return (
         <g className="transform-controls-layer" transform={`rotate(${r}, ${pivotX}, ${pivotY})`}>
             {/* Selection Border */}
@@ -291,58 +299,62 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
                 width={w}
                 height={h}
                 fill="transparent"
-                stroke="#00d9ff"
+                stroke={controlColor}
                 strokeWidth={3}
-                className="cursor-move"
-                onMouseDown={(e) => handleMouseDown(e, 'move')}
+                className={clip.editor_move !== false ? "cursor-move" : ""}
+                onMouseDown={(e) => clip.editor_move !== false && handleMouseDown(e, 'move')}
             />
 
             {/* Scale Handles - Only for non-text clips or as desired */}
-            {clip.type !== 'text' && (
+            {clip.editor_scale !== false && clip.type !== 'text' && (
                 <>
                     {/* Corner Handles */}
-                    {renderHandle(displayX, displayY, 'scale-nw', 'nwse-resize')}
-                    {renderHandle(displayX + w, displayY, 'scale-ne', 'nesw-resize')}
-                    {renderHandle(displayX, displayY + h, 'scale-sw', 'nesw-resize')}
-                    {renderHandle(displayX + w, displayY + h, 'scale-se', 'nwse-resize')}
+                    {renderHandle(displayX, displayY, 'scale-nw', 'nwse-resize', controlColor)}
+                    {renderHandle(displayX + w, displayY, 'scale-ne', 'nesw-resize', controlColor)}
+                    {renderHandle(displayX, displayY + h, 'scale-sw', 'nesw-resize', controlColor)}
+                    {renderHandle(displayX + w, displayY + h, 'scale-se', 'nwse-resize', controlColor)}
 
                     {/* Edge Handles */}
-                    {renderHandle(displayX + w / 2, displayY, 'scale-n', 'ns-resize')}
-                    {renderHandle(displayX + w / 2, displayY + h, 'scale-s', 'ns-resize')}
-                    {renderHandle(displayX, displayY + h / 2, 'scale-w', 'ew-resize')}
-                    {renderHandle(displayX + w, displayY + h / 2, 'scale-e', 'ew-resize')}
+                    {renderHandle(displayX + w / 2, displayY, 'scale-n', 'ns-resize', controlColor)}
+                    {renderHandle(displayX + w / 2, displayY + h, 'scale-s', 'ns-resize', controlColor)}
+                    {renderHandle(displayX, displayY + h / 2, 'scale-w', 'ew-resize', controlColor)}
+                    {renderHandle(displayX + w, displayY + h / 2, 'scale-e', 'ew-resize', controlColor)}
                 </>
             )}
 
             {/* Text simple handles if needed, or re-use above with 'text' check */}
-            {clip.type === 'text' && (
+            {clip.editor_scale !== false && clip.type === 'text' && (
                 <>
-                    {renderHandle(displayX, displayY, 'scale-nw', 'nwse-resize')}
-                    {renderHandle(displayX + w, displayY, 'scale-ne', 'nesw-resize')}
-                    {renderHandle(displayX, displayY + h, 'scale-sw', 'nesw-resize')}
-                    {renderHandle(displayX + w, displayY + h, 'scale-se', 'nwse-resize')}
+                    {renderHandle(displayX, displayY, 'scale-nw', 'nwse-resize', controlColor)}
+                    {renderHandle(displayX + w, displayY, 'scale-ne', 'nesw-resize', controlColor)}
+                    {renderHandle(displayX, displayY + h, 'scale-sw', 'nesw-resize', controlColor)}
+                    {renderHandle(displayX + w, displayY + h, 'scale-se', 'nwse-resize', controlColor)}
                 </>
             )}
 
             {/* Rotation Handle */}
-            <line
-                x1={displayX + w / 2}
-                y1={displayY}
-                x2={displayX + w / 2}
-                y2={displayY - 30}
-                stroke="#00d9ff"
-                strokeWidth={3}
-            />
-            <circle
-                cx={displayX + w / 2}
-                cy={displayY - 30}
-                r={handleSize / 2 + 2}
-                fill="white"
-                stroke="#00d9ff"
-                strokeWidth={3}
-                style={{ cursor: 'alias' }}
-                onMouseDown={(e) => handleMouseDown(e, 'rotate')}
-            />
+            {clip.editor_rotate !== false && (
+                <>
+                    <line
+                        x1={displayX + w / 2}
+                        y1={displayY}
+                        x2={displayX + w / 2}
+                        y2={displayY - 30}
+                        stroke={controlColor}
+                        strokeWidth={3}
+                    />
+                    <circle
+                        cx={displayX + w / 2}
+                        cy={displayY - 30}
+                        r={handleSize / 2 + 2}
+                        fill="white"
+                        stroke={controlColor}
+                        strokeWidth={3}
+                        style={{ cursor: 'alias' }}
+                        onMouseDown={(e) => handleMouseDown(e, 'rotate')}
+                    />
+                </>
+            )}
         </g>
     );
 }
