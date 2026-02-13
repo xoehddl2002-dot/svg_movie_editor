@@ -16,6 +16,7 @@ export interface ProcessedTemplateResult {
     tracks: Track[]
     aspectRatio: number
     currentTime: number
+    fontList?: Record<string, string[]>
 }
 
 export const processTemplate = async (template: TemplateData, defaultDuration: number): Promise<ProcessedTemplateResult | null> => {
@@ -391,9 +392,13 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
         });
     });
 
+    // Extract font list if available
+    const fontList = jsonData['font-list'] || {};
+
     return {
         tracks: initialTracks,
         aspectRatio: ratio,
-        currentTime: 0
+        currentTime: 0,
+        fontList
     };
 }

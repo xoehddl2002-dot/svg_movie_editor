@@ -25,7 +25,7 @@ export function VideoEditor({ clip, onUpdate, onClose }: VideoEditorProps) {
     // Transform state
     const [flipH, setFlipH] = useState(clip.flipH || false)
     const [flipV, setFlipV] = useState(clip.flipV || false)
-    const [rotation, setRotation] = useState(0) // Initialize to 0
+    const [rotation, setRotation] = useState(clip.rotation || 0)
     const [rotationChanged, setRotationChanged] = useState(false)
 
     // Mask state

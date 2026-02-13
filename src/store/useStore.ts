@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { processTemplate } from '../utils/template'
+import { loadFont, checkFontLoaded } from '../utils/fonts'
 
 export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon' | 'mask'
 
@@ -163,6 +164,34 @@ export const useStore = create<EditorState>((set, get) => ({
         aspectRatio: result.aspectRatio,
         currentTime: 0
       }));
+
+      // Load fonts from template if available
+      // Load fonts from template if available
+      if (result.fontList) {
+        const fontMapList = Object.keys(result.fontList).map(family => ({
+          family,
+          url: `/assets/font/${family}.woff` // Assumption: font files are in /assets/font/ and have .woff extension
+        }));
+
+        try {
+          await loadFont(fontMapList);
+
+          // Verify if all fonts are loaded
+          const failedFonts = fontMapList.filter(item => !checkFontLoaded(item.family));
+
+          if (failedFonts.length > 0) {
+            const failedNames = failedFonts.map(f => f.family).join(', ');
+            alert(`다음 폰트를 불러오는데 실패했습니다: ${failedNames}\n확인을 누르면 메인 화면으로 이동합니다.`);
+            window.location.href = '/';
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to load template fonts:", err);
+          alert(`폰트 로딩 중 오류가 발생했습니다.\n확인을 누르면 메인 화면으로 이동합니다.`);
+          window.location.href = '/';
+          return;
+        }
+      }
     }
   },
   addClip: (trackId, clip) => set((state) => ({

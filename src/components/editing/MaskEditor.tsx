@@ -25,7 +25,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     // Transform state
     const [flipH, setFlipH] = useState(clip.flipH || false)
     const [flipV, setFlipV] = useState(clip.flipV || false)
-    const [rotation, setRotation] = useState(0)
+    const [rotation, setRotation] = useState(clip.rotation || 0)
     const [rotationChanged, setRotationChanged] = useState(false)
 
     // Mask state for ReactCrop (visual only)
@@ -210,7 +210,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                 alt="Preview"
                                 className="max-w-full max-h-[60vh] object-contain block"
                                 style={{
-                                    transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) rotate(${baseRotation + rotation}deg)`,
+                                    transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) rotate(${rotation}deg)`,
                                     transition: 'transform 0.3s ease-in-out',
                                     opacity: 0.5
                                 }}
@@ -222,7 +222,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                 style={{
                                     width: '100%',
                                     height: '100%',
-                                    transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) rotate(${baseRotation + rotation}deg)`,
+                                    transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) rotate(${rotation}deg)`,
                                     transformOrigin: 'center'
                                 }}
                             >

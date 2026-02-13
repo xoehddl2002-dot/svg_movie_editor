@@ -83,7 +83,7 @@ export function ImageEditor({ clip, onUpdate, onClose }: ImageEditorProps) {
     // Transform state
     const [flipH, setFlipH] = useState(clip.flipH || false)
     const [flipV, setFlipV] = useState(clip.flipV || false)
-    const [rotation, setRotation] = useState(0) // Initialize to 0, independent of clip.rotation
+    const [rotation, setRotation] = useState(clip.rotation || 0)
     const [rotationChanged, setRotationChanged] = useState(false)
 
     // Mask state
