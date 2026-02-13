@@ -9,14 +9,14 @@
 import { NS } from "./namespaces";
 
 export interface AngleCoord45 {
-  x: number;
-  y: number;
-  a: number;
+    x: number;
+    y: number;
+    a: number;
 }
 
 export interface XYObject {
-  x: number;
-  y: number;
+    x: number;
+    y: number;
 }
 
 // Constants
@@ -25,7 +25,7 @@ const NEAR_ZERO = 1e-14;
 // Throw away SVGSVGElement used for creating matrices/transforms.
 let svg: SVGSVGElement;
 if (typeof document !== 'undefined') {
-  svg = document.createElementNS(NS.SVG, "svg") as SVGSVGElement;
+    svg = document.createElementNS(NS.SVG, "svg") as SVGSVGElement;
 }
 
 /**
@@ -37,7 +37,7 @@ if (typeof document !== 'undefined') {
  * @returns An x, y object representing the transformed point
  */
 export const transformPoint = function (x: number, y: number, m: DOMMatrix | SVGMatrix): XYObject {
-  return { x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f };
+    return { x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f };
 };
 
 /**
@@ -47,9 +47,9 @@ export const transformPoint = function (x: number, y: number, m: DOMMatrix | SVG
  * @returns Indicates whether or not the matrix is 1,0,0,1,0,0
  */
 export const isIdentity = function (m: DOMMatrix | SVGMatrix): boolean {
-  return (
-    m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0
-  );
+    return (
+        m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0
+    );
 };
 
 /**
@@ -59,30 +59,30 @@ export const isIdentity = function (m: DOMMatrix | SVGMatrix): boolean {
  * @returns The matrix object resulting from the calculation
  */
 export const matrixMultiply = function (...args: (DOMMatrix | SVGMatrix)[]): SVGMatrix {
-  const m = args.reduceRight((prev, m1) => {
-    return (m1 as SVGMatrix).multiply(prev as SVGMatrix);
-  }) as SVGMatrix;
+    const m = args.reduceRight((prev, m1) => {
+        return (m1 as SVGMatrix).multiply(prev as SVGMatrix);
+    }) as SVGMatrix;
 
-  if (Math.abs(m.a) < NEAR_ZERO) {
-    m.a = 0;
-  }
-  if (Math.abs(m.b) < NEAR_ZERO) {
-    m.b = 0;
-  }
-  if (Math.abs(m.c) < NEAR_ZERO) {
-    m.c = 0;
-  }
-  if (Math.abs(m.d) < NEAR_ZERO) {
-    m.d = 0;
-  }
-  if (Math.abs(m.e) < NEAR_ZERO) {
-    m.e = 0;
-  }
-  if (Math.abs(m.f) < NEAR_ZERO) {
-    m.f = 0;
-  }
+    if (Math.abs(m.a) < NEAR_ZERO) {
+        m.a = 0;
+    }
+    if (Math.abs(m.b) < NEAR_ZERO) {
+        m.b = 0;
+    }
+    if (Math.abs(m.c) < NEAR_ZERO) {
+        m.c = 0;
+    }
+    if (Math.abs(m.d) < NEAR_ZERO) {
+        m.d = 0;
+    }
+    if (Math.abs(m.e) < NEAR_ZERO) {
+        m.e = 0;
+    }
+    if (Math.abs(m.f) < NEAR_ZERO) {
+        m.f = 0;
+    }
 
-  return m;
+    return m;
 };
 
 /**
@@ -91,30 +91,30 @@ export const matrixMultiply = function (...args: (DOMMatrix | SVGMatrix)[]): SVG
  * @returns Whether or not a matrix transform was found
  */
 export const hasMatrixTransform = function (tlist: SVGTransformList | null): boolean {
-  if (!tlist) {
-    return false;
-  }
-  let num = tlist.numberOfItems;
-  while (num--) {
-    const xform = tlist.getItem(num);
-    if (xform.type === 1 && !isIdentity(xform.matrix)) {
-      return true;
+    if (!tlist) {
+        return false;
     }
-  }
-  return false;
+    let num = tlist.numberOfItems;
+    while (num--) {
+        const xform = tlist.getItem(num);
+        if (xform.type === 1 && !isIdentity(xform.matrix)) {
+            return true;
+        }
+    }
+    return false;
 };
 
 export interface TransformedBox {
-  tl: XYObject;
-  tr: XYObject;
-  bl: XYObject;
-  br: XYObject;
-  aabox: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+    tl: XYObject;
+    tr: XYObject;
+    bl: XYObject;
+    br: XYObject;
+    aabox: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
 }
 
 /**
@@ -127,28 +127,28 @@ export interface TransformedBox {
  * @returns
  */
 export const transformBox = function (l: number, t: number, w: number, h: number, m: DOMMatrix | SVGMatrix): TransformedBox {
-  const tl = transformPoint(l, t, m);
-  const tr = transformPoint(l + w, t, m);
-  const bl = transformPoint(l, t + h, m);
-  const br = transformPoint(l + w, t + h, m);
+    const tl = transformPoint(l, t, m);
+    const tr = transformPoint(l + w, t, m);
+    const bl = transformPoint(l, t + h, m);
+    const br = transformPoint(l + w, t + h, m);
 
-  const minx = Math.min(tl.x, tr.x, bl.x, br.x);
-  const maxx = Math.max(tl.x, tr.x, bl.x, br.x);
-  const miny = Math.min(tl.y, tr.y, bl.y, br.y);
-  const maxy = Math.max(tl.y, tr.y, bl.y, br.y);
+    const minx = Math.min(tl.x, tr.x, bl.x, br.x);
+    const maxx = Math.max(tl.x, tr.x, bl.x, br.x);
+    const miny = Math.min(tl.y, tr.y, bl.y, br.y);
+    const maxy = Math.max(tl.y, tr.y, bl.y, br.y);
 
-  return {
-    tl,
-    tr,
-    bl,
-    br,
-    aabox: {
-      x: minx,
-      y: miny,
-      width: maxx - minx,
-      height: maxy - miny,
-    },
-  };
+    return {
+        tl,
+        tr,
+        bl,
+        br,
+        aabox: {
+            x: minx,
+            y: miny,
+            width: maxx - minx,
+            height: maxy - miny,
+        },
+    };
 };
 
 /**
@@ -163,29 +163,29 @@ export const transformBox = function (l: number, t: number, w: number, h: number
  * @returns A single matrix transform object
  */
 export const transformListToTransform = function (tlist: SVGTransformList | null, min?: number, max?: number): SVGTransform {
-  if (!tlist) {
-    // Or should tlist = null have been prevented before this?
-    return svg.createSVGTransformFromMatrix(svg.createSVGMatrix());
-  }
-  min = min || 0;
-  max = max || tlist.numberOfItems - 1;
-  // min = Number.parseInt(min);
-  // max = Number.parseInt(max);
-  if (min > max) {
-    const temp = max;
-    max = min;
-    min = temp;
-  }
-  let m = svg.createSVGMatrix();
-  for (let i = min; i <= max; ++i) {
-    // if our indices are out of range, just use a harmless identity matrix
-    const mtom =
-      i >= 0 && i < tlist.numberOfItems
-        ? tlist.getItem(i).matrix
-        : svg.createSVGMatrix();
-    m = matrixMultiply(m, mtom);
-  }
-  return svg.createSVGTransformFromMatrix(m);
+    if (!tlist) {
+        // Or should tlist = null have been prevented before this?
+        return svg.createSVGTransformFromMatrix(svg.createSVGMatrix());
+    }
+    min = min || 0;
+    max = max || tlist.numberOfItems - 1;
+    // min = Number.parseInt(min);
+    // max = Number.parseInt(max);
+    if (min > max) {
+        const temp = max;
+        max = min;
+        min = temp;
+    }
+    let m = svg.createSVGMatrix();
+    for (let i = min; i <= max; ++i) {
+        // if our indices are out of range, just use a harmless identity matrix
+        const mtom =
+            i >= 0 && i < tlist.numberOfItems
+                ? tlist.getItem(i).matrix
+                : svg.createSVGMatrix();
+        m = matrixMultiply(m, mtom);
+    }
+    return svg.createSVGTransformFromMatrix(m);
 };
 
 /**
@@ -194,8 +194,8 @@ export const transformListToTransform = function (tlist: SVGTransformList | null
  * @returns The matrix object associated with the element's transformlist
  */
 export const getMatrix = (elem: SVGGraphicsElement): SVGMatrix => {
-  const tlist = elem.transform.baseVal;
-  return transformListToTransform(tlist).matrix;
+    const tlist = elem.transform.baseVal;
+    return transformListToTransform(tlist).matrix;
 };
 
 /**
@@ -208,18 +208,18 @@ export const getMatrix = (elem: SVGGraphicsElement): SVGMatrix => {
  * @returns
  */
 export const snapToAngle = (x1: number, y1: number, x2: number, y2: number): AngleCoord45 => {
-  const snap = Math.PI / 4; // 45 degrees
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const angle = Math.atan2(dy, dx);
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const snapangle = Math.round(angle / snap) * snap;
+    const snap = Math.PI / 4; // 45 degrees
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const angle = Math.atan2(dy, dx);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const snapangle = Math.round(angle / snap) * snap;
 
-  return {
-    x: x1 + dist * Math.cos(snapangle),
-    y: y1 + dist * Math.sin(snapangle),
-    a: snapangle,
-  };
+    return {
+        x: x1 + dist * Math.cos(snapangle),
+        y: y1 + dist * Math.sin(snapangle),
+        a: snapangle,
+    };
 };
 
 /**
@@ -229,10 +229,10 @@ export const snapToAngle = (x1: number, y1: number, x2: number, y2: number): Ang
  * @returns True if rectangles intersect
  */
 export const rectsIntersect = (r1: SVGRect, r2: SVGRect): boolean => {
-  return (
-    r2.x < r1.x + r1.width &&
-    r2.x + r2.width > r1.x &&
-    r2.y < r1.y + r1.height &&
-    r2.y + r2.height > r1.y
-  );
+    return (
+        r2.x < r1.x + r1.width &&
+        r2.x + r2.width > r1.x &&
+        r2.y < r1.y + r1.height &&
+        r2.y + r2.height > r1.y
+    );
 };

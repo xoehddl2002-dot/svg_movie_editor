@@ -51,6 +51,7 @@ SVG Movie Editor는 Next.js 기반의 웹 비디오 편집 애플리케이션입
 - 템플릿은 카테고리(F: Full HD, S: Story, T: Text Banner)별로 구분
 - 카테고리에 따라 자동으로 적절한 종횡비 설정
 - 템플릿 선택 시 `initProjectWithTemplate` 호출로 프로젝트 초기화
+- JSON의 `image-list`를 사용하여 이미지 경로 매핑 (ID 기반 조회) 및 경로 보정
 
 ### 2. 타임라인 편집
 - 드래그 앤 드롭으로 클립 이동 및 길이 조정
@@ -101,6 +102,8 @@ SVG Movie Editor는 Next.js 기반의 웹 비디오 편집 애플리케이션입
 ### 4. 변형 및 좌표 시스템
 - ✅ 위치(`x`, `y`)는 **프로젝트 좌표계** 기준 (픽셀 단위)
 - ✅ 크롭은 **퍼센트(0-100)** 단위
+- ✅ 모든 이미지(`image` 타입)는 기본적으로 crop `{ x: 0, y: 0, width: 100, height: 100 }`을 가짐 (전체 이미지 표시)
+- ✅ 템플릿의 `g` 태그(clip-path 포함)는 크롭된 이미지로 처리하며, 내부 ID 참조는 해당 그룹(`element`) 범위 내에서 탐색
 - ✅ 회전은 **도(degrees)** 단위
 - ✅ 필터 값은 기본값이 1 (밝기, 대비, 채도), 블러는 0
 - ❌ CSS 변형과 혼동하지 않기
@@ -113,6 +116,7 @@ SVG Movie Editor는 Next.js 기반의 웹 비디오 편집 애플리케이션입
 
 ### 6. 파일 경로 및 리소스
 - ✅ 프리셋 에셋은 `/assets/` 경로 사용 (public 디렉토리 기준)
+- ✅ 환경별 리소스 경로는 `src/lib/config.ts`의 `RESOURCE_BASE_PATH` 사용 (`process.env.NEXT_PUBLIC_RESOURCE_BASE_PATH`로 설정 가능)
 - ✅ 사용자 업로드 파일은 Data URL 또는 Blob URL 사용
 - ✅ SVG 템플릿은 `public/data/templates.json`에 정의
 - ❌ 절대 경로나 외부 URL 하드코딩 금지

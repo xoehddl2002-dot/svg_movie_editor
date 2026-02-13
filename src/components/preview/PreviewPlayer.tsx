@@ -5,7 +5,7 @@ import { useStore, type Clip } from "@/store/useStore"
 import React, { useEffect, useRef, useState } from "react"
 import { DynamicSvg } from "./DynamicSvg"
 import { TransformControls } from "./TransformControls"
-import { getTextDimensions } from "@/utils/textUtils"
+import { getTextDimensions } from '@/utils/text'
 
 const getMediaStyle = (clip: Clip): React.CSSProperties => {
     const flipH = clip.flipH || false

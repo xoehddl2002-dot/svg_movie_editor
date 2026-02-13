@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore, type Clip } from '@/store/useStore';
-import { getTextDimensions } from '@/utils/textUtils';
+import { getTextDimensions } from '@/utils/text';
 
 interface TransformControlsProps {
     clip: Clip;

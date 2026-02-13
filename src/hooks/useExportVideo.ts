@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
-import { renderFrame, prefetchVideoFrames } from '@/utils/renderCanvas'
+import { renderFrame, prefetchVideoFrames } from '@/utils/render'
 
 interface UseExportVideoReturn {
     exportVideo: (fps: number) => Promise<void>

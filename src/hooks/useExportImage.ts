@@ -1,7 +1,7 @@
 
 import { useState } from 'react'
 import { useStore } from '@/store/useStore'
-import { renderFrame } from '@/utils/renderCanvas'
+import { renderFrame } from '@/utils/render'
 
 interface UseExportImageReturn {
     exportImage: () => Promise<void>

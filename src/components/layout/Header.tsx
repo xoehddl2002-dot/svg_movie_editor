@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { LayoutTemplate, Settings, Save, Upload } from "lucide-react"
 import { ExportModal } from "./ExportModal"
 import { useStore } from "@/store/useStore"
@@ -63,10 +64,10 @@ export function Header() {
 
     return (
         <header className="flex h-14 items-center justify-between border-b bg-background px-4">
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
                 <LayoutTemplate className="h-6 w-6 text-primary" />
                 <span className="text-lg font-bold">Midnight SVG Edit</span>
-            </div>
+            </Link>
             <div className="flex items-center gap-2">
                 <Input
                     type="file"
