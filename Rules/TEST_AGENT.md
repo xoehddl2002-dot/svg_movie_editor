@@ -77,5 +77,5 @@ npm test -- --coverage
 
 ## 참조 파일
 - `Rules/AI_ENGINEERING_CONTRACT.md` — 전체 프로젝트 규칙
-- `Rules/FEATURE_AGENT.md` — 비즈니스 로직 구조 참조
-- `Rules/FOUNDATION_AGENT.md` — 컴포넌트/유틸리티 구조 참조
+- `Rules/FEATURE_AGENT.md` — 비즈니스 로직/유틸리티 구조 참조
+- `Rules/PAGE_AGENT.md` — UI 컴포넌트 구조 참조

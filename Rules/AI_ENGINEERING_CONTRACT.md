@@ -19,7 +19,7 @@ SVG Movie Editor는 Next.js 기반의 웹 비디오 편집 애플리케이션입
 
 ### 상태 관리
 - **Zustand 5.0.11** - 전역 상태 관리
-  - 위치: `src/store/useStore.ts`
+  - 위치: `src/features/editor/store/useStore.ts`
   - 모든 편집 상태, 트랙, 클립, 타임라인 정보를 관리
 
 ### UI 라이브러리
@@ -176,7 +176,7 @@ npm run dev  # http://localhost:3000에서 개발 서버 실행
 ### 프로젝트 특정 파일
 - `public/data/templates.json`: 템플릿 정의 참조
 - `public/data/assets.json`: 프리셋 에셋 참조
-- `src/store/useStore.ts`: 전체 데이터 모델 및 상태 관리 로직
+- `src/features/editor/store/useStore.ts`: 전체 데이터 모델 및 상태 관리 로직
 
 ---
 
