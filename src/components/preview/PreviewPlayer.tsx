@@ -8,58 +8,16 @@ import { TransformControls } from "./TransformControls"
 import { getTextDimensions } from '@/utils/text'
 
 const getMediaStyle = (clip: Clip): React.CSSProperties => {
-    const flipH = clip.flipH || false
-    const flipV = clip.flipV || false
-    const rotation = clip.rotation || 0
-
-    const mask = clip.mask
-    let transformOrigin = 'center center'
-    if (mask) {
-        transformOrigin = `${mask.x + mask.width / 2}% ${mask.y + mask.height / 2}%`
-    }
-
+    // Only handle sizing here, transforms are moved to parent G
     return {
         width: '100%',
         height: '100%',
         objectFit: 'fill',
-        transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1})`,
-        transformOrigin: 'center center'
+        pointerEvents: 'none'
     }
 }
 
-const getMaskStyle = (clip: Clip): React.CSSProperties => {
-    const mask = clip.mask
-    if (!mask) {
-        return {
-            width: '100%',
-            height: '100%'
-        }
-    }
-
-    const scaleX = 100 / mask.width
-    const scaleY = 100 / mask.height
-
-    const style: React.CSSProperties = {
-        width: `${mask.width}%`,
-        height: `${mask.height}%`,
-        position: 'absolute',
-        top: `${mask.y}%`,
-        left: `${mask.x}%`,
-        overflow: 'hidden'
-    }
-
-    // Apply shape and corner radius
-    if (mask.shape === 'circle') {
-        style.borderRadius = '50%'
-        style.clipPath = 'circle(50% at 50% 50%)'
-    } else if (mask.cornerRadius !== undefined) {
-        style.borderRadius = `${mask.cornerRadius}%`
-    }
-
-    return style
-}
-
-function VideoClip({ clip, currentTime, isPlaying, onReady }: { clip: Clip, currentTime: number, isPlaying: boolean, onReady?: (id: string) => void }) {
+function VideoClip({ clip, currentTime, isPlaying, onReady, forceCheck }: { clip: Clip, currentTime: number, isPlaying: boolean, onReady?: (id: string) => void, forceCheck: number }) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const relativeTime = currentTime - clip.start
     const mediaTime = relativeTime + (clip.mediaStart || 0)
@@ -79,9 +37,35 @@ function VideoClip({ clip, currentTime, isPlaying, onReady }: { clip: Clip, curr
         const video = videoRef.current
         if (!video) return
 
+        const checkReady = () => {
+            if (video.readyState >= 2) {
+                onReady?.(clip.id)
+            }
+        }
+
+        // Check immediately
+        checkReady()
+
+        const interval = setInterval(checkReady, 500) // Fallback poll
+
+        video.addEventListener('canplay', checkReady)
+        video.addEventListener('loadeddata', checkReady)
+
+        return () => {
+            clearInterval(interval)
+            video.removeEventListener('canplay', checkReady)
+            video.removeEventListener('loadeddata', checkReady)
+        }
+    }, [clip.src, onReady, forceCheck])
+
+    useEffect(() => {
+        const video = videoRef.current
+        if (!video) return
+
         const drift = Math.abs(video.currentTime - mediaTime)
         const threshold = isPlaying ? 0.3 : 0.05
 
+        // Only sync if visible time diff is significant
         if (drift > threshold) {
             video.currentTime = mediaTime
         }
@@ -99,32 +83,36 @@ function VideoClip({ clip, currentTime, isPlaying, onReady }: { clip: Clip, curr
         return { filter: `brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(${blur}px)` }
     }
 
-    console.log('[PreviewPlayer] Rendering video:', clip.name, 'src:', clip.src)
+    // console.log('[PreviewPlayer] Rendering video:', clip.name, 'src:', clip.src)
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-            <div style={getMaskStyle(clip)}>
-                <video
-                    draggable={false}
-                    className="select-none"
-                    ref={videoRef}
-                    src={clip.src}
-                    style={{ ...getMediaStyle(clip), ...getFilterStyle(), pointerEvents: 'none' }}
-                    muted={clip.volume === 0}
-                    playsInline
-                    preload="auto"
-                    onError={(e) => console.error('[PreviewPlayer] Video load error:', clip.src, e)}
-                    onLoadedData={() => {
-                        console.log('[PreviewPlayer] Video loaded successfully:', clip.src);
-                        onReady?.(clip.id);
-                    }}
-                />
-            </div>
+            <video
+                draggable={false}
+                className="select-none"
+                ref={videoRef}
+                src={clip.src}
+                style={{ ...getMediaStyle(clip), ...getFilterStyle() }}
+                muted={clip.volume === 0}
+                playsInline
+                preload="auto"
+                onError={(e) => {
+                    console.error('[PreviewPlayer] Video load error:', clip.src, e)
+                    // Mark as ready even on error to prevent blocking
+                    onReady?.(clip.id)
+                }}
+                onLoadedData={() => {
+                    onReady?.(clip.id);
+                }}
+                onCanPlay={() => {
+                    onReady?.(clip.id);
+                }}
+            />
         </div>
     )
 }
 
-function AudioClip({ clip, currentTime, isPlaying, onReady }: { clip: Clip, currentTime: number, isPlaying: boolean, onReady?: (id: string) => void }) {
+function AudioClip({ clip, currentTime, isPlaying, onReady, forceCheck }: { clip: Clip, currentTime: number, isPlaying: boolean, onReady?: (id: string) => void, forceCheck: number }) {
     const mediaRef = useRef<HTMLMediaElement>(null)
     const relativeTime = currentTime - clip.start
     const mediaTime = relativeTime + (clip.mediaStart || 0)
@@ -143,6 +131,26 @@ function AudioClip({ clip, currentTime, isPlaying, onReady }: { clip: Clip, curr
             media.pause()
         }
     }, [isPlaying, relativeTime, clip.duration])
+
+    useEffect(() => {
+        const media = mediaRef.current
+        if (!media) return
+
+        const checkReady = () => {
+            if (media.readyState >= 2) {
+                onReady?.(clip.id)
+            }
+        }
+
+        checkReady()
+        media.addEventListener('canplay', checkReady)
+        media.addEventListener('loadeddata', checkReady)
+
+        return () => {
+            media.removeEventListener('canplay', checkReady)
+            media.removeEventListener('loadeddata', checkReady)
+        }
+    }, [clip.src, onReady, forceCheck])
 
     useEffect(() => {
         const media = mediaRef.current
@@ -180,6 +188,64 @@ function AudioClip({ clip, currentTime, isPlaying, onReady }: { clip: Clip, curr
             src={clip.src}
             preload="auto"
             onLoadedData={() => onReady?.(clip.id)}
+            onCanPlay={() => onReady?.(clip.id)}
+            onError={() => onReady?.(clip.id)}
+        />
+    )
+}
+function ImageClip({ clip, onReady, forceCheck }: { clip: Clip, onReady?: (id: string) => void, forceCheck: number }) {
+    const imgRef = useRef<HTMLImageElement>(null)
+
+    useEffect(() => {
+        const img = imgRef.current
+        if (!img) return
+
+        const checkReady = () => {
+            if (img.complete) {
+                // Try to decode if supported for smoother playback start
+                if ('decode' in img) {
+                    img.decode()
+                        .then(() => {
+                            onReady?.(clip.id)
+                        })
+                        .catch((err) => {
+                            console.warn(`Image decode failed for ${clip.id}`, err)
+                            onReady?.(clip.id)
+                        })
+                } else {
+                    onReady?.(clip.id)
+                }
+            }
+        }
+
+        checkReady()
+    }, [forceCheck, onReady, clip.src])
+
+    return (
+        <img
+            draggable={false}
+            className="select-none"
+            src={clip.src}
+            style={getMediaStyle(clip)}
+            alt=""
+            ref={imgRef}
+            onLoad={() => {
+                // Check ready logic will handle it via effect or we can call it here too
+                // but effect is safer particularly if cached.
+                // Actually onLoad is good trigger for decode too.
+                if (imgRef.current) {
+                    const img = imgRef.current;
+                    if ('decode' in img) {
+                        img.decode().then(() => onReady?.(clip.id)).catch(() => onReady?.(clip.id));
+                    } else {
+                        onReady?.(clip.id);
+                    }
+                }
+            }}
+            onError={(e) => {
+                console.error('[PreviewPlayer] Image load error:', clip.src, e);
+                onReady?.(clip.id);
+            }}
         />
     )
 }
@@ -198,18 +264,25 @@ export function PreviewPlayer() {
     } = useStore()
     const [isPlaying, setIsPlaying] = useState(false)
     const [readyAssets, setReadyAssets] = useState<Set<string>>(new Set())
+    const [forceCheck, setForceCheck] = useState(0)
     const requestRef = useRef<number | null>(null)
     const lastTimeRef = useRef<number>(0)
     const svgRef = useRef<SVGSVGElement>(null)
 
-    const handleReady = (id: string) => {
-        setReadyAssets(prev => new Set(prev).add(id))
-    }
+    const handleReady = React.useCallback((id: string) => {
+        setReadyAssets(prev => {
+            if (prev.has(id)) return prev
+            const next = new Set(prev)
+            next.add(id)
+            return next
+        })
+    }, [])
 
     // Reset ready assets when time changes significantly (seeking)
     useEffect(() => {
         if (!isPlaying) {
             setReadyAssets(new Set())
+            setForceCheck(prev => prev + 1)
         }
     }, [currentTime, isPlaying])
 
@@ -255,17 +328,22 @@ export function PreviewPlayer() {
     }, [activeClips, readyAssets]);
 
     const togglePlay = () => {
+        // Reset ready assets and force check whenever playback is initiated or restarted
+        // This ensures all assets are re-evaluated for readiness.
+        setReadyAssets(new Set())
+        setForceCheck(prev => prev + 1)
+
         // If at the end, restart from beginning
         if (currentTime >= duration) {
             setCurrentTime(0)
-            // Force re-check of assets at the beginning
-            setReadyAssets(new Set())
             setIsPlaying(true)
             lastTimeRef.current = performance.now()
             return
         }
 
         if (!isPlaying) {
+            setReadyAssets(new Set())
+            setForceCheck(prev => prev + 1)
             lastTimeRef.current = performance.now()
         }
         setIsPlaying((prev) => !prev)
@@ -329,6 +407,8 @@ export function PreviewPlayer() {
         let w = clip.width || (projectWidth / 4);
         let h = clip.height || (projectHeight / 4);
         const r = clip.rotation || 0;
+        const flipH = clip.flipH || false;
+        const flipV = clip.flipV || false;
 
         // Text specific dimension override
         if (clip.type === 'text') {
@@ -345,68 +425,90 @@ export function PreviewPlayer() {
             opacity: clip.opacity ?? 1,
         }
 
-        const getFilterStyle = (): React.CSSProperties => {
-            if (!clip.filter) return {}
-            const { brightness, contrast, saturate, blur } = clip.filter
-            return { filter: `brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(${blur}px)` }
-        }
+        // Clip Template Data for Mask
+        const maskId = `mask-${clip.id}`;
+        const hasMask = clip.type !== 'text' && clip.type !== 'audio' && clip.type !== 'shape' && clip.type !== 'icon' && clip.templateData && Object.keys(clip.templateData).length > 0;
+
+        const renderMaskDefs = () => {
+            if (!hasMask) return null;
+
+            // Calculate scale based on viewBox vs rendered size
+            // Default legacy bounds 100x100 if no viewBox
+            let vbx = 0, vby = 0, vbw = 100, vbh = 100;
+            if (clip.viewBox) {
+                // Robust parsing for comma or space separated numbers
+                const parts = clip.viewBox.split(/[ ,]+/).filter(Boolean).map(Number);
+                if (parts.length === 4) {
+                    [vbx, vby, vbw, vbh] = parts;
+                }
+            }
+
+            // Scale mask to fit current dimensions
+            // Protect against division by zero
+            const safeVbw = vbw === 0 ? 100 : vbw;
+            const safeVbh = vbh === 0 ? 100 : vbh;
+
+            const sx = w / safeVbw;
+            const sy = h / safeVbh;
+
+            return (
+                <defs>
+                    <mask id={maskId}>
+                        <rect x="0" y="0" width="100%" height="100%" fill="black" />
+                        <g transform={`scale(${sx}, ${sy}) translate(${-vbx}, ${-vby})`}>
+                            {Object.values(clip.templateData).map((data: any) => (
+                                <path key={data.id} d={data.d} fill="white" />
+                            ))}
+                        </g>
+                    </mask>
+                </defs>
+            );
+        };
 
         const renderInner = () => {
             switch (clip.type) {
                 case 'video':
                     return (
-                        <foreignObject {...commonProps}>
-                            <VideoClip clip={clip} currentTime={currentTime} isPlaying={isPlaying} onReady={() => handleReady(clip.id)} />
-                        </foreignObject>
+                        <g>
+                            {renderMaskDefs()}
+                            <foreignObject {...commonProps} mask={hasMask ? `url(#${maskId})` : undefined}>
+                                <VideoClip clip={clip} currentTime={currentTime} isPlaying={isPlaying && isReady} onReady={() => handleReady(clip.id)} forceCheck={forceCheck} />
+                            </foreignObject>
+                        </g>
                     )
                 case 'audio':
                     return (
                         <foreignObject x={0} y={0} width={0} height={0}>
-                            <AudioClip clip={clip} currentTime={currentTime} isPlaying={isPlaying} onReady={() => handleReady(clip.id)} />
+                            <AudioClip clip={clip} currentTime={currentTime} isPlaying={isPlaying && isReady} onReady={() => handleReady(clip.id)} forceCheck={forceCheck} />
                         </foreignObject>
                     )
                 case 'mask':
                 case 'image':
-
                     return (
-                        <foreignObject {...commonProps}>
-                            {clip.type === 'mask' ? (
-                                <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-                                    <DynamicSvg
-                                        src={clip.src}
-                                        templateData={clip.templateData}
-                                        fill={clip.color}
-                                        mask={clip.mask}
-                                        filter={clip.filter}
-                                        onLoad={() => handleReady(clip.id)}
-                                    />
-                                </div>
-                            ) : (
-                                <div style={getMaskStyle(clip)}>
-                                    <img
-                                        draggable={false}
-                                        className="select-none"
-                                        src={clip.src}
-                                        style={getMediaStyle(clip)}
-                                        alt=""
-                                        onLoad={() => {
-                                            console.log('[PreviewPlayer] Image loaded successfully:', clip.src);
-                                            handleReady(clip.id);
-                                        }}
-                                        onError={(e) => {
-                                            console.error('[PreviewPlayer] Image load error:', clip.src, e);
-                                            handleReady(clip.id); // Also count as ready to avoid stuck playback
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </foreignObject>
+                        <g>
+                            {renderMaskDefs()}
+                            <foreignObject {...commonProps} mask={hasMask ? `url(#${maskId})` : undefined}>
+                                {clip.type === 'mask' ? (
+                                    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                                        <DynamicSvg
+                                            src={clip.src}
+                                            templateData={clip.templateData}
+                                            fill={clip.color}
+                                            mask={clip.mask}
+                                            filter={clip.filter}
+                                            onLoad={() => handleReady(clip.id)}
+                                            forceCheck={forceCheck}
+                                        />
+                                    </div>
+                                ) : (
+                                    <ImageClip clip={clip} onReady={() => handleReady(clip.id)} forceCheck={forceCheck} />
+                                )}
+                            </foreignObject>
+                        </g>
                     )
                 case 'text':
-                    // Auto-calculate text dimensions based on font size and content
                     const fontSize = clip.fontSize || 120;
                     const textContent = clip.text || 'Text';
-                    // Dimensions are already calculated in w and h
 
                     return (
                         <foreignObject
@@ -452,6 +554,7 @@ export function PreviewPlayer() {
                                     templateData={clip.templateData}
                                     fill={clip.color}
                                     onLoad={() => handleReady(clip.id)}
+                                    forceCheck={forceCheck}
                                 />
                             </foreignObject>
                         )
@@ -491,8 +594,6 @@ export function PreviewPlayer() {
             }
         }
 
-        // Calculate rotation center accounting for crop - Reverted to simpler center calculation if needed
-        // But since we reverted to clip-path, w and h are the clip dimensions.
         const rotationCenterX = w / 2;
         const rotationCenterY = h / 2;
 
@@ -511,13 +612,16 @@ export function PreviewPlayer() {
                     e.stopPropagation();
                     if (clip.type === 'image' || clip.type === 'mask' || clip.type === 'video' || clip.type === 'audio') {
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore - setEditingClipId is in store but might not be in type correctly or just to be safe
+                        // @ts-ignore
                         useStore.getState().setEditingClipId(clip.id);
                     }
                 }}
                 className="cursor-pointer"
             >
-                {renderInner()}
+                {/* Apply flip transforms here on the container group of content */}
+                <g transform={`translate(${w / 2}, ${h / 2}) scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) translate(${-w / 2}, ${-h / 2})`}>
+                    {renderInner()}
+                </g>
                 <rect
                     width={w}
                     height={h}

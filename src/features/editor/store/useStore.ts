@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { processTemplate } from '@/utils/template'
 import { loadFont, checkFontLoaded } from '@/utils/fonts'
+import { getRectPath } from '@/features/editor/utils/shapeUtils'
 
 export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon' | 'mask'
 
@@ -194,13 +195,39 @@ export const useStore = create<EditorState>((set, get) => ({
             }
         }
     },
-    addClip: (trackId, clip) => set((state) => ({
-        tracks: state.tracks.map((track) =>
-            track.id === trackId
-                ? { ...track, clips: [...track.clips, clip] }
-                : track
-        )
-    })),
+    addClip: (trackId, clip) => set((state) => {
+        // Enforce default mask for image/video/mask types if not present
+        if (['image', 'video', 'mask'].includes(clip.type)) {
+            if (!clip.templateData || Object.keys(clip.templateData).length === 0) {
+                const w = clip.width || 500;
+                const h = clip.height || 500;
+                const pathD = getRectPath(0, 0, w, h);
+
+                clip.templateData = {
+                    "shape-1": {
+                        type: "path",
+                        d: pathD,
+                        fill: "white",
+                        id: "shape-1",
+                        "data-shape-type": "rect",
+                        x: 0,
+                        y: 0,
+                        width: w,
+                        height: h
+                    }
+                };
+                clip.viewBox = `0 0 ${w} ${h}`;
+            }
+        }
+
+        return {
+            tracks: state.tracks.map((track) =>
+                track.id === trackId
+                    ? { ...track, clips: [...track.clips, clip] }
+                    : track
+            )
+        };
+    }),
 
     removeClip: (clipId) => set((state) => ({
         tracks: state.tracks.map((track) => ({

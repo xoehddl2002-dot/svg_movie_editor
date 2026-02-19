@@ -102,6 +102,23 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                     </Button>
                 )}
 
+                {/* Timing */}
+                <div className="space-y-4">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase">Timing</Label>
+                    <div className="space-y-2">
+                        <div className="flex justify-between">
+                            <Label className="text-xs">Duration (s)</Label>
+                            <span className="text-xs font-mono text-muted-foreground">{(clip.duration || 0).toFixed(1)}s</span>
+                        </div>
+                        <Slider
+                            value={[clip.duration || 5]}
+                            max={60}
+                            step={0.1}
+                            onValueChange={([v]) => updateClip(clip.id, { duration: v })}
+                        />
+                    </div>
+                </div>
+
                 {/* Position & Size */}
                 {(clip.type === 'image' || clip.type === 'mask' || clip.type === 'text' || clip.type === 'video' || clip.type === 'shape' || clip.type === 'icon') && (
                     <div className="space-y-4">

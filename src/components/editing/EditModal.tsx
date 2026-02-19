@@ -4,8 +4,6 @@ import {
     DialogContent,
 } from "@/components/ui/dialog"
 import { useStore, type Clip } from "@/features/editor/store/useStore"
-import { VideoEditor } from "./VideoEditor"
-import { ImageEditor } from "./ImageEditor"
 import { MaskEditor } from "./MaskEditor"
 import { AudioEditor } from "./AudioEditor"
 
@@ -49,13 +47,7 @@ export function EditModal() {
                     </div>
                 ) : (
                     <>
-                        {currentClip.type === 'video' && (
-                            <VideoEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
-                        )}
-                        {currentClip.type === 'image' && (
-                            <ImageEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
-                        )}
-                        {currentClip.type === 'mask' && (
+                        {(currentClip.type === 'video' || currentClip.type === 'image' || currentClip.type === 'mask') && (
                             <MaskEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
                         )}
                         {currentClip.type === 'audio' && (

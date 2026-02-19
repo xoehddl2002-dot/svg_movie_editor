@@ -15,9 +15,10 @@ interface DynamicSvgProps {
     };
     filter?: { brightness: number, contrast: number, saturate: number, blur: number };
     onLoad?: () => void;
+    forceCheck?: number;
 }
 
-export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateData, fill, mask, filter, onLoad }: DynamicSvgProps) {
+export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateData, fill, mask, filter, onLoad, forceCheck }: DynamicSvgProps) {
     const [svgContent, setSvgContent] = useState<string>('');
     const containerRef = useRef<HTMLDivElement>(null);
     const lastAppliedDataRef = useRef<string>('');
@@ -133,9 +134,38 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
             }
         }
 
-        // Call onLoad when processing is finished
-        onLoad?.();
-    }, [svgContent, templateData, fill, mask, filter]);
+        // Check for inner images and wait for them to load
+        const innerImages = svgElement.querySelectorAll('image');
+        if (innerImages.length > 0) {
+            const imagePromises = Array.from(innerImages).map(img => {
+                const svgImg = img as SVGImageElement;
+                if (!svgImg.href.baseVal) return Promise.resolve();
+
+                return new Promise<void>((resolve) => {
+                    const tempImg = new Image();
+                    tempImg.onload = () => resolve();
+                    tempImg.onerror = () => resolve(); // Resolve even on error to avoid blocking
+                    tempImg.src = svgImg.href.baseVal;
+                });
+            });
+
+            Promise.all(imagePromises).then(() => {
+                // Double requestAnimationFrame to ensure paint
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        onLoad?.();
+                    });
+                });
+            });
+        } else {
+            // No images, just wait for paint
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    onLoad?.();
+                });
+            });
+        }
+    }, [svgContent, templateData, fill, mask, filter, forceCheck]);
 
     return (
         <div
