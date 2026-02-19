@@ -413,6 +413,7 @@ export const findDefs = function () {
  * @returns {module:utilities.BBoxObject} A BBox-like object
  */
 export const getPathBBox = function (path: SVGPathElement) {
+    // @ts-expect-error pathSegList is a deprecated SVG 1.1 API removed from modern DOM typings (SVG 2), but still supported at runtime
     const seglist = path.pathSegList;
     const tot = seglist.numberOfItems;
 
