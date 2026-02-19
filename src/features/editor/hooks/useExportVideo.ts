@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react'
-import { useStore } from '@/store/useStore'
+import { useStore } from '@/features/editor/store/useStore'
 import { renderFrame, prefetchVideoFrames } from '@/utils/render'
 
 interface UseExportVideoReturn {

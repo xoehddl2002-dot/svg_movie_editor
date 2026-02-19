@@ -3,7 +3,7 @@ import {
     Dialog,
     DialogContent,
 } from "@/components/ui/dialog"
-import { useStore, type Clip } from "@/store/useStore"
+import { useStore, type Clip } from "@/features/editor/store/useStore"
 import { VideoEditor } from "./VideoEditor"
 import { ImageEditor } from "./ImageEditor"
 import { MaskEditor } from "./MaskEditor"

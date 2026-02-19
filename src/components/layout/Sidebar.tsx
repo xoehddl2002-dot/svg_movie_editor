@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Type, Image as ImageIcon, FileVideo, Shapes, Music, LayoutTemplate, Settings } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useStore } from "@/store/useStore"
+import { useStore } from "@/features/editor/store/useStore"
 
 import { TemplatesTab } from "./sidebar/TemplatesTab"
 import { VideoTab } from "./sidebar/VideoTab"

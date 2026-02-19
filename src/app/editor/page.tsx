@@ -6,7 +6,7 @@ import { PreviewPlayer } from "@/components/preview/PreviewPlayer"
 import { Timeline } from "@/components/timeline/Timeline"
 import { EditModal } from "@/components/editing/EditModal"
 import { useEffect } from "react"
-import { useStore } from "@/store/useStore"
+import { useStore } from "@/features/editor/store/useStore"
 import { useRouter } from "next/navigation"
 
 export default function EditorPage() {

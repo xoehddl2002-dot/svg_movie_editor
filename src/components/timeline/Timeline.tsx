@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Plus, Trash2 } from "lucide-react"
-import { useStore } from "@/store/useStore"
+import { useStore } from "@/features/editor/store/useStore"
 import { Track } from "./Track"
 import { Ruler } from "./Ruler"
 import React, { useRef, useEffect } from "react"

@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { useStore } from '@/store/useStore'
+import { useStore } from '@/features/editor/store/useStore'
 import { renderFrame } from '@/utils/render'
 
 interface UseExportImageReturn {

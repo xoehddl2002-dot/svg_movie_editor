@@ -4,7 +4,7 @@ import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Music, Volume2, Scissors } from "lucide-react"
-import { Clip } from "@/store/useStore"
+import { Clip } from "@/features/editor/store/useStore"
 import { AudioWaveformEditor } from "./AudioWaveformEditor"
 import { cn } from "@/lib/utils"
 

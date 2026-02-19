@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Loader2, Video, Image as ImageIcon } from "lucide-react"
-import { useExportImage } from '@/hooks/useExportImage'
-import { useExportVideo } from '@/hooks/useExportVideo'
+import { useExportImage } from '@/features/editor/hooks/useExportImage'
+import { useExportVideo } from '@/features/editor/hooks/useExportVideo'
 
 export function ExportModal() {
     const [isOpen, setIsOpen] = useState(false)

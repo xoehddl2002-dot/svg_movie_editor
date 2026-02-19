@@ -1,4 +1,4 @@
-import { useStore, type Clip as ClipType } from "@/store/useStore"
+import { useStore, type Clip as ClipType } from "@/features/editor/store/useStore"
 import { FileVideo, Image as ImageIcon, Music, Type, Shapes, LayoutTemplate, Smile } from "lucide-react"
 
 interface ClipProps {

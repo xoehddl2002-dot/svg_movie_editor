@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { useStore } from "@/store/useStore"
+import { useStore } from "@/features/editor/store/useStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LayoutTemplate, Search, Info, Upload } from "lucide-react"

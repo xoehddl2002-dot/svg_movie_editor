@@ -3,7 +3,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState, useEffect } from "react"
-import { useStore } from "@/store/useStore"
+import { useStore } from "@/features/editor/store/useStore"
 
 interface TemplateItem {
     id: string

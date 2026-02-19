@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut, Search, Loader2 } from "lucide-react"
-import { useStore, type Clip } from "@/store/useStore"
+import { useStore, type Clip } from "@/features/editor/store/useStore"
 import React, { useEffect, useRef, useState } from "react"
 import { DynamicSvg } from "./DynamicSvg"
 import { TransformControls } from "./TransformControls"
@@ -216,9 +216,16 @@ export function PreviewPlayer() {
     const activeClips = React.useMemo(() => {
         return tracks
             .flatMap((track, trackIndex) => track.clips.map(clip => ({ ...clip, trackOrder: trackIndex })))
-            .filter(clip => currentTime >= clip.start && currentTime < clip.start + clip.duration)
+            .filter(clip => {
+                const clipEnd = clip.start + clip.duration
+                // Standard check: within range [start, end)
+                if (currentTime >= clip.start && currentTime < clipEnd) return true
+                // Special case: if we are at the very end of the project, show clips that end exactly there
+                if (currentTime === duration && currentTime === clipEnd) return true
+                return false
+            })
             .sort((a, b) => b.trackOrder - a.trackOrder)
-    }, [tracks, currentTime]);
+    }, [tracks, currentTime, duration]);
 
     const isReady = React.useMemo(() => {
         // Clips that need explicit loading
@@ -248,10 +255,20 @@ export function PreviewPlayer() {
     }, [activeClips, readyAssets]);
 
     const togglePlay = () => {
+        // If at the end, restart from beginning
+        if (currentTime >= duration) {
+            setCurrentTime(0)
+            // Force re-check of assets at the beginning
+            setReadyAssets(new Set())
+            setIsPlaying(true)
+            lastTimeRef.current = performance.now()
+            return
+        }
+
         if (!isPlaying) {
             lastTimeRef.current = performance.now()
         }
-        setIsPlaying(!isPlaying)
+        setIsPlaying((prev) => !prev)
     }
 
     useEffect(() => {

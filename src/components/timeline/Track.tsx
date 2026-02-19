@@ -1,6 +1,6 @@
 import React from "react"
 import { Clip } from "./Clip"
-import type { Clip as ClipType } from "@/store/useStore"
+import type { Clip as ClipType } from "@/features/editor/store/useStore"
 
 interface TrackProps {
     id: string

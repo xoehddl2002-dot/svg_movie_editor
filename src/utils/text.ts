@@ -1,5 +1,5 @@
 
-import { Clip } from "@/store/useStore";
+import { Clip } from "@/features/editor/store/useStore";
 
 /**
  * Calculates the width and height of a text clip's content.

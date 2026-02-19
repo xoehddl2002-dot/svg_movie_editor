@@ -1,5 +1,5 @@
 
-import { Clip, Track } from "@/store/useStore"
+import { Clip, Track } from "@/features/editor/store/useStore"
 import { imageToDataURL } from '@/utils/dataUrl'
 
 // -------------------------------------------------------------------------

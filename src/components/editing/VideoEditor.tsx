@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Film, Scissors, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw } from "lucide-react"
-import { Clip } from "@/store/useStore"
+import { Clip } from "@/features/editor/store/useStore"
 import { cn } from "@/lib/utils"
 // @ts-ignore
 import ReactCrop, { type Crop, type PixelCrop, type PercentCrop } from 'react-image-crop'

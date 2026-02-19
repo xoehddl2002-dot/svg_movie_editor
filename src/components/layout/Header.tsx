@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { LayoutTemplate, Settings, Save, Upload } from "lucide-react"
 import { ExportModal } from "./ExportModal"
-import { useStore } from "@/store/useStore"
+import { useStore } from "@/features/editor/store/useStore"
 import { useRef } from "react"
 import { Input } from "@/components/ui/input"
 

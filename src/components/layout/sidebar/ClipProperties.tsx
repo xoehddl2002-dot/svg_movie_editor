@@ -1,6 +1,6 @@
 'use client'
 
-import { useStore, type Clip } from "@/store/useStore"
+import { useStore, type Clip } from "@/features/editor/store/useStore"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
