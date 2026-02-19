@@ -3,7 +3,7 @@ import { getStrokedBBox, getBBox } from './svg/utilities'
 import { hasNonIdentityTransform, getMatrix, transformBox, deltaTransformPoint } from './svg/math'
 import { config } from '../lib/config'
 import { urlToDataURL } from './dataUrl'
-import type { Clip, Track, ResourceType } from '../store/useStore'
+import type { Clip, Track, ResourceType } from '../features/editor/store/useStore'
 
 export interface TemplateData {
     name: string
