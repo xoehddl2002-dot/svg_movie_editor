@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 
 interface VideoTabProps {
     videoItems: { src: string, thumbnail?: string }[]
-    onDragStart: (e: React.DragEvent, type: string, src: string) => void
+    onDragStart: (e: React.DragEvent, type: string, src: string, mediaType?: 'video' | 'image') => void
 }
 
 export function VideoTab({ videoItems, onDragStart }: VideoTabProps) {
@@ -18,7 +18,7 @@ export function VideoTab({ videoItems, onDragStart }: VideoTabProps) {
                         key={i}
                         className="overflow-hidden cursor-grab hover:border-primary group relative"
                         draggable
-                        onDragStart={(e) => onDragStart(e, 'mask', item.src)}
+                        onDragStart={(e) => onDragStart(e, 'mask', item.src, 'video')}
                     >
                         <CardContent className="p-0 aspect-video relative">
                             {item.thumbnail ? (

@@ -29,6 +29,7 @@ export interface Clip {
     flipV?: boolean
     // Media specific
     mediaStart?: number // seconds offset into source video
+    mediaType?: 'video' | 'image'
     customPath?: string // SVG path data for custom shapes
     viewBox?: string // SVG viewbox for custom shapes
     mask?: {

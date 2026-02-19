@@ -325,11 +325,38 @@ export const renderFrame = async (
 
         try {
             if (clip.type === 'mask') {
-                const img = await loadImage(clip.src).catch(async () => {
-                    const dataUrl = await imageToDataURL(clip.src)
-                    return await loadImage(dataUrl)
-                }).catch(() => null)
-                if (img) ctx.drawImage(img, 0, 0, w, h)
+                const isVideo = (clip.mediaType === 'video') || clip.src.match(/\.(mp4|webm|mov|m4v)$/i) || clip.src.startsWith('blob:video/');
+                let drawSource: CanvasImageSource | null = null;
+
+                if (isVideo) {
+                    // 1. Try to get from pre-fetched map (Batch Export)
+                    if (frameIndex !== undefined && videoFrameMap) {
+                        const key = `${clip.src}_${frameIndex}`;
+                        const cached = videoFrameMap.get(key);
+                        if (cached) drawSource = cached;
+                    }
+
+                    // 2. Fallback to direct DOM load (Single Export or Cache Miss)
+                    if (!drawSource) {
+                        try {
+                            const videoEl = await loadVideoFrame(clip, projectTime);
+                            drawSource = videoEl;
+                        } catch (e) {
+                            console.warn("Failed to load video frame for export", e);
+                        }
+                    }
+                }
+
+                // 3. If not video or failed to load video, try as Image
+                if (!drawSource) {
+                    const img = await loadImage(clip.src).catch(async () => {
+                        const dataUrl = await imageToDataURL(clip.src)
+                        return await loadImage(dataUrl)
+                    }).catch(() => null)
+                    if (img) drawSource = img;
+                }
+
+                if (drawSource) ctx.drawImage(drawSource, 0, 0, w, h)
 
             } else if (clip.type === 'icon') {
                 // Load SVG with dynamic color/template data

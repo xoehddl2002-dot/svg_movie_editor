@@ -5,9 +5,9 @@ Feature Agent는 애플리케이션의 **비즈니스 로직, 상태 관리, 유
 
 ## 담당 영역
 - `src/features/` — 상태 관리, 도메인 훅
+- `src/features/editor/_components/` — 에디터 전용 컴포넌트 (editing, preview, timeline, layout)
 - `src/utils/` — 공통 유틸리티 함수
 - `src/lib/` — 프레임워크 설정
-- `src/components/` 내 비즈니스 로직 — 좌표 변환, 렌더링 엔진, 드래그/드롭 등
 
 ### 디렉토리 구조
 ```
@@ -52,16 +52,16 @@ src/lib/
 
 | 컴포넌트 | Feature Agent 책임 (비즈니스 로직) |
 |---|---|
-| `editing/MaskEditor` | SVG 좌표 변환, 도형 조작, 크롭 계산 |
-| `editing/AudioEditor` | 오디오 트림, 볼륨 처리 |
-| `preview/PreviewPlayer` | 클립 렌더링 로직, 재생 엔진(rAF), 리소스 로딩 |
-| `preview/TransformControls` | 좌표 변환, 이동/크기/회전 계산 |
-| `preview/DynamicSvg` | SVG 파싱, 템플릿 데이터 적용 |
-| `timeline/Timeline` | 드래그/드롭, 리사이즈, 클립 이동 로직 |
-| `layout/Header` | 프로젝트 저장/불러오기 로직 |
-| `layout/ExportModal` | export hooks 연동 |
-| `layout/Sidebar` | 에셋 로드 로직 |
-| `sidebar/ClipProperties` | 속성 계산(마스크 크롭 역산 등) |
+| `_components/editing/MaskEditor` | SVG 좌표 변환, 도형 조작, 크롭 계산 |
+| `_components/editing/AudioEditor` | 오디오 트림, 볼륨 처리 |
+| `_components/preview/PreviewPlayer` | 클립 렌더링 로직, 재생 엔진(rAF), 리소스 로딩 |
+| `_components/preview/TransformControls` | 좌표 변환, 이동/크기/회전 계산 |
+| `_components/preview/DynamicSvg` | SVG 파싱, 템플릿 데이터 적용 |
+| `_components/timeline/Timeline` | 드래그/드롭, 리사이즈, 클립 이동 로직 |
+| `_components/layout/Header` | 프로젝트 저장/불러오기 로직 |
+| `_components/layout/ExportModal` | export hooks 연동 |
+| `_components/layout/Sidebar` | 에셋 로드 로직 |
+| `_components/layout/sidebar/ClipProperties` | 속성 계산(마스크 크롭 역산 등) |
 
 ## 코딩 규칙
 

@@ -346,6 +346,48 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
             }
 
+            // Extract clipPath shapes for mask/image clips
+            let templateData: Record<string, any> = {};
+            if (type === 'mask' && element) {
+                const style = element.getAttribute('style') || '';
+                let clipPathId = element.getAttribute('clip-path');
+
+                // Check style for clip-path if attribute is missing
+                if (!clipPathId && style.includes('clip-path')) {
+                    const match = style.match(/clip-path\s*:\s*url\(['"]?#([^)'"]+)['"]?\)/);
+                    if (match) clipPathId = match[1];
+                } else if (clipPathId) {
+                    const match = clipPathId.match(/url\(['"]?#([^)'"]+)['"]?\)/);
+                    if (match) clipPathId = match[1];
+                }
+
+                if (clipPathId) {
+                    // Handle case where ID might not have # definition in the attribute itself (sometimes raw ID)
+                    clipPathId = clipPathId.replace(/^url\(#?/, '').replace(/\)$/, '');
+
+                    const clipPathEl = svgDoc.getElementById(clipPathId);
+                    if (clipPathEl) {
+                        Array.from(clipPathEl.children).forEach((child, idx) => {
+                            // Skip text nodes or non-element nodes
+                            if (child.nodeType !== 1) return;
+
+                            const childId = child.id || `${data.id}-mask-shape-${idx}`;
+                            const shapeType = child.tagName.toLowerCase();
+
+                            const attrs: any = { type: shapeType };
+                            Array.from(child.attributes).forEach(attr => {
+                                attrs[attr.name] = attr.value;
+                            });
+
+                            // Ensure fill is defined (default white for mask visibility)
+                            if (!attrs.fill) attrs.fill = 'white';
+
+                            templateData[childId] = attrs;
+                        });
+                    }
+                }
+            }
+
             const clip: Clip = {
                 id: uuidv4(),
                 trackId: '',
@@ -371,7 +413,9 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 attr_rock: item.attr_rock === 'true',
                 image_id: item.image_id,
                 shapes_id: item.shapes_id,
-                max_length: item.max_length ? parseInt(item.max_length, 10) : (type === 'text' ? 15 : undefined)
+                max_length: item.max_length ? parseInt(item.max_length, 10) : (type === 'text' ? 15 : undefined),
+                mediaType: (type === 'mask' && element.querySelector('image')) ? 'image' : undefined,
+                templateData: Object.keys(templateData).length > 0 ? templateData : undefined
             };
             newClips.push(clip);
         });

@@ -1,6 +1,6 @@
 'use client'
 
-import { TemplateSelector } from "@/components/layout/TemplateSelector"
+import { TemplateSelector } from "@/features/home/_components/layout/TemplateSelector"
 
 export default function Home() {
   return <TemplateSelector />

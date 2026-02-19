@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 
 interface ImageTabProps {
     images: string[]
-    onDragStart: (e: React.DragEvent, type: string, src: string) => void
+    onDragStart: (e: React.DragEvent, type: string, src: string, mediaType?: 'video' | 'image') => void
 }
 
 export function ImageTab({ images, onDragStart }: ImageTabProps) {
@@ -18,7 +18,7 @@ export function ImageTab({ images, onDragStart }: ImageTabProps) {
                         key={i}
                         className="overflow-hidden cursor-grab hover:border-primary group relative"
                         draggable
-                        onDragStart={(e) => onDragStart(e, 'mask', src)}
+                        onDragStart={(e) => onDragStart(e, 'mask', src, 'image')}
                     >
                         <CardContent className="p-0 aspect-square relative bg-muted flex items-center justify-center">
                             <img src={src} className="w-full h-full object-cover pointer-events-none" alt={`Asset ${i}`} />

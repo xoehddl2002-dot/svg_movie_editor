@@ -45,8 +45,8 @@ export function Sidebar() {
         loadAssets()
     }, [])
 
-    const handleDragStart = (e: React.DragEvent, type: string, src: string) => {
-        e.dataTransfer.setData("application/json", JSON.stringify({ type, src }))
+    const handleDragStart = (e: React.DragEvent, type: string, src: string, mediaType?: 'video' | 'image') => {
+        e.dataTransfer.setData("application/json", JSON.stringify({ type, src, mediaType }))
     }
 
     const selectedClip = selectedClipId

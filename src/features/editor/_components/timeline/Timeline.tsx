@@ -204,7 +204,7 @@ export function Timeline() {
         if (!data) return
 
         try {
-            const { type, src, customPath, name, templateData, templateCategory, viewBox } = JSON.parse(data)
+            const { type, src, customPath, name, templateData, templateCategory, viewBox, mediaType } = JSON.parse(data)
 
             // Adjust aspect ratio based on template category
             if (templateCategory === 'F') setAspectRatio(1920 / 1080)
@@ -223,18 +223,27 @@ export function Timeline() {
             let width = 500; // Default fallback
             let height = 500;
             let actualDuration = videoDuration;
+            let resolvedMediaType = mediaType;
 
             if (type === 'mask') {
-                // Determine if it's video or image based on src or other heuristics (for now, assume image if not video ext)
-                const isVideo = src.match(/\.(mp4|webm|mov|m4v)$/i) || src.startsWith('blob:video/');
+                // Determine if it's video or image based on mediaType or src heuristics
+                const isVideo = resolvedMediaType === 'video' || src.match(/\.(mp4|webm|mov|m4v)$/i) || src.startsWith('blob:video/');
+                resolvedMediaType = isVideo ? 'video' : 'image';
 
                 if (isVideo) {
                     try {
                         const video = document.createElement('video');
+                        video.preload = 'metadata';
                         video.src = src;
+
+                        // Force load
+                        video.load();
+
                         await new Promise((resolve, reject) => {
                             video.onloadedmetadata = resolve;
                             video.onerror = reject;
+                            // Add timeout to avoid hanging
+                            setTimeout(() => reject(new Error('Video load timeout')), 3000);
                         });
 
                         const aspect = video.videoWidth / video.videoHeight;
@@ -253,7 +262,8 @@ export function Timeline() {
                         }
 
                         if (video.duration && isFinite(video.duration)) {
-                            actualDuration = video.duration;
+                            // Cap at project duration if longer, otherwise keep video duration
+                            actualDuration = Math.min(video.duration, duration);
                         }
 
                     } catch (err) {
@@ -379,6 +389,7 @@ export function Timeline() {
             const newClipData = {
                 id: clipId,
                 type,
+                mediaType: resolvedMediaType as 'video' | 'image' | undefined,
                 start: dropTime,
                 duration: actualDuration,
                 name: name || (type === 'text' ? src : (customPath ? 'Custom Shape' : generatedName)),

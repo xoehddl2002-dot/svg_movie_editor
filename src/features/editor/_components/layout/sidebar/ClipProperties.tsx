@@ -59,6 +59,67 @@ interface ClipPropertiesProps {
 
 export function ClipProperties({ clip }: { clip: Clip }) {
     const { setSelectedClipId, updateClip, removeClip, setEditingClipId } = useStore()
+
+    return (
+        <ClipPropertiesContent clip={clip} updateClip={updateClip} setSelectedClipId={setSelectedClipId} removeClip={removeClip} setEditingClipId={setEditingClipId} />
+    )
+}
+
+function VideoTrimSlider({ clip, updateClip }: { clip: Clip, updateClip: (id: string, updates: Partial<Clip>) => void }) {
+    const [sourceDuration, setSourceDuration] = useState<number>(0);
+
+    useEffect(() => {
+        const loadMetadata = () => {
+            const video = document.createElement('video');
+            video.src = clip.src;
+            video.preload = 'metadata';
+            video.onloadedmetadata = () => {
+                if (isFinite(video.duration)) {
+                    setSourceDuration(video.duration);
+                }
+            };
+        };
+        loadMetadata();
+    }, [clip.src]);
+
+    const start = clip.mediaStart || 0;
+    const end = start + (clip.duration || 0);
+    // Use sourceDuration if available, otherwise fallback to reasonable max
+    const max = sourceDuration || Math.max(end + 10, 60);
+
+    return (
+        <div className="space-y-3">
+            <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Start: {start.toFixed(1)}s</span>
+                <span>End: {end.toFixed(1)}s</span>
+            </div>
+            <Slider
+                value={[start, end]}
+                max={max}
+                step={0.1}
+                min={0}
+                minStepsBetweenThumbs={0.1}
+                onValueChange={([newStart, newEnd]) => {
+                    // Constraint: End must be > Start. Slider handles this but we ensure min duration.
+                    const duration = newEnd - newStart;
+                    if (duration < 0.1) return;
+
+                    updateClip(clip.id, {
+                        mediaStart: newStart,
+                        duration: duration
+                    });
+                }}
+                className="py-4"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>0s</span>
+                <span>{max.toFixed(1)}s</span>
+            </div>
+        </div>
+    );
+}
+
+function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip, setEditingClipId }: any) {
     const [fonts, setFonts] = useState<string[]>([])
 
     useEffect(() => {
@@ -263,22 +324,7 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                 {clip.type === 'mask' && (clip.src.match(/\.(mp4|webm|mov|m4v)$/i) || clip.src.startsWith('blob:video/')) && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Video Edit</Label>
-
-                        <div className="space-y-2">
-                            <Label>Trim Start (Offset)</Label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    step={0.1}
-                                    value={clip.mediaStart || 0}
-                                    onChange={(e) => updateClip(clip.id, { mediaStart: Math.max(0, Number(e.target.value)) })}
-                                />
-                                <span className="text-xs text-muted-foreground">sec</span>
-                            </div>
-                        </div>
-
-
+                        <VideoTrimSlider clip={clip} updateClip={updateClip} />
                     </div>
                 )}
 
@@ -374,7 +420,7 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                                     </div>
                                 )}
 
-                                {data.fill !== undefined && (
+                                {data.fill !== undefined && !['video', 'image'].includes(clip.mediaType || '') && (
                                     <div className="space-y-1">
                                         <Label className="text-[10px]">Color</Label>
                                         <ColorPicker

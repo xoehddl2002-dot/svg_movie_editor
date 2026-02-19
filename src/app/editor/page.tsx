@@ -1,10 +1,10 @@
 'use client'
 
-import { Header } from "@/components/layout/Header"
-import { Sidebar } from "@/components/layout/Sidebar"
-import { PreviewPlayer } from "@/components/preview/PreviewPlayer"
-import { Timeline } from "@/components/timeline/Timeline"
-import { EditModal } from "@/components/editing/EditModal"
+import { Header } from "@/features/editor/_components/layout/Header"
+import { Sidebar } from "@/features/editor/_components/layout/Sidebar"
+import { PreviewPlayer } from "@/features/editor/_components/preview/PreviewPlayer"
+import { Timeline } from "@/features/editor/_components/timeline/Timeline"
+import { EditModal } from "@/features/editor/_components/editing/EditModal"
 import { useEffect } from "react"
 import { useStore } from "@/features/editor/store/useStore"
 import { useRouter } from "next/navigation"
