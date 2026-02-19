@@ -12,7 +12,7 @@ Foundation Agent는 **공통 UI 컴포넌트, 핵심 편집 컴포넌트, 유틸
 ```
 src/components/
 ├── ui/          # Shadcn/Radix 기반 공통 UI (button, dialog, select 등)
-├── editing/     # 편집 모달 및 전용 에디터 (Image, Video, Audio, Mask)
+├── editing/     # 편집 모달 및 전용 에디터 (Audio, Mask)
 ├── preview/     # 미리보기 (PreviewPlayer, TransformControls, DynamicSvg)
 ├── timeline/    # 타임라인 (Timeline, Track, Clip, Ruler, Playhead)
 └── layout/      # 레이아웃 (Header, Sidebar, ExportModal, TemplateSelector)

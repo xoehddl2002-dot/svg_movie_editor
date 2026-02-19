@@ -293,17 +293,53 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
     return (
         <g className="transform-controls-layer" transform={`rotate(${r}, ${pivotX}, ${pivotY})`}>
             {/* Selection Border */}
-            <rect
-                x={displayX}
-                y={displayY}
-                width={w}
-                height={h}
-                fill="transparent"
-                stroke={controlColor}
-                strokeWidth={3}
-                className={clip.editor_move !== false ? "cursor-move" : ""}
-                onMouseDown={(e) => clip.editor_move !== false && handleMouseDown(e, 'move')}
-            />
+            {clip.type === 'mask' && clip.templateData && Object.keys(clip.templateData).length > 0 ? (
+                (() => {
+                    // Extract viewBox for mask coordinate system
+                    let vbx = 0, vby = 0, vbw = 100, vbh = 100;
+                    if (clip.viewBox) {
+                        const parts = clip.viewBox.split(/[ ,]+/).filter(Boolean).map(Number);
+                        if (parts.length === 4) {
+                            [vbx, vby, vbw, vbh] = parts;
+                        }
+                    }
+
+                    const safeVbw = vbw === 0 ? 100 : vbw;
+                    const safeVbh = vbh === 0 ? 100 : vbh;
+                    const maskSx = w / safeVbw;
+                    const maskSy = h / safeVbh;
+
+                    return (
+                        <g transform={`translate(${displayX}, ${displayY}) scale(${maskSx}, ${maskSy}) translate(${-vbx}, ${-vby})`}>
+                            {Object.entries(clip.templateData).map(([id, data]: [string, any]) => (
+                                <path
+                                    key={id}
+                                    d={data.d}
+                                    fill="transparent"
+                                    stroke={controlColor}
+                                    strokeWidth={3 / Math.max(maskSx, maskSy)}
+                                    vectorEffect="non-scaling-stroke"
+                                    className={clip.editor_move !== false ? "cursor-move" : ""}
+                                    onMouseDown={(e) => clip.editor_move !== false && handleMouseDown(e, 'move')}
+                                    style={{ pointerEvents: 'auto' }}
+                                />
+                            ))}
+                        </g>
+                    );
+                })()
+            ) : (
+                <rect
+                    x={displayX}
+                    y={displayY}
+                    width={w}
+                    height={h}
+                    fill="transparent"
+                    stroke={controlColor}
+                    strokeWidth={3}
+                    className={clip.editor_move !== false ? "cursor-move" : ""}
+                    onMouseDown={(e) => clip.editor_move !== false && handleMouseDown(e, 'move')}
+                />
+            )}
 
             {/* Scale Handles - Only for non-text clips or as desired */}
             {clip.editor_scale !== false && clip.type !== 'text' && (

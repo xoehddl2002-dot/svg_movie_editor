@@ -44,7 +44,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
     const svgRef = useRef<SVGSVGElement>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
-    const [imageSvgBounds, setImageSvgBounds] = useState({ x: 0, y: 0, width: 100, height: 100 })
+    const [imageSvgBounds, setImageSvgBounds] = useState({ x: 0, y: 0, width: clip.width || 100, height: clip.height || 100 })
     const [activeComponentId, setActiveComponentId] = useState<string | null>(null)
 
     // Interaction state
@@ -61,37 +61,31 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
     const [isResourceLoaded, setIsResourceLoaded] = useState(false);
 
-    // Load resource natural dimensions
+    // Load resource and set coordinate system based on clip dimensions
     useEffect(() => {
         setIsResourceLoaded(false);
         if (!resourceSrc) return;
 
+        // Use clip's width/height as the coordinate system so mask shapes
+        // match the PreviewPlayer display exactly.
+        const clipW = clip.width || 100;
+        const clipH = clip.height || 100;
+
+        const onLoaded = () => {
+            setImageSvgBounds({ x: 0, y: 0, width: clipW, height: clipH });
+            setIsResourceLoaded(true);
+
+            // Set viewBox to clip dimensions so coordinates match PreviewPlayer
+            onUpdate({ viewBox: `0 0 ${clipW} ${clipH}` });
+        };
+
         if (resourceType === 'image') {
             const img = new Image();
-            img.onload = () => {
-                const w = img.naturalWidth || 100;
-                const h = img.naturalHeight || 100;
-                setImageSvgBounds({ x: 0, y: 0, width: w, height: h });
-                setIsResourceLoaded(true);
-
-                // Only update viewBox if it's missing or if we are initializing a new clip (no template data yet)
-                if (!clip.viewBox || (!clip.templateData || Object.keys(clip.templateData).length === 0)) {
-                    onUpdate({ viewBox: `0 0 ${w} ${h}` });
-                }
-            };
+            img.onload = onLoaded;
             img.src = resourceSrc;
         } else if (resourceType === 'video') {
             const vid = document.createElement('video');
-            vid.onloadedmetadata = () => {
-                const w = vid.videoWidth || 100;
-                const h = vid.videoHeight || 100;
-                setImageSvgBounds({ x: 0, y: 0, width: w, height: h });
-                setIsResourceLoaded(true);
-
-                if (!clip.viewBox || (!clip.templateData || Object.keys(clip.templateData).length === 0)) {
-                    onUpdate({ viewBox: `0 0 ${w} ${h}` });
-                }
-            };
+            vid.onloadedmetadata = onLoaded;
             vid.src = resourceSrc;
         }
     }, [resourceSrc, resourceType]);
@@ -100,6 +94,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     useEffect(() => {
         if (!isResourceLoaded) return;
 
+        // If no template data exists, initialize with a full-size rect
         if (!clip.templateData || Object.keys(clip.templateData).length === 0) {
             const w = imageSvgBounds.width;
             const h = imageSvgBounds.height;
@@ -119,6 +114,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
             };
             onUpdate({
                 templateData: newData,
+                // Ensure viewBox is synced here as well just in case
                 viewBox: `0 0 ${w} ${h}`
             });
             setActiveComponentId("shape-1");
@@ -333,13 +329,15 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     }
 
     const renderHandles = (id: string, x: number, y: number, w: number, h: number) => {
-        const handleSize = Math.max(imageSvgBounds.width / 50, 4);
+        // Adjust handle size based on the image size so they aren't too small or too big
+        const handleSize = Math.max(imageSvgBounds.width / 50, 8);
         const half = handleSize / 2;
+        const strokeWidth = Math.max(1, imageSvgBounds.width / 500);
 
         const ControlRect = ({ cx, cy, m, cursor }: { cx: number, cy: number, m: TransformMode, cursor: string }) => (
             <rect
                 x={cx - half} y={cy - half} width={handleSize} height={handleSize}
-                fill="white" stroke="#00d9ff" strokeWidth={1}
+                fill="white" stroke="#00d9ff" strokeWidth={strokeWidth}
                 style={{ cursor, pointerEvents: 'auto' }}
                 onMouseDown={(e) => handleMouseDown(e, m, id)}
             />
@@ -347,7 +345,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
         return (
             <g>
-                <rect x={x} y={y} width={w} height={h} fill="none" stroke="#00d9ff" strokeWidth={1} style={{ pointerEvents: 'none' }} />
+                <rect x={x} y={y} width={w} height={h} fill="none" stroke="#00d9ff" strokeWidth={strokeWidth} style={{ pointerEvents: 'none' }} />
                 <ControlRect cx={x} cy={y} m="scale-nw" cursor="nwse-resize" />
                 <ControlRect cx={x + w} cy={y} m="scale-ne" cursor="nesw-resize" />
                 <ControlRect cx={x} cy={y + h} m="scale-sw" cursor="nesw-resize" />
@@ -393,13 +391,13 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
                     <div
                         className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 max-w-full max-h-full overflow-hidden flex items-center justify-center"
-                        style={{ aspectRatio: `${imageSvgBounds.width} / ${imageSvgBounds.height}` }}
+                        style={{ aspectRatio: `${imageSvgBounds.width} / ${imageSvgBounds.height}`, width: 'auto', height: 'auto' }}
                     >
                         <svg
                             ref={svgRef}
                             viewBox={`${imageSvgBounds.x} ${imageSvgBounds.y} ${imageSvgBounds.width} ${imageSvgBounds.height}`}
                             className="w-full h-full"
-                            preserveAspectRatio="none"
+                            preserveAspectRatio="xMidYMid meet"
                         >
                             {/* 1. Background (Image or Video) */}
                             <g style={{
@@ -452,7 +450,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         key: id,
                                         fill: isActive ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 0, 255, 0.2)",
                                         stroke: isActive ? "red" : "blue",
-                                        strokeWidth: isActive ? 1 : 0.5,
+                                        strokeWidth: isActive ? Math.max(1, imageSvgBounds.width / 500) : Math.max(0.5, imageSvgBounds.width / 1000),
                                         vectorEffect: "non-scaling-stroke" as any,
                                         style: { cursor: 'move', pointerEvents: 'auto' } as React.CSSProperties
                                     };
