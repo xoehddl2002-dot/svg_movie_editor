@@ -145,8 +145,12 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                                     <Label className="text-xs">Width (px)</Label>
                                     <Input
                                         type="number"
-                                        value={clip.width || 100}
-                                        onChange={(e) => updateClip(clip.id, { width: Number(e.target.value) })}
+                                        value={Math.round((clip.width || 100) * ((clip.mask?.width ?? 100) / 100))}
+                                        onChange={(e) => {
+                                            const visualW = Number(e.target.value);
+                                            const maskW = clip.mask?.width ?? 100;
+                                            updateClip(clip.id, { width: maskW > 0 ? visualW / (maskW / 100) : visualW });
+                                        }}
                                     />
                                 </div>
                             )}
@@ -155,8 +159,12 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                                     <Label className="text-xs">Height (px)</Label>
                                     <Input
                                         type="number"
-                                        value={clip.height || 100}
-                                        onChange={(e) => updateClip(clip.id, { height: Number(e.target.value) })}
+                                        value={Math.round((clip.height || 100) * ((clip.mask?.height ?? 100) / 100))}
+                                        onChange={(e) => {
+                                            const visualH = Number(e.target.value);
+                                            const maskH = clip.mask?.height ?? 100;
+                                            updateClip(clip.id, { height: maskH > 0 ? visualH / (maskH / 100) : visualH });
+                                        }}
                                     />
                                 </div>
                             )}

@@ -276,26 +276,14 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         const x = (imageSvgBounds.width - w) / 2 + imageSvgBounds.x;
         const y = (imageSvgBounds.height - h) / 2 + imageSvgBounds.y;
 
-        let currentData = { ...clip.templateData };
-        // Clean default shape logic
-        const keys = Object.keys(currentData);
-        if (keys.length === 1) {
-            const firstShape = currentData[keys[0]];
-            const isFullSize = Math.abs(firstShape.width - imageSvgBounds.width) < 1 && Math.abs(firstShape.height - imageSvgBounds.height) < 1;
-
-            if (firstShape['data-shape-type'] === 'rect' && isFullSize) {
-                delete currentData[keys[0]];
-            }
-        }
-
         let d = '';
         if (shapeType === 'rect') d = getRectPath(x, y, w, h);
         else if (shapeType === 'circle') d = getEllipsePath(x, y, w, h);
         else if (shapeType === 'triangle') d = getTrianglePath(x, y, w, h);
         else if (shapeType === 'star') d = getStarPath(x, y, w, h);
 
+        // Single shape only — replace all existing shapes
         const newData = {
-            ...currentData,
             [id]: {
                 type: 'path',
                 id,
@@ -313,20 +301,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         setActiveComponentId(id);
     };
 
-    const removeActiveShape = () => {
-        if (!activeComponentId || !clip.templateData) return;
 
-        const ids = Object.keys(clip.templateData);
-        if (ids.length <= 1) {
-            alert("Cannot remove the last mask shape.");
-            return;
-        }
-
-        const newData = { ...clip.templateData };
-        delete newData[activeComponentId];
-        onUpdate({ templateData: newData });
-        setActiveComponentId(null);
-    }
 
     const renderHandles = (id: string, x: number, y: number, w: number, h: number) => {
         // Adjust handle size based on the image size so they aren't too small or too big
@@ -434,11 +409,8 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                 )}
                             </g>
 
-                            {/* 2. Mask Shapes Overlay */}
-                            <g style={{
-                                transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) rotate(${rotation}deg)`,
-                                transformOrigin: 'center',
-                            }}>
+                            {/* 2. Mask Shapes Overlay — no rotation/flip, those are resource-only */}
+                            <g>
                                 {clip.templateData && Object.entries(clip.templateData).map(([id, data]: [string, any]) => {
                                     const isActive = id === activeComponentId;
                                     const bx = data.x || 0;
@@ -447,7 +419,6 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                     const bh = data.height || 0;
 
                                     const commonProps = {
-                                        key: id,
                                         fill: isActive ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 0, 255, 0.2)",
                                         stroke: isActive ? "red" : "blue",
                                         strokeWidth: isActive ? Math.max(1, imageSvgBounds.width / 500) : Math.max(0.5, imageSvgBounds.width / 1000),
@@ -605,11 +576,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         Shape Geometry
                                     </div>
                                     <div className="space-y-4">
-                                        <div className="flex justify-end">
-                                            <Button variant="destructive" size="sm" onClick={removeActiveShape} disabled={!activeComponentId}>
-                                                Remove Selected
-                                            </Button>
-                                        </div>
+
 
                                         {clip.templateData && Object.entries(clip.templateData).map(([id, data]: [string, any]) => (
                                             <div key={id} className={cn(
