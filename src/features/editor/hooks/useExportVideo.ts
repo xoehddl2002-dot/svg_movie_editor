@@ -43,7 +43,8 @@ export const useExportVideo = (): UseExportVideoReturn => {
 
         try {
             const projectWidth = 1920
-            const projectHeight = 1920 / (aspectRatio || 1)
+            // libx264 with yuv420p requires even dimensions; round to nearest even integer
+            const projectHeight = Math.round(1920 / (aspectRatio || 1) / 2) * 2
 
             const canvas = document.createElement('canvas')
             canvas.width = projectWidth

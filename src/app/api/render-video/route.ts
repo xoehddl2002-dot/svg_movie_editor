@@ -57,6 +57,62 @@ export async function POST(request: Request) {
 
         const audioTracksStr = formData.get('audioTracks') as string
         const audioTracks = audioTracksStr ? JSON.parse(audioTracksStr) : []
+        console.log(`Audio tracks: ${audioTracks.length}`, audioTracks)
+
+        // Pre-validate audio tracks: resolve paths and verify audio streams
+        interface ValidatedAudioTrack {
+            path: string
+            start: number
+            duration: number
+            mediaStart: number
+            volume: number
+        }
+        const validatedAudioTracks: ValidatedAudioTrack[] = []
+
+        for (const track of audioTracks) {
+            let trackPath = track.src
+            if (trackPath.startsWith('/')) {
+                trackPath = path.join(process.cwd(), 'public', trackPath)
+            }
+
+            // Skip blob URLs or HTTP URLs
+            if (trackPath.startsWith('blob:') || trackPath.startsWith('http')) {
+                console.warn(`Skipping audio track with non-local src: ${trackPath}`)
+                continue
+            }
+            if (!fs.existsSync(trackPath)) {
+                console.warn(`Skipping audio track - file not found: ${trackPath}`)
+                continue
+            }
+
+            // Probe file to verify it has an audio stream
+            const hasAudio = await new Promise<boolean>((resolve) => {
+                ffmpeg.ffprobe(trackPath, (err: any, metadata: any) => {
+                    if (err) {
+                        console.warn(`ffprobe failed for ${trackPath}:`, err.message)
+                        resolve(false)
+                        return
+                    }
+                    const audioStream = metadata.streams?.some((s: any) => s.codec_type === 'audio')
+                    resolve(!!audioStream)
+                })
+            })
+
+            if (!hasAudio) {
+                console.warn(`Skipping audio track - no audio stream found: ${trackPath}`)
+                continue
+            }
+
+            validatedAudioTracks.push({
+                path: trackPath,
+                start: Number(track.start) || 0,
+                duration: Number(track.duration) || 1,
+                mediaStart: Number(track.mediaStart) || 0,
+                volume: Number(track.volume) ?? 1,
+            })
+        }
+
+        console.log(`Validated audio tracks: ${validatedAudioTracks.length}`)
 
         // 2. Run FFmpeg
         await new Promise<void>((resolve, reject) => {
@@ -67,52 +123,49 @@ export async function POST(request: Request) {
             const complexFilters: string[] = []
             const audioOutputLabels: string[] = []
 
-            audioTracks.forEach((track: any, index: number) => {
-                // Handle paths: if starts with /, map to public dir
-                let trackPath = track.src
-                if (trackPath.startsWith('/')) {
-                    trackPath = path.join(process.cwd(), 'public', trackPath)
-                }
+            validatedAudioTracks.forEach((track, index) => {
+                command.input(track.path)
 
-                command.input(trackPath)
-
-                // Define filter for this audio track
-                // [1:a]atrim=start=0:duration=5,adelay=1000|1000,volume=1[a1]
+                const inputIdx = index + 1 // 0 is the video frames input
                 const label = `a${index}`
-                // Convert seconds to ms for adelay
                 const delayMs = Math.round(track.start * 1000)
 
-                // Construct filter chain for this input
-                // input index is index + 1 (0 is video)
-                // atrim=start={mediaStart}:duration={duration} -> cut the segment
-                // asetpts=PTS-STARTPTS -> reset timestamp to 0 after cut
-                // adelay -> shift on timeline
-                complexFilters.push(`[${index + 1}:a]atrim=start=${track.mediaStart}:duration=${track.duration},asetpts=PTS-STARTPTS,adelay=${delayMs}|${delayMs},volume=${track.volume}[${label}]`)
-
+                complexFilters.push(`[${inputIdx}:a]atrim=start=${track.mediaStart}:duration=${track.duration},asetpts=PTS-STARTPTS,adelay=${delayMs}|${delayMs},volume=${track.volume}[${label}]`)
                 audioOutputLabels.push(`[${label}]`)
             })
 
-            if (audioOutputLabels.length > 0) {
-                // Mix all audio streams
+            if (audioOutputLabels.length > 1) {
                 complexFilters.push(`${audioOutputLabels.join('')}amix=inputs=${audioOutputLabels.length}:duration=longest[outa]`)
+                command.complexFilter(complexFilters)
+                command.outputOptions(['-map 0:v', '-map [outa]'])
+            } else if (audioOutputLabels.length === 1) {
+                complexFilters[0] = complexFilters[0].replace(/\[a0\]$/, '[outa]')
                 command.complexFilter(complexFilters)
                 command.outputOptions(['-map 0:v', '-map [outa]'])
             }
 
+            const outputOpts = [
+                '-c:v libx264',
+                '-pix_fmt yuv420p',
+                '-crf 18',
+                '-tune stillimage',
+            ]
+
+            if (audioOutputLabels.length > 0) {
+                outputOpts.push('-c:a aac', '-b:a 192k', '-shortest')
+            }
+
             command
-                .outputOptions([
-                    '-c:v libx264',
-                    '-pix_fmt yuv420p',
-                    '-crf 18',
-                    '-tune stillimage',
-                    '-c:a aac', // Audio codec
-                    '-b:a 192k',
-                    '-shortest' // Stop when shortest stream ends (usually video if we mapped correctly)
-                ])
+                .outputOptions(outputOpts)
                 .output(outputPath)
                 .on('start', (cmd) => console.log('FFmpeg started:', cmd))
+                .on('stderr', (line) => console.log('FFmpeg stderr:', line))
                 .on('end', () => resolve())
-                .on('error', (err) => reject(err))
+                .on('error', (err, stdout, stderr) => {
+                    console.error('FFmpeg error:', err.message)
+                    console.error('FFmpeg stderr output:', stderr)
+                    reject(err)
+                })
                 .run()
         })
 

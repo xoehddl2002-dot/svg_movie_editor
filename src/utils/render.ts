@@ -138,6 +138,96 @@ export const getShapePath = (shapeName: string): string => {
 }
 
 // -------------------------------------------------------------------------
+// Helper: Pre-fetch Video Frames API
+// -------------------------------------------------------------------------
+export const prefetchVideoFrames = async (fps: number, duration: number, tracks: Track[]) => {
+    const videoClips = tracks
+        .flatMap(t => t.clips)
+        .filter(c => c.type === 'mask')
+        .filter(c => c.src.match(/\.(mp4|webm|mov|m4v)$/i) || c.src.startsWith('blob:video/'))
+
+    // Group by source to avoid redundant requests
+    const uniqueSources = Array.from(new Set(videoClips.map(c => c.src)))
+    const frameMap = new Map<string, HTMLImageElement>()
+
+    const totalFrames = Math.max(1, Math.ceil(duration * fps))
+
+    for (const src of uniqueSources) {
+        // Find all clips using this source
+        const clips = videoClips.filter(c => c.src === src)
+
+        // Calculate needed timestamps for this video source
+        // We need to know which frames in the project correspond to which time in the video
+        const neededTimestamps: number[] = []
+        const timestampToFrameIndexMap = new Map<number, number[]>()
+
+        for (let i = 0; i < totalFrames; i++) {
+            const projectTime = i / fps
+
+            // Check if any clip active at this time uses this source
+            const activeClip = clips.find(c => projectTime >= c.start && projectTime < c.start + c.duration)
+
+            if (activeClip) {
+                const videoTime = (projectTime - activeClip.start) + (activeClip.mediaStart || 0)
+                neededTimestamps.push(videoTime)
+
+                if (!timestampToFrameIndexMap.has(videoTime)) {
+                    timestampToFrameIndexMap.set(videoTime, [])
+                }
+                timestampToFrameIndexMap.get(videoTime)?.push(i)
+            }
+        }
+
+        if (neededTimestamps.length === 0) continue
+
+        // Fetch frames from API
+        try {
+            const response = await fetch('/api/extract-frames', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    videoPath: src,
+                    timestamps: neededTimestamps,
+                    // Optional: size: '1920x?' to query high res if needed, but default/auto might be safer
+                })
+            })
+
+            if (!response.ok) throw new Error('Failed to fetch frames')
+
+            const data = await response.json()
+            const images: string[] = data.images
+
+            // Map back to project frame indices
+            // API returns images in order of sorted timestamps (as per our API logic roughly? 
+            // Wait, API logic sorts file names. If we pass timestamps, we should verify execution order or matching.)
+            // Actually the API logic sorts by filename timestamp.
+            // We should sort our neededTimestamps to match API return order.
+
+            const sortedUniqueTimestamps = Array.from(new Set(neededTimestamps)).sort((a, b) => a - b)
+
+            // Load images
+            await Promise.all(images.map(async (base64, idx) => {
+                const img = await loadImage(base64)
+                const videoTime = sortedUniqueTimestamps[idx]
+
+                // Assign this image to all source clips that use this videoTime
+                const projectIndices = timestampToFrameIndexMap.get(videoTime)
+                if (projectIndices) {
+                    projectIndices.forEach(pIdx => {
+                        frameMap.set(`${src}_${pIdx}`, img)
+                    })
+                }
+            }))
+
+        } catch (e) {
+            console.error(`Failed to load frames for ${src}`, e)
+        }
+    }
+
+    return frameMap
+}
+
+// -------------------------------------------------------------------------
 // Core: Render Frame to Canvas
 // -------------------------------------------------------------------------
 export const renderFrame = async (
