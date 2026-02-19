@@ -20,7 +20,7 @@ export const loadFont = async (fontMapList: FontMapItem | FontMapItem[]): Promis
             .filter((it) => !checkFontLoaded(it.family))
             .map(async ({ family, file, url, ...data }) => {
                 const isFile = file instanceof File || file instanceof Blob;
-                let source: string | ArrayBuffer | ArrayBufferView;
+                let source: string | BufferSource;
 
                 if (isFile && file) {
                     source = new Uint8Array(await file.arrayBuffer());
