@@ -153,7 +153,7 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
             type = 'text';
         } else if (nodeName === 'image') {
             if (item.image_id && item.image_id === item.id) {
-                type = 'image';
+                type = 'mask';
             } else {
                 type = null;
             }
@@ -328,9 +328,6 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 fontFamily = element.getAttribute('font-family') || 'sans-serif';
                 fill = element.getAttribute('fill') || '#000000';
                 textContent = element.textContent || element.innerHTML || '';
-            } else if (type === 'image') {
-                src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-                mask = { x: 0, y: 0, width: 100, height: 100 };
             } else if (type === 'icon' || type === 'shape' || type === 'mask') {
                 if (type === 'shape') {
                     fill = element.getAttribute('fill') || '#000000';
@@ -385,8 +382,6 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
     }
 
     const initialTracks: Track[] = [
-        { id: 'audio-1', type: 'audio', clips: [] },
-        { id: 'video-1', type: 'video', clips: [] }
     ];
 
     newClips.forEach((clip, index) => {
