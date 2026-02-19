@@ -1,5 +1,5 @@
 import { useStore, type Clip as ClipType } from "@/features/editor/store/useStore"
-import { FileVideo, Image as ImageIcon, Music, Type, Shapes, LayoutTemplate, Smile } from "lucide-react"
+import { Music, Type, Shapes, LayoutTemplate, Smile } from "lucide-react"
 
 interface ClipProps {
     clip: ClipType
@@ -19,9 +19,7 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
         // if (clip.templateData) return '#0d9488' // Teal for Templates - Removed to allow resource specific colors
 
         switch (clip.type) {
-            case 'video': return '#3b82f6' // Blue
             case 'audio': return '#22c55e' // Green
-            case 'image': return '#a855f7' // Purple
             case 'text': return '#06b6d4' // Cyan
             case 'shape': return '#f97316' // Orange for Basic Shapes
             case 'icon': return '#14b8a6' // Teal for Icons
@@ -35,9 +33,7 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
         // if (clip.templateData) return <LayoutTemplate {...props} />
 
         switch (clip.type) {
-            case 'video': return <FileVideo {...props} />
             case 'audio': return <Music {...props} />
-            case 'image': return <ImageIcon {...props} />
             case 'text': return <Type {...props} />
             case 'shape': return <Shapes {...props} />
             case 'icon': return <Smile {...props} />
@@ -53,7 +49,7 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
             onMouseDown={(e) => onDragStart?.(e, clip.id)}
             onDoubleClick={(e) => {
                 e.stopPropagation();
-                if (clip.type === 'image' || clip.type === 'mask' || clip.type === 'video' || clip.type === 'audio') {
+                if (clip.type === 'mask' || clip.type === 'audio') {
                     setEditingClipId(clip.id);
                 }
             }}
@@ -65,9 +61,9 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
                 fill={getClipColor(clip)}
                 stroke={isSelected ? "white" : "transparent"}
                 strokeWidth={isSelected ? 2 : 2}
-                strokeDasharray={clip.type === 'video' || clip.type === 'audio' ? "4 2" : "0"}
+                strokeDasharray={clip.type === 'audio' ? "4 2" : "0"}
                 className={isSelected ? "" : "group-hover:stroke-white/50 transition-colors"}
-                opacity={clip.type === 'video' || clip.type === 'audio' ? 0.6 : 0.8}
+                opacity={clip.type === 'audio' ? 0.6 : 0.8}
             />
             {/* Clip Content Overlay */}
             <foreignObject x={0} y={0} width={width} height={trackHeight - 10} style={{ pointerEvents: 'none' }}>
@@ -79,7 +75,7 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
 
 
             {/* Trim Handles - Only for non-video/audio clips */}
-            {clip.type !== 'video' && clip.type !== 'audio' && (
+            {clip.type !== 'audio' && (
                 <>
                     {/* Left Handle (Start) */}
                     <rect
