@@ -303,7 +303,7 @@ export function PreviewPlayer() {
     const isReady = React.useMemo(() => {
         // Clips that need explicit loading
         const clipsRequiringLoading = activeClips.filter(c =>
-            ['video', 'audio', 'image', 'mask', 'icon', 'shape'].includes(c.type)
+            ['audio', 'mask', 'icon', 'shape'].includes(c.type)
         );
         return clipsRequiringLoading.every(c => readyAssets.has(c.id));
     }, [activeClips, readyAssets]);
@@ -467,15 +467,6 @@ export function PreviewPlayer() {
 
         const renderInner = () => {
             switch (clip.type) {
-                case 'video':
-                    return (
-                        <g>
-                            {renderMaskDefs()}
-                            <foreignObject {...commonProps} mask={hasMask ? `url(#${maskId})` : undefined}>
-                                <VideoClip clip={clip} currentTime={currentTime} isPlaying={isPlaying && isReady} onReady={() => handleReady(clip.id)} forceCheck={forceCheck} />
-                            </foreignObject>
-                        </g>
-                    )
                 case 'audio':
                     return (
                         <foreignObject x={0} y={0} width={0} height={0}>
@@ -483,12 +474,24 @@ export function PreviewPlayer() {
                         </foreignObject>
                     )
                 case 'mask':
-                case 'image':
-                    return (
-                        <g>
-                            {renderMaskDefs()}
-                            <foreignObject {...commonProps} mask={hasMask ? `url(#${maskId})` : undefined}>
-                                {clip.type === 'mask' ? (
+                    // Determine subtype based on src
+                    const isVideo = clip.src && (clip.src.match(/\.(mp4|webm|mov|m4v)$/i) || clip.src.startsWith('blob:'));
+                    const isSvg = clip.src && (clip.src.toLowerCase().split('?')[0].endsWith('.svg') || clip.src.startsWith('data:image/svg+xml'));
+
+                    if (isVideo) {
+                        return (
+                            <g>
+                                {renderMaskDefs()}
+                                <foreignObject {...commonProps} mask={hasMask ? `url(#${maskId})` : undefined}>
+                                    <VideoClip clip={clip} currentTime={currentTime} isPlaying={isPlaying && isReady} onReady={() => handleReady(clip.id)} forceCheck={forceCheck} />
+                                </foreignObject>
+                            </g>
+                        )
+                    } else if (isSvg && !clip.src.startsWith('blob:')) {
+                        return (
+                            <g>
+                                {renderMaskDefs()}
+                                <foreignObject {...commonProps} mask={hasMask ? `url(#${maskId})` : undefined}>
                                     <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
                                         <DynamicSvg
                                             src={clip.src}
@@ -500,12 +503,20 @@ export function PreviewPlayer() {
                                             forceCheck={forceCheck}
                                         />
                                     </div>
-                                ) : (
+                                </foreignObject>
+                            </g>
+                        )
+                    } else {
+                        // Default to Image
+                        return (
+                            <g>
+                                {renderMaskDefs()}
+                                <foreignObject {...commonProps} mask={hasMask ? `url(#${maskId})` : undefined}>
                                     <ImageClip clip={clip} onReady={() => handleReady(clip.id)} forceCheck={forceCheck} />
-                                )}
-                            </foreignObject>
-                        </g>
-                    )
+                                </foreignObject>
+                            </g>
+                        )
+                    }
                 case 'text':
                     const fontSize = clip.fontSize || 120;
                     const textContent = clip.text || 'Text';
@@ -610,7 +621,7 @@ export function PreviewPlayer() {
                 }}
                 onDoubleClick={(e) => {
                     e.stopPropagation();
-                    if (clip.type === 'image' || clip.type === 'mask' || clip.type === 'video' || clip.type === 'audio') {
+                    if (clip.type === 'mask' || clip.type === 'audio') {
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
                         useStore.getState().setEditingClipId(clip.id);

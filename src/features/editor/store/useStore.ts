@@ -3,7 +3,7 @@ import { processTemplate } from '@/utils/template'
 import { loadFont, checkFontLoaded } from '@/utils/fonts'
 import { getRectPath } from '@/features/editor/utils/shapeUtils'
 
-export type ResourceType = 'video' | 'audio' | 'image' | 'text' | 'shape' | 'icon' | 'mask'
+export type ResourceType = 'audio' | 'text' | 'shape' | 'icon' | 'mask'
 
 export interface Clip {
     id: string
@@ -104,8 +104,8 @@ export const useStore = create<EditorState>((set, get) => ({
             clips: []
         },
         {
-            id: 'video-1',
-            type: 'video',
+            id: 'mask-1',
+            type: 'mask',
             clips: []
         }
     ],
@@ -196,8 +196,8 @@ export const useStore = create<EditorState>((set, get) => ({
         }
     },
     addClip: (trackId, clip) => set((state) => {
-        // Enforce default mask for image/video/mask types if not present
-        if (['image', 'video', 'mask'].includes(clip.type)) {
+        // Enforce default mask for mask types if not present
+        if (clip.type === 'mask') {
             if (!clip.templateData || Object.keys(clip.templateData).length === 0) {
                 const w = clip.width || 500;
                 const h = clip.height || 500;

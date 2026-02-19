@@ -28,7 +28,19 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
     // Resource state
     const [resourceSrc, setResourceSrc] = useState(clip.src)
-    const [resourceType, setResourceType] = useState(clip.type)
+
+    // Internal helper to determine type from src
+    const getMediaType = (src: string): 'video' | 'image' => {
+        if (src.match(/\.(mp4|webm|mov|m4v)$/i) || src.startsWith('blob:video/')) return 'video';
+        return 'image';
+    }
+
+    const [resourceType, setResourceType] = useState<'video' | 'image'>(getMediaType(clip.src))
+
+    // Update resource type if src changes
+    useEffect(() => {
+        setResourceType(getMediaType(resourceSrc));
+    }, [resourceSrc]);
 
     const svgRef = useRef<SVGSVGElement>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -237,7 +249,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
             flipH,
             flipV,
             src: resourceSrc,
-            type: resourceType as any
+            // type: resourceType as any // No longer needed, type is always 'mask'
         }
 
         if (rotationChanged) {

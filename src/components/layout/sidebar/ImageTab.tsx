@@ -18,7 +18,7 @@ export function ImageTab({ images, onDragStart }: ImageTabProps) {
                         key={i}
                         className="overflow-hidden cursor-grab hover:border-primary group relative"
                         draggable
-                        onDragStart={(e) => onDragStart(e, 'image', src)}
+                        onDragStart={(e) => onDragStart(e, 'mask', src)}
                     >
                         <CardContent className="p-0 aspect-square relative bg-muted flex items-center justify-center">
                             <img src={src} className="w-full h-full object-cover pointer-events-none" alt={`Asset ${i}`} />

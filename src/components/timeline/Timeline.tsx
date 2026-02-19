@@ -216,71 +216,76 @@ export function Timeline() {
             const x = e.clientX - rect.left
             const dropTime = Math.max(0, x / zoom)
 
-            const videoDuration = type === 'image' || type === 'mask' || type === 'text' || type === 'shape' || type === 'icon' ? duration : 10
+            const videoDuration = type === 'mask' || type === 'text' || type === 'shape' || type === 'icon' ? duration : 10
             const clipId = uuidv4()
 
             // Calculate dimensions based on resource type
             let width = 500; // Default fallback
             let height = 500;
+            let actualDuration = videoDuration;
 
-            if (type === 'image' || type === 'mask') {
-                try {
-                    const img = new Image();
-                    img.src = src;
-                    await new Promise((resolve, reject) => {
-                        img.onload = resolve;
-                        img.onerror = reject;
-                    });
+            if (type === 'mask') {
+                // Determine if it's video or image based on src or other heuristics (for now, assume image if not video ext)
+                const isVideo = src.match(/\.(mp4|webm|mov|m4v)$/i) || src.startsWith('blob:video/');
 
-                    // Fit within 1080p roughly, or current project bounds?
-                    // Let's fit within standard 1920x1080 box, usually safe.
-                    // Or fit within the current project aspect ratio?
-                    // User just wants "original aspect ratio". 
-                    // Let's enforce a max dimension of 1000px for usability, scaling down if needed.
-                    // But keeping ratio.
+                if (isVideo) {
+                    try {
+                        const video = document.createElement('video');
+                        video.src = src;
+                        await new Promise((resolve, reject) => {
+                            video.onloadedmetadata = resolve;
+                            video.onerror = reject;
+                        });
 
-                    const aspect = img.naturalWidth / img.naturalHeight;
-                    if (img.naturalWidth > 1000 || img.naturalHeight > 1000) {
-                        if (aspect > 1) {
-                            width = 1000;
-                            height = 1000 / aspect;
+                        const aspect = video.videoWidth / video.videoHeight;
+                        // Standard video size in preview
+                        if (video.videoWidth > 1000 || video.videoHeight > 1000) {
+                            if (aspect > 1) {
+                                width = 1000;
+                                height = 1000 / aspect;
+                            } else {
+                                height = 1000;
+                                width = 1000 * aspect;
+                            }
                         } else {
-                            height = 1000;
-                            width = 1000 * aspect;
+                            width = video.videoWidth;
+                            height = video.videoHeight;
                         }
-                    } else {
-                        width = img.naturalWidth;
-                        height = img.naturalHeight;
+
+                        if (video.duration && isFinite(video.duration)) {
+                            actualDuration = video.duration;
+                        }
+
+                    } catch (err) {
+                        console.error("Failed to load video metadata", err)
                     }
+                } else {
+                    // Image
+                    try {
+                        const img = new Image();
+                        img.src = src;
+                        await new Promise((resolve, reject) => {
+                            img.onload = resolve;
+                            img.onerror = reject;
+                        });
 
-                } catch (err) {
-                    console.error("Failed to load image metadata", err)
-                }
-            } else if (type === 'video') {
-                try {
-                    const video = document.createElement('video');
-                    video.src = src;
-                    await new Promise((resolve, reject) => {
-                        video.onloadedmetadata = resolve;
-                        video.onerror = reject;
-                    });
-
-                    const aspect = video.videoWidth / video.videoHeight;
-                    // Standard video size in preview
-                    if (video.videoWidth > 1000 || video.videoHeight > 1000) {
-                        if (aspect > 1) {
-                            width = 1000;
-                            height = 1000 / aspect;
+                        const aspect = img.naturalWidth / img.naturalHeight;
+                        if (img.naturalWidth > 1000 || img.naturalHeight > 1000) {
+                            if (aspect > 1) {
+                                width = 1000;
+                                height = 1000 / aspect;
+                            } else {
+                                height = 1000;
+                                width = 1000 * aspect;
+                            }
                         } else {
-                            height = 1000;
-                            width = 1000 * aspect;
+                            width = img.naturalWidth;
+                            height = img.naturalHeight;
                         }
-                    } else {
-                        width = video.videoWidth;
-                        height = video.videoHeight;
+
+                    } catch (err) {
+                        console.error("Failed to load image metadata", err)
                     }
-                } catch (err) {
-                    console.error("Failed to load video metadata", err)
                 }
             } else if (type === 'text') {
                 width = 600;
@@ -342,9 +347,8 @@ export function Timeline() {
 
             // Generate dynamic Korean clip name based on type and count
             const typeNameMap: Record<string, string> = {
-                'video': '비디오',
+                'mask': '마스크', // Generic mask, could be Image or Video content
                 'audio': '오디오',
-                'image': '이미지',
                 'text': '텍스트',
                 'shape': '도형',
                 'icon': '아이콘'
@@ -376,7 +380,7 @@ export function Timeline() {
                 id: clipId,
                 type,
                 start: dropTime,
-                duration: videoDuration,
+                duration: actualDuration,
                 name: name || (type === 'text' ? src : (customPath ? 'Custom Shape' : generatedName)),
                 src,
                 text: type === 'text' ? 'New Text' : undefined,
@@ -384,7 +388,7 @@ export function Timeline() {
                 customPath,
                 viewBox,
                 templateData,
-                volume: type === 'video' || type === 'audio' ? 1 : undefined,
+                volume: (type === 'mask' && (src.match(/\.(mp4|webm|mov|m4v)$/i) || src.startsWith('blob:video/'))) || type === 'audio' ? 1 : undefined,
                 // Add calculated dimensions
                 width,
                 height,

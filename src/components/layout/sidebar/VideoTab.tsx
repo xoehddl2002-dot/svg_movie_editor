@@ -18,7 +18,7 @@ export function VideoTab({ videoItems, onDragStart }: VideoTabProps) {
                         key={i}
                         className="overflow-hidden cursor-grab hover:border-primary group relative"
                         draggable
-                        onDragStart={(e) => onDragStart(e, 'video', item.src)}
+                        onDragStart={(e) => onDragStart(e, 'mask', item.src)}
                     >
                         <CardContent className="p-0 aspect-video relative">
                             {item.thumbnail ? (

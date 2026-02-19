@@ -91,7 +91,7 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                     />
                 </div>
 
-                {(clip.type === 'image' || clip.type === 'mask' || clip.type === 'video' || clip.type === 'audio') && (
+                {(clip.type === 'mask' || clip.type === 'audio') && (
                     <Button
                         variant="outline"
                         className="w-full flex items-center justify-center gap-2"
@@ -120,7 +120,7 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                 </div>
 
                 {/* Position & Size */}
-                {(clip.type === 'image' || clip.type === 'mask' || clip.type === 'text' || clip.type === 'video' || clip.type === 'shape' || clip.type === 'icon') && (
+                {(clip.type === 'mask' || clip.type === 'text' || clip.type === 'shape' || clip.type === 'icon') && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Transform</Label>
                         <div className="grid grid-cols-2 gap-4">
@@ -236,7 +236,7 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                 )}
 
                 {/* Video/Audio Properties */}
-                {(clip.type === 'video' || clip.type === 'audio') && (
+                {(clip.type === 'audio' || (clip.type === 'mask' && (clip.src.match(/\.(mp4|webm|mov|m4v)$/i) || clip.src.startsWith('blob:video/')))) && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Audio</Label>
                         <div className="space-y-2">
@@ -252,7 +252,7 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                 )}
 
                 {/* Video Trim/Mask */}
-                {clip.type === 'video' && (
+                {clip.type === 'mask' && (clip.src.match(/\.(mp4|webm|mov|m4v)$/i) || clip.src.startsWith('blob:video/')) && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Video Edit</Label>
 
@@ -275,9 +275,9 @@ export function ClipProperties({ clip }: { clip: Clip }) {
                 )}
 
                 {/* Image Edit (Mask & Filter) */}
-                {(clip.type === 'image' || clip.type === 'mask') && (
+                {clip.type === 'mask' && (
                     <div className="space-y-4">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Image Mask & Filter</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Image/Video Mask & Filter</Label>
 
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">

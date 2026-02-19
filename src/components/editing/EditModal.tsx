@@ -47,7 +47,7 @@ export function EditModal() {
                     </div>
                 ) : (
                     <>
-                        {(currentClip.type === 'video' || currentClip.type === 'image' || currentClip.type === 'mask') && (
+                        {currentClip.type === 'mask' && (
                             <MaskEditor clip={currentClip} onUpdate={handleUpdate} onClose={handleClose} />
                         )}
                         {currentClip.type === 'audio' && (
