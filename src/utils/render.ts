@@ -275,23 +275,106 @@ export const renderFrame = async (
 
         // Mask Logic (Zoom to Mask) implementation for Canvas
         // Need to clip the area then draw scaled image
+        // Mask Logic (Zoom to Mask) implementation for Canvas
         const mask = clip.mask
+        const templateData = clip.templateData
+
+        let hasCustomClip = false;
+
+        // 1. Apply Custom Path Clip (if available)
+        if (templateData) {
+            const shapes = Object.values(templateData).filter((v: any) => v.type);
+            if (shapes.length > 0) {
+                let viewX = 0;
+                let viewY = 0;
+                let viewW = 100;
+                let viewH = 100;
+
+                if (clip.viewBox) {
+                    const parts = clip.viewBox.split(/[ ,]+/).filter(Boolean).map(Number);
+                    if (parts.length === 4) {
+                        [viewX, viewY, viewW, viewH] = parts;
+                    }
+                } else if (templateData.originalBBox) {
+                    // Fallback for legacy items if needed, or just default to 100 if we assumed strict migration
+                }
+
+                // Avoid division by zero
+                if (viewW === 0) viewW = 100;
+                if (viewH === 0) viewH = 100;
+
+                const sx = w / viewW;
+                const sy = h / viewH;
+
+                // Matrix: Scale(sx, sy) * Translate(-vx, -vy)
+                // We also need to translate to the Clip's (x, y) on canvas.
+                // The context is already AT (cx, cy) then rotated then translated back to (x, y) effectively via transforms?
+                // Line 272: ctx.translate(cx, cy); ctx.rotate; ctx.translate(-cx, -cy).
+                // So the context origin (0,0) is still at Global(0,0), but the grid is rotated around center?
+                // No. `ctx.translate/rotate` modifies the matrix.
+                // If we draw at `x,y`, it appears at the correct rotated position.
+
+                // So we want to map:
+                // Path(0,0) -> Clip(x,y)
+                // But Path is in ViewBox Space.
+                // Path(vx, vy) -> Clip(x, y)
+                // So we Translate(-vx, -vy) then Scale(sx, sy) then Translate(x, y).
+
+                // We can compose the matrix:
+                // Global Matrix = [sx, 0, 0, sy, x - vx*sx, y - vy*sy]
+
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                const matrix = svg.createSVGMatrix();
+                matrix.a = sx;
+                matrix.d = sy;
+                matrix.e = x - (viewX * sx);
+                matrix.f = y - (viewY * sy);
+
+                const combinedPath = new Path2D();
+                shapes.forEach((shape: any) => {
+                    if (shape.d) {
+                        combinedPath.addPath(new Path2D(shape.d), matrix);
+                    } else if (shape.type === 'rect') {
+                        const px = parseFloat(shape.x || 0);
+                        const py = parseFloat(shape.y || 0);
+                        const pw = parseFloat(shape.width || 0);
+                        const ph = parseFloat(shape.height || 0);
+                        const p = new Path2D();
+                        p.rect(px, py, pw, ph);
+                        combinedPath.addPath(p, matrix);
+                    } else if (shape.type === 'circle') {
+                        const cx = parseFloat(shape.cx || 0);
+                        const cy = parseFloat(shape.cy || 0);
+                        const r = parseFloat(shape.r || 0);
+                        const p = new Path2D();
+                        p.arc(cx, cy, r, 0, 2 * Math.PI);
+                        combinedPath.addPath(p, matrix);
+                    }
+                    // Add other shapes if needed
+                });
+
+                ctx.beginPath();
+                ctx.clip(combinedPath);
+                hasCustomClip = true;
+            }
+        }
 
         if (mask) {
-            // 1. Clip the drawing area to the box, respecting shape and corner radius
-            ctx.beginPath()
-            if (mask.shape === 'circle') {
-                ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, 2 * Math.PI)
-            } else if (mask.cornerRadius) {
-                const radius = (mask.cornerRadius / 100) * Math.min(w, h)
-                ctx.roundRect(x, y, w, h, radius)
-            } else {
-                ctx.rect(x, y, w, h)
+            // 2. Apply User Crop Clip (if no custom path found)
+            if (!hasCustomClip) {
+                ctx.beginPath()
+                if (mask.shape === 'circle') {
+                    ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, 2 * Math.PI)
+                } else if (mask.cornerRadius) {
+                    const radius = (mask.cornerRadius / 100) * Math.min(w, h)
+                    ctx.roundRect(x, y, w, h, radius)
+                } else {
+                    ctx.rect(x, y, w, h)
+                }
+                ctx.clip()
             }
-            ctx.clip()
 
-            // 2. Transform the context to "Zoom" into the crop
-            // Scale so that crop        if (mask) {
+            // 3. Transform to "Zoom" into the crop
             const scaleX = 100 / mask.width
             const scaleY = 100 / mask.height
 
@@ -304,13 +387,12 @@ export const renderFrame = async (
             offX -= (mask.x / 100) * clipWidth * scaleX
             offY -= (mask.y / 100) * clipHeight * scaleY
 
-            clipWidth *= scaleX
-            clipHeight *= scaleY
-
             ctx.translate(offX, offY)
             ctx.scale(scaleX, scaleY)
         } else {
             // No crop, just translate to x,y so we draw at correct pos
+            // If hasCustomClip, clipping is already applied in Global Space over (x,y,w,h) area.
+            // We just need to draw the image at x,y.
             ctx.translate(x, y)
         }
 

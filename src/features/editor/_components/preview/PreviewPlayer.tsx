@@ -456,8 +456,8 @@ export function PreviewPlayer() {
                     <mask id={maskId}>
                         <rect x="0" y="0" width="100%" height="100%" fill="black" />
                         <g transform={`scale(${sx}, ${sy}) translate(${-vbx}, ${-vby})`}>
-                            {Object.values(clip.templateData).map((data: any) => (
-                                <path key={data.id} d={data.d} fill="white" />
+                            {Object.values(clip.templateData).map((data: any, index: number) => (
+                                <path key={data.id || index} d={data.d} fill="white" />
                             ))}
                         </g>
                     </mask>
