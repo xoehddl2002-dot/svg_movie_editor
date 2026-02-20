@@ -10,6 +10,8 @@ import { Clip } from "@/features/editor/store/useStore"
 import { cn } from "@/lib/utils"
 import { getRectPath, getEllipsePath, getTrianglePath, getStarPath, getPolygonPath } from "@/features/editor/utils/shapeUtils"
 import { transformPath } from "@/utils/svg/pathUtils"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Card, CardContent } from "@/components/ui/card"
 
 interface MaskEditorProps {
     clip: Clip
@@ -37,6 +39,29 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     }
 
     const [resourceType, setResourceType] = useState<'video' | 'image'>(getMediaType(clip.src))
+
+    // Assets state for Unified Picker
+    const [assets, setAssets] = useState<{ type: 'video' | 'image', src: string, thumbnail?: string }[]>([]);
+
+    useEffect(() => {
+        const loadAssets = async () => {
+            try {
+                const response = await fetch('/api/assets');
+                if (!response.ok) throw new Error('Failed to fetch assets');
+                const data = await response.json();
+
+                const combinedAssets: { type: 'video' | 'image', src: string, thumbnail?: string }[] = [
+                    ...(data.videos || []).map((v: any) => ({ type: 'video' as const, ...v })),
+                    ...(data.images || []).map((i: string) => ({ type: 'image' as const, src: i }))
+                ];
+                setAssets(combinedAssets);
+            } catch (error) {
+                console.error("Failed to load assets in MaskEditor", error);
+            }
+        };
+        loadAssets();
+    }, []);
+
 
     // Update resource type if src changes
     useEffect(() => {
@@ -83,10 +108,20 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         if (resourceType === 'image') {
             const img = new Image();
             img.onload = onLoaded;
+            // Handle loading error or verify src exists?
+            img.onerror = () => {
+                 console.warn("Failed to load image resource:", resourceSrc);
+                 // Proceed anyway to allow changing it?
+                 setIsResourceLoaded(true); 
+            };
             img.src = resourceSrc;
         } else if (resourceType === 'video') {
             const vid = document.createElement('video');
             vid.onloadedmetadata = onLoaded;
+            vid.onerror = () => {
+                 console.warn("Failed to load video resource:", resourceSrc);
+                 setIsResourceLoaded(true);
+            }
             vid.src = resourceSrc;
         }
     }, [resourceSrc, resourceType]);
@@ -486,108 +521,153 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                             </TabsList>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4">
-                            <TabsContent value="resource" className="mt-0 space-y-6">
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-                                        <Upload className="w-4 h-4" />
-                                        Source & Transform
+                        <div className="flex-1 relative overflow-hidden">
+                             <TabsContent value="resource" className="absolute inset-0 mt-0">
+                                <ScrollArea className="h-full w-full" type="always">
+                                    <div className="flex flex-col p-4 gap-4">
+                                    <div className="space-y-4 shrink-0">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                                            <Upload className="w-4 h-4" />
+                                            Source & Transform
+                                        </div>
+                                        <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+                                            {/* File Upload / Swap */}
+                                            <div className="space-y-2">
+                                                <Label className="text-xs">Current Source</Label>
+                                                <div className="flex gap-2">
+                                                    <div className="flex-1 p-2 bg-background border rounded text-xs font-mono truncate">
+                                                        {resourceSrc.slice(0, 30)}...
+                                                    </div>
+                                                    <Button size="icon" variant="outline" className="shrink-0 relative">
+                                                        <Upload className="w-4 h-4" />
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*,video/*"
+                                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                                            onChange={handleFileChange}
+                                                        />
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="h-px bg-border my-2" />
+
+                                            {/* Transform Controls */}
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <Label className="text-xs">Rotation</Label>
+                                                    <div className="flex items-center gap-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={Math.round(rotation)}
+                                                            onChange={(e) => {
+                                                                const val = Number(e.target.value);
+                                                                setRotation(val);
+                                                                setRotationChanged(true);
+                                                            }}
+                                                            className="h-6 w-16 text-xs text-right p-1"
+                                                        />
+                                                        <span className="text-xs text-muted-foreground">°</span>
+                                                    </div>
+                                                </div>
+
+                                                <Slider
+                                                    value={[rotation]}
+                                                    min={0}
+                                                    max={360}
+                                                    step={1}
+                                                    onValueChange={([v]) => {
+                                                        setRotation(v);
+                                                        setRotationChanged(true);
+                                                    }}
+                                                />
+
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" size="sm" className="flex-1" onClick={rotateLeft}>
+                                                        <RotateCcw className="w-4 h-4 mr-2" />
+                                                        -90°
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" className="flex-1" onClick={rotateRight}>
+                                                        <RotateCw className="w-4 h-4 mr-2" />
+                                                        +90°
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-xs">Flip</Label>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        variant={flipH ? "secondary" : "outline"}
+                                                        size="sm"
+                                                        className="flex-1"
+                                                        onClick={toggleFlipH}
+                                                    >
+                                                        <FlipHorizontal className="w-4 h-4 mr-2" />
+                                                        Horizontal
+                                                    </Button>
+                                                    <Button
+                                                        variant={flipV ? "secondary" : "outline"}
+                                                        size="sm"
+                                                        className="flex-1"
+                                                        onClick={toggleFlipV}
+                                                    >
+                                                        <FlipVertical className="w-4 h-4 mr-2" />
+                                                        Vertical
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
-                                        {/* File Upload / Swap */}
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Current Source</Label>
-                                            <div className="flex gap-2">
-                                                <div className="flex-1 p-2 bg-background border rounded text-xs font-mono truncate">
-                                                    {resourceSrc.slice(0, 30)}...
-                                                </div>
-                                                <Button size="icon" variant="outline" className="shrink-0 relative">
-                                                    <Upload className="w-4 h-4" />
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*,video/*"
-                                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                                        onChange={handleFileChange}
-                                                    />
-                                                </Button>
-                                            </div>
-                                            <p className="text-[10px] text-muted-foreground">
-                                                Upload an image or video to replace the current resource.
-                                            </p>
-                                        </div>
-
-                                        <div className="h-px bg-border my-2" />
-
-                                        {/* Transform Controls */}
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center">
-                                                <Label className="text-xs">Rotation</Label>
-                                                <div className="flex items-center gap-2">
-                                                    <Input
-                                                        type="number"
-                                                        value={Math.round(rotation)}
-                                                        onChange={(e) => {
-                                                            const val = Number(e.target.value);
-                                                            setRotation(val);
-                                                            setRotationChanged(true);
-                                                        }}
-                                                        className="h-6 w-16 text-xs text-right p-1"
-                                                    />
-                                                    <span className="text-xs text-muted-foreground">°</span>
-                                                </div>
-                                            </div>
-
-                                            <Slider
-                                                value={[rotation]}
-                                                min={0}
-                                                max={360}
-                                                step={1}
-                                                onValueChange={([v]) => {
-                                                    setRotation(v);
-                                                    setRotationChanged(true);
-                                                }}
-                                            />
-
-                                            <div className="flex gap-2">
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={rotateLeft}>
-                                                    <RotateCcw className="w-4 h-4 mr-2" />
-                                                    -90°
-                                                </Button>
-                                                <Button variant="outline" size="sm" className="flex-1" onClick={rotateRight}>
-                                                    <RotateCw className="w-4 h-4 mr-2" />
-                                                    +90°
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Flip</Label>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    variant={flipH ? "secondary" : "outline"}
-                                                    size="sm"
-                                                    className="flex-1"
-                                                    onClick={toggleFlipH}
-                                                >
-                                                    <FlipHorizontal className="w-4 h-4 mr-2" />
-                                                    Horizontal
-                                                </Button>
-                                                <Button
-                                                    variant={flipV ? "secondary" : "outline"}
-                                                    size="sm"
-                                                    className="flex-1"
-                                                    onClick={toggleFlipV}
-                                                >
-                                                    <FlipVertical className="w-4 h-4 mr-2" />
-                                                    Vertical
-                                                </Button>
-                                            </div>
-                                        </div>
+                                    
+                                    <div className="space-y-2">
+                                         <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                                            <ImageIcon className="w-4 h-4" />
+                                            Asset Library
+                                         </div>
+                                         <div className="p-2 grid grid-cols-2 gap-2 border rounded-md bg-muted/10">
+                                                 {assets.map((asset, i) => (
+                                                     <Card
+                                                         key={i}
+                                                         className="overflow-hidden cursor-pointer hover:border-primary group relative transition-all active:scale-95"
+                                                         onClick={() => {
+                                                             setResourceSrc(asset.src);
+                                                             setResourceType(asset.type);
+                                                         }}
+                                                     >
+                                                         <CardContent className="p-0 aspect-video relative bg-black/5 flex items-center justify-center">
+                                                             {asset.type === 'video' ? (
+                                                                 asset.thumbnail ? (
+                                                                     <img src={asset.thumbnail} className="w-full h-full object-cover" />
+                                                                 ) : (
+                                                                     <video src={asset.src} className="w-full h-full object-cover" />
+                                                                 )
+                                                             ) : (
+                                                                 <img src={asset.src} className="w-full h-full object-cover" />
+                                                             )}
+                                                             
+                                                             <div className={cn(
+                                                                 "absolute inset-0 transition-opacity flex items-center justify-center text-white text-[10px] font-bold bg-black/40",
+                                                                 resourceSrc === asset.src ? "opacity-100 ring-4 ring-primary ring-inset" : "opacity-0 group-hover:opacity-100"
+                                                             )}>
+                                                                 {resourceSrc === asset.src ? "SELECTED" : "USE THIS"}
+                                                             </div>
+                                                             
+                                                             {asset.type === 'video' && (
+                                                                 <div className="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-black/60 text-white text-[8px] font-bold flex items-center gap-1">
+                                                                     <Film className="w-2 h-2" /> VID
+                                                                 </div>
+                                                             )}
+                                                         </CardContent>
+                                                     </Card>
+                                                 ))}
+                                             </div>
                                     </div>
                                 </div>
-                            </TabsContent>
+                                </ScrollArea>
+                             </TabsContent>
 
-                            <TabsContent value="mask" className="mt-0 space-y-6">
+                            <TabsContent value="mask" className="mt-0 h-full overflow-y-auto custom-scrollbar p-4">
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
                                         <Maximize2 className="w-4 h-4" />
