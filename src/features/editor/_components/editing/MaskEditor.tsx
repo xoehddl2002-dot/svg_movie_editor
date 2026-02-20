@@ -63,10 +63,10 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     }, []);
 
 
-    // Update resource type if src changes
-    useEffect(() => {
-        setResourceType(getMediaType(resourceSrc));
-    }, [resourceSrc]);
+    // Update resource type if src changes - REMOVED to prevent overwriting type for Blob URLs
+    // useEffect(() => {
+    //     setResourceType(getMediaType(resourceSrc));
+    // }, [resourceSrc]);
 
     const svgRef = useRef<SVGSVGElement>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
