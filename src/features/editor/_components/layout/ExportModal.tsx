@@ -6,18 +6,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Loader2, Video, Image as ImageIcon } from "lucide-react"
 import { useExportImage } from '@/features/editor/hooks/useExportImage'
 import { useExportVideo } from '@/features/editor/hooks/useExportVideo'
+import { Progress } from "@/components/ui/progress"
 
 export function ExportModal() {
     const [isOpen, setIsOpen] = useState(false)
     const [format, setFormat] = useState<'mp4' | 'png'>('png')
-    const [fps, setFps] = useState<number>(30)
+    const [fps, setFps] = useState<number>(20)
 
-    const { exportImage, isExporting: isExportingImage } = useExportImage()
-    const { exportVideo, cancelExport, isExporting: isExportingVideo } = useExportVideo()
+    const { exportImage, isExporting: isExportingImage, progress: progressImage, status: statusImage } = useExportImage()
+    const { exportVideo, cancelExport, isExporting: isExportingVideo, progress: progressVideo, status: statusVideo } = useExportVideo()
 
     const isExporting = isExportingImage || isExportingVideo
+    const progress = isExportingVideo ? progressVideo : progressImage
+    const status = isExportingVideo ? statusVideo : statusImage
 
     const handleExport = async () => {
+        console.log(`[Export Debug] Handle Export Clicked. Format: ${format}, FPS: ${fps}`)
         if (format === 'mp4') {
             await exportVideo(fps)
             setIsOpen(false)
@@ -87,11 +91,25 @@ export function ExportModal() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-white">
+                                    <SelectItem value="20">20 FPS</SelectItem>
                                     <SelectItem value="24">24 FPS</SelectItem>
                                     <SelectItem value="30">30 FPS</SelectItem>
                                     <SelectItem value="60">60 FPS</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                    )}
+
+                    {isExporting && (
+                        <div className="space-y-2 pt-2">
+                            <div className="flex justify-between text-sm">
+                                <span>{status === 'encoding' ? 'Encoding...' : 'Rendering...'}</span>
+                                <span className="text-muted-foreground">{progress}%</span>
+                            </div>
+                            <Progress value={progress} />
+                            {status === 'encoding' && (
+                                <p className="text-xs text-muted-foreground">This may take a while...</p>
+                            )}
                         </div>
                     )}
                 </div>
@@ -107,7 +125,7 @@ export function ExportModal() {
                         disabled={isExporting}
                     >
                         {isExporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isExporting ? 'Exporting...' : 'Export'}
+                        {isExporting ? (status === 'encoding' ? 'Encoding...' : 'Rendering...') : 'Export'}
                     </Button>
                 </div>
             </DialogContent>

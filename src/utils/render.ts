@@ -188,6 +188,7 @@ export const prefetchVideoFrames = async (fps: number, duration: number, tracks:
                 body: JSON.stringify({
                     videoPath: src,
                     timestamps: neededTimestamps,
+                    fps: fps,
                     // Optional: size: '1920x?' to query high res if needed, but default/auto might be safer
                 })
             })

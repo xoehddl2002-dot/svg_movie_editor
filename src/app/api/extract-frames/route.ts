@@ -97,7 +97,9 @@ export async function POST(request: Request) {
         }
 
         // Extract frames in batches to avoid ENAMETOOLONG
-        const BATCH_SIZE = 20 // Decrease if still failing
+        // Default to 20 if fps is not provided, otherwise use fps as batch size (1 second worth of frames)
+        const fps = body.fps || 20
+        const BATCH_SIZE = Math.max(1, Math.min(60, fps)) 
 
         for (let i = 0; i < timestamps.length; i += BATCH_SIZE) {
             const batch = timestamps.slice(i, i + BATCH_SIZE)

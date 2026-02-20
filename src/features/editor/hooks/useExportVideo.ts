@@ -7,10 +7,14 @@ interface UseExportVideoReturn {
     exportVideo: (fps: number) => Promise<void>
     cancelExport: () => void
     isExporting: boolean
+    progress: number
+    status: 'idle' | 'rendering' | 'encoding' | 'completed' | 'error'
 }
 
 export const useExportVideo = (): UseExportVideoReturn => {
     const [isExporting, setIsExporting] = useState(false)
+    const [progress, setProgress] = useState(0)
+    const [status, setStatus] = useState<'idle' | 'rendering' | 'encoding' | 'completed' | 'error'>('idle')
     const [abortController, setAbortController] = useState<AbortController | null>(null)
     const { tracks, aspectRatio, duration } = useStore()
 
@@ -35,11 +39,16 @@ export const useExportVideo = (): UseExportVideoReturn => {
     }
 
     const exportVideo = async (fps: number) => {
+        console.log(`[Export Debug] exportVideo called with FPS: ${fps}`)
+        console.log(`[Export Debug] Current Store Duration: ${duration}`)
+        
         const controller = new AbortController()
         setAbortController(controller)
         const signal = controller.signal
 
         setIsExporting(true)
+        setStatus('rendering')
+        setProgress(0)
 
         try {
             const projectWidth = 1920
@@ -53,6 +62,7 @@ export const useExportVideo = (): UseExportVideoReturn => {
             if (!ctx) throw new Error('Could not get 2d context')
 
             const totalFrames = Math.max(1, Math.ceil(duration * fps))
+            console.log(`[Export Debug] Calculated totalFrames: ${totalFrames} (Duration: ${duration} * FPS: ${fps})`)
 
             // 1. Prefetch Video Frames
             if (signal.aborted) throw new Error('Export cancelled')
@@ -70,11 +80,18 @@ export const useExportVideo = (): UseExportVideoReturn => {
 
                 const base64 = canvas.toDataURL('image/png')
                 frames.push(base64)
+                
+                // Update progress - Max 99% during rendering
+                setProgress(Math.round(((i + 1) / totalFrames) * 99))
             }
 
             if (signal.aborted) throw new Error('Export cancelled')
 
             // 3. Send to API
+            setStatus('encoding')
+            // Allow UI to update to "Encoding... 99%" before standard sync freeze of FormData
+            await new Promise(resolve => setTimeout(resolve, 100))
+
             const formData = new FormData()
             formData.append('fps', fps.toString())
             formData.append('frameCount', frames.length.toString())
@@ -97,6 +114,8 @@ export const useExportVideo = (): UseExportVideoReturn => {
             if (audioClips.length > 0) {
                 formData.append('audioTracks', JSON.stringify(audioClips));
             }
+
+            setProgress(100)
 
             const response = await fetch('/api/render-video', {
                 method: 'POST',
@@ -125,6 +144,7 @@ export const useExportVideo = (): UseExportVideoReturn => {
             link.click()
 
             console.log('MP4 export successful')
+            setStatus('completed')
 
         } catch (error: any) {
             if (error.name === 'AbortError' || error.message === 'Export cancelled') {
@@ -134,11 +154,12 @@ export const useExportVideo = (): UseExportVideoReturn => {
                 const msg = error.message || (typeof error === 'string' ? error : 'Check network tab for details')
                 alert(`Failed to export Video: ${msg}`)
             }
+            setStatus('error')
         } finally {
             setIsExporting(false)
             setAbortController(null)
         }
     }
 
-    return { exportVideo, cancelExport, isExporting }
+    return { exportVideo, cancelExport, isExporting, progress, status }
 }
