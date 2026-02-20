@@ -77,3 +77,21 @@ export const getStarPath = (x: number, y: number, w: number, h: number): string 
     d += ' Z';
     return d;
 };
+
+export const getPolygonPath = (x: number, y: number, w: number, h: number, sides: number = 5): string => {
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const r = Math.min(w, h) / 2;
+
+    let d = '';
+    for (let i = 0; i < sides; i++) {
+        const angle = (Math.PI * 2 * i) / sides - Math.PI / 2;
+        const px = cx + Math.cos(angle) * r;
+        const py = cy + Math.sin(angle) * r;
+
+        if (i === 0) d += `M ${px} ${py}`;
+        else d += ` L ${px} ${py}`;
+    }
+    d += ' Z';
+    return d;
+};

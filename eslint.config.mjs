@@ -18,6 +18,7 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "react/react-in-jsx-scope": "off",
+      "prettier/prettier": "error",
     },
   },
 ]);

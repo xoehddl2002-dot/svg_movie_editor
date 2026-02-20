@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Image as ImageIcon, Film, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, MousePointer2, Square, Circle, Triangle, Star, Upload } from "lucide-react"
+import { Image as ImageIcon, Film, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, MousePointer2, Square, Circle, Triangle, Star, Hexagon, Upload } from "lucide-react"
 import { Clip } from "@/features/editor/store/useStore"
 import { cn } from "@/lib/utils"
-import { getRectPath, getEllipsePath, getTrianglePath, getStarPath } from "@/features/editor/utils/shapeUtils"
+import { getRectPath, getEllipsePath, getTrianglePath, getStarPath, getPolygonPath } from "@/features/editor/utils/shapeUtils"
+import { transformPath } from "@/utils/svg/pathUtils"
 
 interface MaskEditorProps {
     clip: Clip
@@ -209,6 +210,18 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                 newD = getTrianglePath(newX, newY, newW, newH);
             } else if (shapeType === 'star') {
                 newD = getStarPath(newX, newY, newW, newH);
+            } else if (shapeType === 'polygon' || shapeType === 'path') {
+                // For polygon and path, preserve the shape by transforming the existing path data
+                // Calculate transform relative to start state (using start.data.d as base)
+                const sX = newW / (start.shapeW || 1);
+                const sY = newH / (start.shapeH || 1);
+                
+                const dX = newX - (start.shapeX * sX);
+                const dY = newY - (start.shapeY * sY);
+                
+                if (start.data && start.data.d) {
+                   newD = transformPath(start.data.d, dX, dY, sX, sY);
+                }
             }
 
             newData[activeComponentId] = {
@@ -267,7 +280,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     const toggleFlipH = () => setFlipH(f => !f)
     const toggleFlipV = () => setFlipV(f => !f)
 
-    const addShape = (shapeType: 'rect' | 'circle' | 'triangle' | 'star') => {
+    const addShape = (shapeType: 'rect' | 'circle' | 'triangle' | 'star' | 'polygon') => {
         const id = `shape-${Date.now()}`;
 
         const boxMin = Math.min(imageSvgBounds.width, imageSvgBounds.height);
@@ -281,6 +294,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         else if (shapeType === 'circle') d = getEllipsePath(x, y, w, h);
         else if (shapeType === 'triangle') d = getTrianglePath(x, y, w, h);
         else if (shapeType === 'star') d = getStarPath(x, y, w, h);
+        else if (shapeType === 'polygon') d = getPolygonPath(x, y, w, h, 5);
 
         // Single shape only — replace all existing shapes
         const newData = {
@@ -290,7 +304,8 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                 x, y, width: w, height: h,
                 d,
                 fill: 'white',
-                'data-shape-type': shapeType
+                'data-shape-type': shapeType,
+                sides: shapeType === 'polygon' ? 5 : undefined
             }
         };
 
@@ -455,6 +470,9 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                         <Button variant="ghost" size="icon" onClick={() => addShape('star')} title="Star">
                             <Star className="w-5 h-5" />
                         </Button>
+                        <Button variant="ghost" size="icon" onClick={() => addShape('polygon')} title="Polygon">
+                            <Hexagon className="w-5 h-5" />
+                        </Button>
                     </div>
                 </div>
 
@@ -600,6 +618,31 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4">
+                                                    {data.sides !== undefined && (
+                                                        <div className="space-y-1 col-span-2">
+                                                            <Label className="text-[10px] uppercase font-bold opacity-70">Sides</Label>
+                                                            <div className="flex items-center gap-2">
+                                                                <Slider
+                                                                    value={[data.sides]}
+                                                                    min={3}
+                                                                    max={20}
+                                                                    step={1}
+                                                                    onValueChange={([val]) => {
+                                                                        const newData = { ...clip.templateData };
+                                                                        const current = newData[id];
+                                                                        const newProps = { ...current, sides: val };
+                                                                        const { x, y, width, height } = newProps;
+                                                                        
+                                                                        const newD = getPolygonPath(x, y, width, height, val);
+                                                                        newData[id] = { ...newProps, d: newD };
+                                                                        onUpdate({ templateData: newData });
+                                                                    }}
+                                                                    className="flex-1"
+                                                                />
+                                                                <span className="w-8 text-xs font-mono text-right">{data.sides}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     {['x', 'y', 'width', 'height'].map(prop => (
                                                         data[prop] !== undefined && (
                                                             <div key={prop} className="space-y-1">
@@ -622,6 +665,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                                         else if (shapeType === 'circle') newD = getEllipsePath(x, y, width, height);
                                                                         else if (shapeType === 'triangle') newD = getTrianglePath(x, y, width, height);
                                                                         else if (shapeType === 'star') newD = getStarPath(x, y, width, height);
+                                                                        else if (shapeType === 'polygon') newD = getPolygonPath(x, y, width, height, current.sides || 5);
 
                                                                         newData[id] = { ...newProps, d: newD };
                                                                         onUpdate({ templateData: newData });
