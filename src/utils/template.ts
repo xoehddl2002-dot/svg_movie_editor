@@ -1,9 +1,9 @@
 
 import { getStrokedBBox, getBBox } from './svg/utilities'
-import { hasNonIdentityTransform, getMatrix, deltaTransformPoint } from './svg/math'
+import { hasNonIdentityTransform, getMatrix, deltaTransformPoint, transformBox } from './svg/math'
 import { urlToDataURL } from './dataUrl'
 import type { Clip, Track, ResourceType } from '../features/editor/store/useStore'
-import { transformPath } from './svg/pathUtils'
+import { transformPath, matrixTransformPath, getBoundsFromPathD } from './svg/pathUtils'
 import { getRectPath, getEllipsePath, getTrianglePath, getStarPath, getPolygonPath } from '../features/editor/utils/shapeUtils'
 
 export interface TemplateData {
@@ -390,7 +390,11 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                             let d = '';
                             let dataShapeType = 'rect';
 
-                            console.log('shapeElement', shapeElement)
+                            // Check for transform on the shape element
+                            let shapeMatrix: SVGMatrix | null = null;
+                            if (shapeElement instanceof SVGGraphicsElement && hasNonIdentityTransform(shapeElement.transform.baseVal)) {
+                                shapeMatrix = getMatrix(shapeElement);
+                            }
 
                             // Initialize variable to track sides for polygons
                             let sides: number | undefined;
@@ -460,20 +464,112 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                                 dataShapeType = 'polygon';
                             }else if(shapeType==='path') {
                                 const rawD = shapeElement.getAttribute('d') || '';
-                                
-                                const pb = getBBox(shapeElement); // This works if child is attached to DOM (it is via hiddenContainer)
-                                if (pb) {
-                                    shapeX = (pb.x - (bbox ? bbox.x : 0)) * scale;
-                                    shapeY = (pb.y - (bbox ? bbox.y : 0)) * scale;
-                                    shapeW = pb.width * scale;
-                                    shapeH = pb.height * scale;
-                                }
 
+                                console.log('rawD', rawD);
+                                
                                 // We use the global scale factor for the path transformation
                                 d = transformPath(rawD, -(bbox ? bbox.x * scale : 0), -(bbox ? bbox.y * scale : 0), scale, scale);
+                                console.log('d', d);
+                                // Update BBox (x, y, w, h) from the final d
+                                // This ensures that the x,y attributes exactly match the path's position.
+                                const bounds = getBoundsFromPathD(d);
+                                console.log('bounds', bounds);
+                                shapeX = bounds.x;
+                                shapeY = bounds.y;
+                                shapeW = bounds.width;
+                                shapeH = bounds.height;
 
                                 dataShapeType = 'path';
                             }
+
+                            // Apply matrix transform if exists
+                            if (shapeMatrix) {
+                                // 1. Updates d with matrix
+                                // Note: our d is already scaled and relative to validClips origin (kind of).
+                                // Wait, the d calculation above used `scale` and subtract `originX/Y`.
+                                // Transform on the element applies to the raw coordinates BEFORE we processed them.
+                                // But our process above 'baked' the scale and translation relative to the parent image BBox.
+                                
+                                // The `shapeMatrix` is in the SVG coordinate space (before our Manual Scale/Translate logic).
+                                // So we should apply the matrix to the raw path first, THEN scale/center relative to parent?
+                                // OR apply the matrix to our processed path but need to adjust the matrix.
+                                
+                                // Better approach:
+                                // Parse raw D/rect/circle in SVG coords.
+                                // Apply the shapeMatrix (SVG coords -> Transformed SVG coords).
+                                // THEN Apply the "Project Scale" (scale) and "Parent Offset" (-bbox.x, -bbox.y).
+                                
+                                // Let's reconstruct the process for transformed elements.
+                                
+                                // Get Initial Path Data (Raw)
+                                let rawD = '';
+                                if (shapeType === 'rect') {
+                                    const rx = parseFloat(shapeElement.getAttribute('x') || '0');
+                                    const ry = parseFloat(shapeElement.getAttribute('y') || '0');
+                                    const w = parseFloat(shapeElement.getAttribute('width') || '0');
+                                    const h = parseFloat(shapeElement.getAttribute('height') || '0');
+                                    const rRx = parseFloat(shapeElement.getAttribute('rx') || '0');
+                                    const rRy = parseFloat(shapeElement.getAttribute('ry') || '0');
+                                    rawD = getRectPath(rx, ry, w, h, rRx, rRy);
+                                } else if (shapeType === 'circle' || shapeType === 'ellipse') {
+                                    // ... similar raw fetch
+                                     const cx = parseFloat(shapeElement.getAttribute('cx') || '0');
+                                    const cy = parseFloat(shapeElement.getAttribute('y') || '0');
+                                    let rx = 0, ry = 0;
+                                    if(shapeType === 'circle') {
+                                        const r = parseFloat(shapeElement.getAttribute('r') || '0');
+                                        rx = r; ry = r;
+                                    } else {
+                                        rx = parseFloat(shapeElement.getAttribute('rx') || '0');
+                                        ry = parseFloat(shapeElement.getAttribute('ry') || '0');
+                                    }
+                                    rawD = getEllipsePath(cx - rx, cy - ry, rx * 2, ry * 2);
+                                } else if (shapeType === 'polygon') {
+                                    const points = shapeElement.getAttribute('points') || '';
+                                    const ptsArr = points.trim().split(/[\s,]+/).filter(Boolean).map(n => parseFloat(n));
+                                    let builtD = '';
+                                    for(let k=0; k<ptsArr.length; k+=2) {
+                                        builtD += (k===0 ? `M ${ptsArr[k]} ${ptsArr[k+1]}` : ` L ${ptsArr[k]} ${ptsArr[k+1]}`);
+                                    }
+                                    builtD += ' Z';
+                                    rawD = builtD;
+                                } else if (shapeType === 'path') {
+                                    rawD = shapeElement.getAttribute('d') || '';
+                                }
+                                if (rawD) {
+                                    // 1. Apply Element Transform (Rotation, Skew, input Translate)
+                                    // shapeMatrix corresponds to this.
+                                    const transformedRawD = matrixTransformPath(rawD, shapeMatrix);
+                                    
+                                    // 2. Apply Project Scale and Parent Offset
+                                    // originX/Y are already scaled.
+                                    // We need to translate by (-bbox.x, -bbox.y) then scale by (scale).
+                                    // Actually, standard transformPath does: val * s + d.
+                                    // So we want: (val - bbox.x) * scale.
+                                    // This is equivalent to: val * scale - bbox.x * scale.
+                                    
+                                    // So use transformPath with:
+                                    // dx = -(bbox.x * scale)
+                                    // dy = -(bbox.y * scale)
+                                    // sx = scale
+                                    // sy = scale
+                                    
+                                    d = transformPath(transformedRawD, -originX, -originY, scale, scale);
+                                    
+                                    // 3. Update BBox (x, y, w, h) from the final d
+                                    // This ensures that the x,y attributes exactly match the path's position.
+                                    const bounds = getBoundsFromPathD(d);
+                                    shapeX = bounds.x;
+                                    shapeY = bounds.y;
+                                    shapeW = bounds.width;
+                                    shapeH = bounds.height;
+                                    
+                                    // Since it's transformed, force type to 'path' (or polygon if simple)
+                                    // 'path' is safest.
+                                    dataShapeType = 'path';
+                                }
+                            }
+
 
                             const attrs: any = {
                                 type: shapeType,
@@ -488,7 +584,7 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
 
                             Array.from(shapeElement.attributes).forEach(attr => {
                                 // Don't overwrite our calculated relative coordinates with absolute ones
-                                if (!['x', 'y', 'width', 'height', 'd', 'cx', 'cy', 'r', 'rx', 'ry'].includes(attr.name)) {
+                                if (!['x', 'y', 'width', 'height', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'transform'].includes(attr.name)) {
                                     attrs[attr.name] = attr.value;
                                 }
                             });

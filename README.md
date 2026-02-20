@@ -1,7 +1,7 @@
-demo
+# demo
 https://svg-movie-editor.vercel.app/
 
-SVG Movie Editor
+# SVG Movie Editor
 SVG 기반 영상 편집기 프로토타입입니다.
 이미지 편집기 프로젝트를 확장하여
 SVG 요소 구성을 프레임 단위로 관리하고
@@ -14,15 +14,17 @@ SVG 편집 상태를 시간 축으로 확장하는 것을 목표로
 AI 기반 코드 생성 도구를 활용하여
 편집기 구조와 인터랙션 구현 방식을 탐색하고 있습니다.
 
-구현 범위
+# 구현 범위
 SVG 편집 상태 관리 구조
 프레임 단위 구성 실험
 편집기 → 영상 렌더링 흐름 설계
 AI 협업 기반 구현 실험
-기술 스택
+
+# 기술 스택
 Next.js
 React
 TypeScript
 Tailwind CSS
 SVG 렌더링
+
 ※ 개인 연구/실험 프로젝트입니다.
