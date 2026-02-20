@@ -1,5 +1,6 @@
 # demo
 https://svg-movie-editor.vercel.app/
+export video 는 현재 배포환경(vercel) 환경에서 메모리 문제로 렌더링이 불가능합니다.
 
 # SVG Movie Editor
 SVG 기반 영상 편집기 프로토타입입니다.

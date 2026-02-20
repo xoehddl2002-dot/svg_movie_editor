@@ -23,6 +23,14 @@ export function ExportModal() {
     const handleExport = async () => {
         console.log(`[Export Debug] Handle Export Clicked. Format: ${format}, FPS: ${fps}`)
         if (format === 'mp4') {
+            // Disable video export in production (Vercel) due to memory constraints
+            // But allow it for local testing (localhost)
+            const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+            if (process.env.NODE_ENV === 'production' && !isLocal) {
+                alert("Video export is currently disabled in the deployment environment due to server memory constraints. Please run locally to export video.")
+                return
+            }
             await exportVideo(fps)
             setIsOpen(false)
         } else {
