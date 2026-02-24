@@ -1,0 +1,52 @@
+{
+    "videos": [
+        {
+            "src": "/assets/video/M202110071043484962.mp4",
+            "thumbnail": "/assets/video/T202110071043484962.jpg"
+        },
+        {
+            "src": "/assets/video/M202110131430111179.mp4",
+            "thumbnail": "/assets/video/T202110131430111179.png"
+        },
+        {
+            "src": "/assets/video/M202110131728012013.mp4",
+            "thumbnail": "/assets/video/T202110131728012013.png"
+        },
+        {
+            "src": "/assets/video/M202110131729235200.mp4",
+            "thumbnail": "/assets/video/T202110131729235200.png"
+        },
+        {
+            "src": "/assets/video/M202110131730279976.mp4",
+            "thumbnail": "/assets/video/T202110131730279976.png"
+        }
+    ],
+    "images": [
+        "/assets/images/208001.jpg",
+        "/assets/images/223001.jpg",
+        "/assets/images/225001.jpg",
+        "/assets/images/3024001.jpg",
+        "/assets/images/306001.jpg",
+        "/assets/images/3244001.jpg",
+        "/assets/images/3276001.jpg",
+        "/assets/images/577229001.jpg",
+        "/assets/images/599001.jpg",
+        "/assets/images/671001.jpg",
+        "/assets/images/990001.jpg"
+    ],
+    "audio": [
+        "/assets/audio/B1010000002.mp3",
+        "/assets/audio/B1010000003.mp3",
+        "/assets/audio/B1010000004.mp3",
+        "/assets/audio/B1010000005.mp3",
+        "/assets/audio/B1010000007.mp3"
+    ],
+    "shapes": [
+        "/assets/shape/202207061050244404485.svg",
+        "/assets/shape/202207061050467976125.svg",
+        "/assets/shape/202207061051174999278.svg",
+        "/assets/shape/202207061051431658751.svg",
+        "/assets/shape/202207061052092924740.svg",
+        "/assets/shape/202207061052385663109.svg"
+    ]
+}
