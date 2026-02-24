@@ -260,7 +260,9 @@ export function PreviewPlayer() {
         canvasZoom,
         setCanvasZoom,
         selectedClipId,
-        setSelectedClipId
+        setSelectedClipId,
+        addClip,
+        addTrack
     } = useStore()
     const [isPlaying, setIsPlaying] = useState(false)
     const [readyAssets, setReadyAssets] = useState<Set<string>>(new Set())
@@ -400,6 +402,220 @@ export function PreviewPlayer() {
 
     const projectWidth = 1920;
     const projectHeight = 1920 / (aspectRatio || 1);
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault()
+    }
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault()
+        const data = e.dataTransfer.getData("application/json")
+        if (!data) return
+
+        try {
+            const { type, src, customPath, name, templateData, viewBox, mediaType } = JSON.parse(data)
+
+            if (!svgRef.current) return
+            const rect = svgRef.current.getBoundingClientRect()
+            
+            // Calculate absolute x and y within the SVG relative to the element
+            const clientX = e.clientX - rect.left
+            const clientY = e.clientY - rect.top
+            
+            // Map to project coordinates using current canvasZoom and aspect ratio
+            const scale = canvasZoom / 100
+            const displayWidth = aspectRatio > 1 ? 800 * scale : (800 * aspectRatio) * scale
+            const displayHeight = aspectRatio > 1 ? (800 / aspectRatio) * scale : 800 * scale
+            
+            // Get proper scale factor between rendered size and project coordinates
+            const scaleX = projectWidth / displayWidth
+            const scaleY = projectHeight / displayHeight
+
+            let finalX = clientX * scaleX
+            let finalY = clientY * scaleY
+
+            const videoDuration = type === 'mask' || type === 'text' || type === 'shape' || type === 'icon' ? duration : 10
+            import('uuid').then(({ v4: uuidv4 }) => {
+                const clipId = uuidv4()
+
+                // Calculate dimensions based on resource type
+                let width = 500; // Default fallback
+                let height = 500;
+                let actualDuration = videoDuration;
+                let resolvedMediaType = mediaType;
+
+                const processClipCreation = async () => {
+                    if (type === 'mask') {
+                        // Determine if it's video or image based on mediaType or src heuristics
+                        const isVideo = resolvedMediaType === 'video' || src.match(/\.(mp4|webm|mov|m4v)$/i) || src.startsWith('blob:video/');
+                        resolvedMediaType = isVideo ? 'video' : 'image';
+
+                        if (isVideo) {
+                            try {
+                                const video = document.createElement('video');
+                                video.preload = 'metadata';
+                                video.src = src;
+                                video.load();
+
+                                await new Promise((resolve, reject) => {
+                                    video.onloadedmetadata = resolve;
+                                    video.onerror = reject;
+                                    setTimeout(() => reject(new Error('Video load timeout')), 3000);
+                                });
+
+                                const aspect = video.videoWidth / video.videoHeight;
+                                if (video.videoWidth > 1000 || video.videoHeight > 1000) {
+                                    if (aspect > 1) {
+                                        width = 1000;
+                                        height = 1000 / aspect;
+                                    } else {
+                                        height = 1000;
+                                        width = 1000 * aspect;
+                                    }
+                                } else {
+                                    width = video.videoWidth;
+                                    height = video.videoHeight;
+                                }
+
+                                if (video.duration && isFinite(video.duration)) {
+                                    actualDuration = Math.min(video.duration, duration);
+                                }
+                            } catch (err) {
+                                console.error("Failed to load video metadata", err)
+                            }
+                        } else {
+                            // Image
+                            try {
+                                const img = new Image();
+                                img.src = src;
+                                await new Promise((resolve, reject) => {
+                                    img.onload = resolve;
+                                    img.onerror = reject;
+                                });
+
+                                const aspect = img.naturalWidth / img.naturalHeight;
+                                if (img.naturalWidth > 1000 || img.naturalHeight > 1000) {
+                                    if (aspect > 1) {
+                                        width = 1000;
+                                        height = 1000 / aspect;
+                                    } else {
+                                        height = 1000;
+                                        width = 1000 * aspect;
+                                    }
+                                } else {
+                                    width = img.naturalWidth;
+                                    height = img.naturalHeight;
+                                }
+                            } catch (err) {
+                                console.error("Failed to load image metadata", err)
+                            }
+                        }
+                    } else if (type === 'text') {
+                        width = 600;
+                        height = 150;
+                    } else if (type === 'shape' || type === 'icon') {
+                        if (viewBox) {
+                            const [_x, _y, vW, vH] = viewBox.split(' ').map(Number);
+                            if (!isNaN(vW) && !isNaN(vH) && vH > 0) {
+                                const aspect = vW / vH;
+                                if (aspect > 1) {
+                                    width = 200;
+                                    height = 200 / aspect;
+                                } else {
+                                    height = 200;
+                                    width = 200 * aspect;
+                                }
+                            } else {
+                                width = 200;
+                                height = 200;
+                            }
+                        } else {
+                            width = 200;
+                            height = 200;
+                        }
+                    }
+
+                    // Center the dropped item on the mouse pointer instead of placing its top-left corner there
+                    const centeredX = finalX - (width / 2);
+                    const centeredY = finalY - (height / 2);
+
+                    const typeNameMap: Record<string, string> = {
+                        'mask': '마스크',
+                        'audio': '오디오',
+                        'text': '텍스트',
+                        'shape': '도형',
+                        'icon': '아이콘'
+                    };
+
+                    const allClips = tracks.flatMap(t => t.clips);
+                    const typeClips = allClips.filter(c => c.type === type);
+                    const typeName = typeNameMap[type] || type;
+                    const pattern = new RegExp(`^새\\s+${typeName}\\s+클립\\s+(\\d+)$`);
+                    let maxSequence = 0;
+
+                    typeClips.forEach(clip => {
+                        const match = clip.name.match(pattern);
+                        if (match) {
+                            const num = parseInt(match[1], 10);
+                            if (num > maxSequence) {
+                                maxSequence = num;
+                            }
+                        }
+                    });
+
+                    const sequenceNumber = maxSequence + 1;
+                    const generatedName = `새 ${typeName} 클립 ${sequenceNumber}`;
+
+                    const newClipData: Clip = {
+                        id: clipId,
+                        type: type as any,
+                        trackId: '', // placeholder, will be filled
+                        mediaType: resolvedMediaType as 'video' | 'image' | undefined,
+                        start: currentTime,
+                        duration: actualDuration,
+                        name: name || (type === 'text' ? src : (customPath ? 'Custom Shape' : generatedName)),
+                        src,
+                        text: type === 'text' ? 'New Text' : undefined,
+                        fontFamily: type === 'text' ? src : undefined,
+                        customPath,
+                        viewBox,
+                        templateData,
+                        volume: (type === 'mask' && (src.match(/\.(mp4|webm|mov|m4v)$/i) || src.startsWith('blob:video/'))) || type === 'audio' ? 1 : undefined,
+                        width,
+                        height,
+                        x: centeredX,
+                        y: centeredY
+                    };
+
+                    if (type === 'text') {
+                        const { loadFont } = require('@/utils/fonts');
+                        loadFont({
+                            family: src,
+                            url: `/assets/font/${src}.woff`
+                        });
+                    }
+
+                    // Always create a new track when dropped precisely on canvas to ensure it's layered correctly
+                    addTrack(type as any, 0);
+                    
+                    setTimeout(() => {
+                        // Needs to pull from fresh state because addTrack is async to this scope locally
+                        const updatedTracks = useStore.getState().tracks;
+                        const newTrack = updatedTracks[0];
+
+                        if (newTrack) {
+                            addClip(newTrack.id, { ...newClipData, trackId: newTrack.id })
+                            setSelectedClipId(clipId)
+                        }
+                    }, 0);
+                }
+
+                processClipCreation();
+            })
+        } catch (err) {
+            console.error("Failed to parse drop data in PreviewPlayer", err)
+        }
+    }
 
     const renderClipContent = (clip: Clip) => {
         const x = clip.x || 0;
@@ -681,6 +897,8 @@ export function PreviewPlayer() {
                             viewBox={`0 0 ${projectWidth} ${projectHeight}`}
                             className="absolute inset-0 w-full h-full overflow-visible"
                             onMouseDown={() => setSelectedClipId(null)}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
                         >
                             {activeClips.map(clip => (
                                 <React.Fragment key={clip.id}>

@@ -60,10 +60,10 @@ export function Clip({ clip, zoom, trackHeight, isSelected, onDragStart, onResiz
                 rx={4}
                 fill={getClipColor(clip)}
                 stroke={isSelected ? "white" : "transparent"}
-                strokeWidth={isSelected ? 2 : 2}
+                strokeWidth={isSelected ? 3 : 1}
                 strokeDasharray={clip.type === 'audio' ? "4 2" : "0"}
-                className={isSelected ? "" : "group-hover:stroke-white/50 transition-colors"}
-                opacity={clip.type === 'audio' ? 0.6 : 0.8}
+                className={isSelected ? "drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] z-10" : "group-hover:stroke-white/50 transition-colors"}
+                opacity={isSelected ? 1 : (clip.type === 'audio' ? 0.6 : 0.8)}
             />
             {/* Clip Content Overlay */}
             <foreignObject x={0} y={0} width={width} height={trackHeight - 10} style={{ pointerEvents: 'none' }}>
