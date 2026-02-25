@@ -16,7 +16,7 @@ export const useExportVideo = (): UseExportVideoReturn => {
     const [progress, setProgress] = useState(0)
     const [status, setStatus] = useState<'idle' | 'rendering' | 'encoding' | 'completed' | 'error'>('idle')
     const [abortController, setAbortController] = useState<AbortController | null>(null)
-    const { tracks, aspectRatio, duration } = useStore()
+    const { tracks, duration, projectWidth, projectHeight } = useStore()
 
     // Prevent closing/refreshing while exporting
     useEffect(() => {
@@ -51,13 +51,13 @@ export const useExportVideo = (): UseExportVideoReturn => {
         setProgress(0)
 
         try {
-            const projectWidth = 1920
             // libx264 with yuv420p requires even dimensions; round to nearest even integer
-            const projectHeight = Math.round(1920 / (aspectRatio || 1) / 2) * 2
+            const exportWidth = Math.round(projectWidth / 2) * 2
+            const exportHeight = Math.round(projectHeight / 2) * 2
 
             const canvas = document.createElement('canvas')
-            canvas.width = projectWidth
-            canvas.height = projectHeight
+            canvas.width = exportWidth
+            canvas.height = exportHeight
             const ctx = canvas.getContext('2d')
             if (!ctx) throw new Error('Could not get 2d context')
 
@@ -76,7 +76,7 @@ export const useExportVideo = (): UseExportVideoReturn => {
                 if (signal.aborted) throw new Error('Export cancelled')
 
                 const time = i / fps
-                await renderFrame(ctx, time, projectWidth, projectHeight, tracks, i, videoFrameMap)
+                await renderFrame(ctx, time, exportWidth, exportHeight, tracks, i, videoFrameMap)
 
                 const base64 = canvas.toDataURL('image/png')
                 frames.push(base64)

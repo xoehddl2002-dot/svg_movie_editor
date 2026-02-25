@@ -256,6 +256,8 @@ export function PreviewPlayer() {
         currentTime,
         duration,
         aspectRatio,
+        projectWidth,
+        projectHeight,
         setCurrentTime,
         canvasZoom,
         setCanvasZoom,
@@ -399,10 +401,6 @@ export function PreviewPlayer() {
             default: return ''
         }
     }
-
-    const projectWidth = 1920;
-    const projectHeight = 1920 / (aspectRatio || 1);
-
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault()
     }
@@ -754,7 +752,7 @@ export function PreviewPlayer() {
                                     justifyContent: 'center',
                                     fontSize: `${fontSize}px`,
                                     color: clip.color || 'white',
-                                    fontFamily: clip.fontFamily || 'sans-serif',
+                                    fontFamily: `"${clip.fontFamily || 'sans-serif'}"`,
                                     fontWeight: 'bold',
                                     textShadow: '0 0.2px 0.4px rgba(0,0,0,0.5)',
                                     whiteSpace: 'nowrap',
@@ -861,17 +859,20 @@ export function PreviewPlayer() {
 
     return (
         <div className="flex flex-1 flex-col bg-black/5 overflow-hidden select-none">
-            <div className="flex-1 overflow-auto flex p-8 bg-black/10">
-                <div
-                    id="preview-container"
-                    className="relative transition-all duration-200 m-auto inverse-scaling-target preview-container"
-                    style={{
-                        transformOrigin: 'center center',
-                    }}
-                >
+            <div className="flex-1 overflow-auto bg-black/10 relative flex flex-col">
+                <div className="flex-1 shrink-0 min-h-0" />
+                <div className="flex justify-center items-center shrink-0 p-8">
                     <div
-                        className="rounded-lg border bg-black shadow-lg relative group shrink-0"
+                        id="preview-container"
+                        className="relative transition-all duration-200 inverse-scaling-target preview-container"
                         style={{
+                            transformOrigin: 'center center',
+                        }}
+                    >
+                        <div
+                            className="border bg-black shadow-lg relative group shrink-0"
+                        style={{
+                            boxSizing: 'content-box',
                             aspectRatio: `${aspectRatio}`,
                             width: aspectRatio > 1 ? `${800 * (canvasZoom / 100)}px` : `${(800 * aspectRatio) * (canvasZoom / 100)}px`,
                             height: aspectRatio > 1 ? `${(800 / aspectRatio) * (canvasZoom / 100)}px` : `${800 * (canvasZoom / 100)}px`,
@@ -900,7 +901,9 @@ export function PreviewPlayer() {
                             onDragOver={handleDragOver}
                             onDrop={handleDrop}
                         >
-                            {activeClips.map(clip => (
+                            {activeClips.map(clip => {
+                                console.log(`[PreviewPlayer Debug] Clip ${clip.id} - w: ${clip.width}, h: ${clip.height}, projectWidth: ${projectWidth}`);
+                                return (
                                 <React.Fragment key={clip.id}>
                                     {renderClipContent(clip)}
                                     {selectedClipId === clip.id && clip.type !== 'audio' && (
@@ -912,11 +915,14 @@ export function PreviewPlayer() {
                                         />
                                     )}
                                 </React.Fragment>
-                            ))}
+                                );
+                            })}
                         </svg>
                     </div>
                 </div>
             </div>
+            <div className="flex-1 shrink-0 min-h-0" />
+        </div>
 
             <div className="h-20 border-t bg-background px-6 flex flex-col justify-center gap-2">
                 <div className="flex items-center justify-between gap-6">

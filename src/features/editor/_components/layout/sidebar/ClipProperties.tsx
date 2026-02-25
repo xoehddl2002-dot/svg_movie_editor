@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Settings, X, Trash2, Info } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { loadFont } from "@/utils/fonts"
 import { useState, useEffect } from "react"
 
@@ -262,26 +263,32 @@ function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip
                         </div>
                         <div className="space-y-2">
                             <Label>Font Family</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {fonts.map(font => (
-                                    <Button
-                                        key={font}
-                                        variant={clip.fontFamily === font ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={async () => {
-                                            await loadFont({
-                                                family: font,
-                                                url: `/assets/font/${font}.woff`
-                                            });
-                                            updateClip(clip.id, { fontFamily: font });
-                                        }}
-                                        style={{ fontFamily: font }}
-                                        className="h-8 text-xs"
-                                    >
-                                        {font}
-                                    </Button>
-                                ))}
-                            </div>
+                            <Select
+                                value={clip.fontFamily || ""}
+                                onValueChange={async (font) => {
+                                    await loadFont({
+                                        family: font,
+                                        url: `/assets/font/${font}.woff`
+                                    });
+                                    updateClip(clip.id, { fontFamily: font });
+                                }}
+                            >
+                                <SelectTrigger className="w-full text-xs h-8">
+                                    <SelectValue placeholder="Select a font" />
+                                </SelectTrigger>
+                                <SelectContent side="bottom" position="popper" className="bg-transparent backdrop-blur-md shadow-lg border-white/10 prevent-deselect">
+                                    {fonts.map(font => (
+                                        <SelectItem 
+                                            key={font} 
+                                            value={font} 
+                                            style={{ fontFamily: `"${font}"` }}
+                                            className="focus:bg-white/10 focus:text-white cursor-pointer transition-colors"
+                                        >
+                                            {font}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>Font Size</Label>
@@ -437,7 +444,6 @@ function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip
                         ))}
                     </div>
                 )}
-
 
                 <Separator className="my-6" />
 

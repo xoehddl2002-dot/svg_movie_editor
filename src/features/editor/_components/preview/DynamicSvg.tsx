@@ -52,7 +52,24 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
             return;
         }
 
-        // ... (existing processing code) ...
+        // Check if we need to apply
+        const currentData = JSON.stringify({ fill, templateData, mask, filter, forceCheck });
+        const isDomReset = svgElement.getAttribute('data-modified') !== 'true';
+        
+        if (lastAppliedDataRef.current === currentData && !isDomReset) {
+            // Check for inner images and wait for them to load
+            const innerImages = svgElement.querySelectorAll('image');
+            if (innerImages.length > 0) {
+                 // skip image loading if already run
+            } else {
+                 onLoad?.();
+            }
+            return;
+        }
+
+        svgElement.setAttribute('data-modified', 'true');
+        lastAppliedDataRef.current = currentData;
+
         // Ensure viewBox exists for proper scaling
         if (!svgElement.getAttribute('viewBox')) {
             const w = svgElement.getAttribute('width');
@@ -83,7 +100,7 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
 
         if (templateData && typeof templateData === 'object') {
             Object.entries(templateData).forEach(([id, data]: [string, any]) => {
-                const element = svgElement.getElementById(id);
+                const element = svgElement.getElementById(id) as SVGElement | null;
                 if (!element) return;
                 if (data.text !== undefined) {
                     if (element.tagName.toLowerCase() === 'text' || element.tagName.toLowerCase() === 'tspan') {
@@ -101,10 +118,22 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
                 if (data.cy !== undefined) element.setAttribute('cy', data.cy.toString());
                 if (data.d !== undefined) element.setAttribute('d', data.d);
 
-                if (data.fill !== undefined) element.setAttribute('fill', data.fill);
-                if (data.stroke !== undefined) element.setAttribute('stroke', data.stroke);
-                if (data.strokeWidth !== undefined) element.setAttribute('stroke-width', data.strokeWidth.toString());
-                if (data.opacity !== undefined) element.setAttribute('opacity', data.opacity.toString());
+                if (data.fill !== undefined) {
+                    element.setAttribute('fill', data.fill);
+                    if (element.style) element.style.fill = data.fill;
+                }
+                if (data.stroke !== undefined) {
+                    element.setAttribute('stroke', data.stroke);
+                    if (element.style) element.style.stroke = data.stroke;
+                }
+                if (data.strokeWidth !== undefined) {
+                    element.setAttribute('stroke-width', data.strokeWidth.toString());
+                    if (element.style) element.style.strokeWidth = data.strokeWidth.toString();
+                }
+                if (data.opacity !== undefined) {
+                    element.setAttribute('opacity', data.opacity.toString());
+                    if (element.style) element.style.opacity = data.opacity.toString();
+                }
             });
         }
 
@@ -165,7 +194,7 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
                 });
             });
         }
-    }, [svgContent, templateData, fill, mask, filter, forceCheck]);
+    }); // Changed from [svgContent, templateData, fill, mask, filter, forceCheck] to run every render!
 
     return (
         <div

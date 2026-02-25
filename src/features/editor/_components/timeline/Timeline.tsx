@@ -11,7 +11,7 @@ export function Timeline() {
     const {
         tracks, currentTime, duration, zoom,
         setZoom, setCurrentTime, setDuration, addClip, setSelectedClipId, removeClip, selectedClipId, addTrack,
-        timelineHeight, setAspectRatio, moveClip
+        timelineHeight, setAspectRatio, moveClip, projectWidth, projectHeight
     } = useStore()
 
     const svgRef = useRef<SVGSVGElement>(null)
@@ -403,8 +403,8 @@ export function Timeline() {
                 // Add calculated dimensions
                 width,
                 height,
-                x: (1920 - width) / 2, // Center horizontally roughly (assuming 1920 base)
-                y: (1080 - height) / 2  // Center vertically roughly
+                x: (projectWidth - width) / 2, // Center horizontally
+                y: (projectHeight - height) / 2  // Center vertically
             };
 
             // Auto-load font if text clip

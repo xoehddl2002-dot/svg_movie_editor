@@ -18,6 +18,8 @@ export interface ProcessedTemplateResult {
     aspectRatio: number
     currentTime: number
     fontList?: Record<string, string[]>
+    projectWidth: number
+    projectHeight: number
 }
 
 export const processTemplate = async (template: TemplateData, defaultDuration: number): Promise<ProcessedTemplateResult | null> => {
@@ -45,38 +47,36 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
 
     const { v4: uuidv4 } = await import('uuid');
 
-    let ratio = 16 / 9;
-    if (template.category === 'F') ratio = 1920 / 1080;
-    else if (template.category === 'S') ratio = 1080 / 1920;
-    else if (template.category === 'T') ratio = 1820 / 118;
+    let ratio = 1920 / 1080;
+    let expectedSvgWidth = 1920;
+    let expectedSvgHeight = 1080;
 
-    const projectWidth = 1920;
+    if (template.category === 'F') {
+        ratio = 1920 / 1080;
+        expectedSvgWidth = 1920;
+        expectedSvgHeight = 1080;
+    } else if (template.category === 'S') {
+        ratio = 356 / 837;
+        expectedSvgWidth = 356;
+        expectedSvgHeight = 837;
+    } else if (template.category === 'T') {
+        ratio = 1864 / 90;
+        expectedSvgWidth = 1864;
+        expectedSvgHeight = 90;
+    }
 
     // Extract SVG dimensions to calculate scale factor
     const rootElement = svgDoc.documentElement;
-    let svgWidth = 1920;
-    let svgHeight = 1080;
-    const viewBoxAttr = rootElement.getAttribute('viewBox');
-    const widthAttr = rootElement.getAttribute('width');
-    const heightAttr = rootElement.getAttribute('height');
+    const parsedSvgWidth = expectedSvgWidth;
+    const parsedSvgHeight = expectedSvgHeight;
 
-    if (viewBoxAttr) {
-        const parts = viewBoxAttr.split(/\s+|,/).filter(Boolean).map(parseFloat);
-        if (parts.length === 4) {
-            svgWidth = parts[2];
-            svgHeight = parts[3];
-        }
-    } else if (widthAttr && heightAttr) {
-        svgWidth = parseFloat(widthAttr);
-        svgHeight = parseFloat(heightAttr);
-    }
+    // Force aspect ratio to the category's expected ratio.
+    ratio = expectedSvgWidth / expectedSvgHeight;
 
-    // Calculate Scale Factor
-    const scale = projectWidth / svgWidth;
-
-    if (svgWidth && svgHeight) {
-        ratio = svgWidth / svgHeight;
-    }
+    // Use native bounds instead of forcing 1920 
+    const projectWidth = expectedSvgWidth;
+    const projectHeight = expectedSvgHeight;
+    const scale = 1;
 
     // Calculate base URL for resolving relative image paths
     const templateBaseUrl = template.svg.substring(0, template.svg.lastIndexOf('/') + 1);
@@ -122,7 +122,19 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
         }
     });
 
-    const rootFree = svgDoc.documentElement.getAttribute('viewBox') || `0 0 ${svgWidth} ${svgHeight}`;
+    const rootFree = svgDoc.documentElement.getAttribute('viewBox') || `0 0 ${parsedSvgWidth} ${parsedSvgHeight}`;
+
+    // Extract font list if available and create a reverse mapping (fontMap)
+    const fontList = jsonData['font-list'] || {};
+    const fontMap: Record<string, string> = {}; // clip ID -> font family
+    
+    Object.entries(fontList).forEach(([fontFamily, clipIds]) => {
+        if (Array.isArray(clipIds)) {
+            clipIds.forEach((clipId: string) => {
+                fontMap[clipId] = fontFamily;
+            });
+        }
+    });
 
     // Helper to determine clip type and validity from JSON item
     interface TempClipData {
@@ -189,8 +201,8 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
     const hiddenContainer = document.createElement('div');
     hiddenContainer.style.visibility = 'hidden';
     hiddenContainer.style.position = 'absolute';
-    hiddenContainer.style.width = '0';
-    hiddenContainer.style.height = '0';
+    hiddenContainer.style.width = `${projectWidth}px`;
+    hiddenContainer.style.height = `${projectHeight}px`;
     hiddenContainer.style.overflow = 'hidden';
     hiddenContainer.appendChild(rootElement);
     document.body.appendChild(hiddenContainer);
@@ -305,12 +317,23 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                     width = bbox.width * scale;
                     height = bbox.height * scale;
 
+                    // For images, browsers sometimes return smaller bbox values or 0 when not fully loaded.
+                    // Prioritize explicit attributes if they exist.
+                    const explicitWidth = parseFloat(element.getAttribute('width') || '0');
+                    const explicitHeight = parseFloat(element.getAttribute('height') || '0');
+                    if (tagName === 'image' && explicitWidth > 0 && explicitHeight > 0) {
+                        width = explicitWidth * scale;
+                        height = explicitHeight * scale;
+                    }
+
                     if (visualCx) {
                         x = visualCx * scale - width / 2;
                         y = visualCy * scale - height / 2;
                     } else {
-                        x = bbox.x * scale;
-                        y = bbox.y * scale;
+                        const explicitX = parseFloat(element.getAttribute('x') || '0');
+                        const explicitY = parseFloat(element.getAttribute('y') || '0');
+                        x = (tagName === 'image' && (explicitX || explicitY)) ? explicitX * scale : bbox.x * scale;
+                        y = (tagName === 'image' && (explicitX || explicitY)) ? explicitY * scale : bbox.y * scale;
                     }
 
                     bboxString = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`;
@@ -329,7 +352,21 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
 
             if (type === 'text') {
                 fontSize = (parseFloat(element.getAttribute('font-size') || '24')) * scale;
-                fontFamily = element.getAttribute('font-family') || 'sans-serif';
+                // Assign font family from fontMap first, fallback to element attribute, then default
+                fontFamily = fontMap[item.id || data.id] || element.getAttribute('font-family') || '';
+                if (!fontFamily || fontFamily === 'sans-serif' || fontFamily === 'sans' || fontFamily === '') {
+                    fontFamily = 'GmarketSansTTFBold';
+                }
+
+                // Track font for loading
+                if (!fontList[fontFamily]) {
+                    fontList[fontFamily] = [];
+                }
+                const trackId = item.id || data.id;
+                if (!fontList[fontFamily].includes(trackId)) {
+                    fontList[fontFamily].push(trackId);
+                }
+
                 fill = element.getAttribute('fill') || '#000000';
                 textContent = element.textContent || element.innerHTML || '';
             } else if (type === 'icon' || type === 'shape' || type === 'mask') {
@@ -652,13 +689,12 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
         });
     });
 
-    // Extract font list if available
-    const fontList = jsonData['font-list'] || {};
-
     return {
         tracks: initialTracks,
         aspectRatio: ratio,
         currentTime: 0,
-        fontList
+        fontList,
+        projectWidth,
+        projectHeight
     };
 }

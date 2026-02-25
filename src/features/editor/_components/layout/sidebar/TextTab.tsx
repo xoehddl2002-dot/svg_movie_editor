@@ -41,7 +41,7 @@ export function TextTab({ onDragStart }: TextTabProps) {
                         onDragStart={(e) => onDragStart(e, 'text', font)}
                     >
                         <CardContent className="p-4">
-                            <h3 className="text-lg" style={{ fontFamily: font }}>{font}</h3>
+                            <h3 className="text-lg" style={{ fontFamily: `"${font}"` }}>{font}</h3>
                         </CardContent>
                     </Card>
                 ))}

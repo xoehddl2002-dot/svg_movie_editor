@@ -78,10 +78,26 @@ export const loadSvgImage = async (src: string, color?: string, templateData?: a
                 if (data.cy !== undefined) element.setAttribute('cy', data.cy.toString());
                 if (data.d !== undefined) element.setAttribute('d', data.d);
 
-                if (data.fill !== undefined) element.setAttribute('fill', data.fill);
-                if (data.stroke !== undefined) element.setAttribute('stroke', data.stroke);
-                if (data.strokeWidth !== undefined) element.setAttribute('stroke-width', data.strokeWidth.toString());
-                if (data.opacity !== undefined) element.setAttribute('opacity', data.opacity.toString());
+                if (data.fill !== undefined) {
+                    element.setAttribute('fill', data.fill);
+                    const currentStyle = element.getAttribute('style') || '';
+                    element.setAttribute('style', `${currentStyle}; fill: ${data.fill};`);
+                }
+                if (data.stroke !== undefined) {
+                    element.setAttribute('stroke', data.stroke);
+                    const currentStyle = element.getAttribute('style') || '';
+                    element.setAttribute('style', `${currentStyle}; stroke: ${data.stroke};`);
+                }
+                if (data.strokeWidth !== undefined) {
+                    element.setAttribute('stroke-width', data.strokeWidth.toString());
+                    const currentStyle = element.getAttribute('style') || '';
+                    element.setAttribute('style', `${currentStyle}; stroke-width: ${data.strokeWidth};`);
+                }
+                if (data.opacity !== undefined) {
+                    element.setAttribute('opacity', data.opacity.toString());
+                    const currentStyle = element.getAttribute('style') || '';
+                    element.setAttribute('style', `${currentStyle}; opacity: ${data.opacity};`);
+                }
             });
         }
 
@@ -516,7 +532,7 @@ export const renderFrame = async (
                 const color = clip.color || 'white'
                 const fontFamily = clip.fontFamily || 'sans-serif'
 
-                ctx.font = `bold ${fontSize}px ${fontFamily}`
+                ctx.font = `bold ${fontSize}px "${fontFamily}"`
                 ctx.fillStyle = color
                 ctx.textAlign = 'center'
                 ctx.textBaseline = 'middle'

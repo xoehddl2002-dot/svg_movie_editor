@@ -28,7 +28,8 @@ export const loadFont = async (fontMapList: FontMapItem | FontMapItem[]): Promis
                     source = `url(${url})`;
                 }
 
-                return new FontFace(family, source, data);
+                const safeFamily = family.replace(/['"]/g, '');
+                return new FontFace(`"${safeFamily}"`, source, data);
             })
     );
 
@@ -53,8 +54,13 @@ export const loadFont = async (fontMapList: FontMapItem | FontMapItem[]): Promis
 };
 
 export const checkFontLoaded = (fontFamily: string): boolean => {
+    const safeFamily = fontFamily.replace(/['"]/g, '');
     return (
-        document.fonts.check(`16px '${fontFamily}'`) &&
-        Array.from(document.fonts).some((font) => font.family === fontFamily)
+        document.fonts.check(`16px "${safeFamily}"`) &&
+        Array.from(document.fonts).some((font) => 
+            font.family === safeFamily || 
+            font.family === `"${safeFamily}"` || 
+            font.family === `'${safeFamily}'`
+        )
     );
 };

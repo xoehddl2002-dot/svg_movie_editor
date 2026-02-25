@@ -2,12 +2,13 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { LayoutTemplate, Settings, Save, Upload } from "lucide-react"
 import { ExportModal } from "./ExportModal"
+import { AIMagicEditModal } from "./AIMagicEditModal"
 import { useStore } from "@/features/editor/store/useStore"
 import { useRef } from "react"
 import { Input } from "@/components/ui/input"
 
 export function Header() {
-    const { tracks, duration, aspectRatio, currentTime, setProjectState } = useStore()
+    const { tracks, duration, aspectRatio, currentTime, projectWidth, projectHeight, setProjectState } = useStore()
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleSaveProject = () => {
@@ -15,6 +16,8 @@ export function Header() {
             tracks,
             duration,
             aspectRatio,
+            projectWidth,
+            projectHeight,
             currentTime,
             timestamp: Date.now()
         }
@@ -44,6 +47,8 @@ export function Header() {
                         tracks: data.tracks,
                         duration: data.duration,
                         aspectRatio: data.aspectRatio || (16 / 9),
+                        projectWidth: data.projectWidth || 1920,
+                        projectHeight: data.projectHeight || 1080,
                         currentTime: data.currentTime || 0,
                         selectedClipId: null
                     })
@@ -96,6 +101,8 @@ export function Header() {
                 </Button>
 
                 <div className="w-px h-6 bg-border mx-2" />
+
+                <AIMagicEditModal />
 
                 <Button variant="ghost" size="icon">
                     <Settings className="h-5 w-5" />

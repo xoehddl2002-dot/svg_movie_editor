@@ -20,7 +20,7 @@ export const getTextDimensions = (clip: Clip): { width: number; height: number }
 
         if (context) {
             // Ensure font string matches CSS rendering
-            context.font = `bold ${fontSize}px ${fontFamily}`;
+            context.font = `bold ${fontSize}px "${fontFamily}"`;
             textLines.forEach(line => {
                 const metrics = context.measureText(line);
                 maxLineMeasuredWidth = Math.max(maxLineMeasuredWidth, metrics.width);

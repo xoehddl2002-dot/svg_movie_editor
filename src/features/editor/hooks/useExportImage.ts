@@ -14,7 +14,7 @@ export const useExportImage = (): UseExportImageReturn => {
     const [isExporting, setIsExporting] = useState(false)
     const [progress, setProgress] = useState(0)
     const [status, setStatus] = useState<'idle' | 'rendering' | 'encoding' | 'completed' | 'error'>('idle')
-    const { tracks, currentTime, aspectRatio } = useStore()
+    const { tracks, currentTime, projectWidth, projectHeight } = useStore()
 
     const exportImage = async () => {
         setIsExporting(true)
@@ -22,8 +22,6 @@ export const useExportImage = (): UseExportImageReturn => {
         setProgress(0)
 
         try {
-            const projectWidth = 1920
-            const projectHeight = 1920 / (aspectRatio || 1)
 
             const canvas = document.createElement('canvas')
             canvas.width = projectWidth

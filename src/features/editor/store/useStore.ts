@@ -57,6 +57,15 @@ export interface Clip {
     max_length?: number
 }
 
+export interface AITemplateHistoryItem {
+    id: string
+    prompt: string
+    type: 'full' | 'side' | 'top'
+    svg: string
+    json: any
+    date: number
+}
+
 export interface Track {
     id: string
     type: ResourceType | 'mixed'
@@ -86,6 +95,10 @@ interface EditorState {
     setTimelineHeight: (height: number) => void
     aspectRatio: number // width / height
     setAspectRatio: (ratio: number) => void
+    projectWidth: number
+    setProjectWidth: (width: number) => void
+    projectHeight: number
+    setProjectHeight: (height: number) => void
 
     initProjectWithTemplate: (template: { name: string, svg: string, json: any, category: string }) => Promise<void>
     canvasZoom: number
@@ -95,6 +108,10 @@ interface EditorState {
     isPlaying: boolean
     setIsPlaying: (isPlaying: boolean) => void
     setProjectState: (state: Partial<EditorState>) => void
+
+    aiTemplateHistory: AITemplateHistoryItem[]
+    setAITemplateHistory: (items: AITemplateHistoryItem[]) => void
+    addAITemplateHistory: (item: AITemplateHistoryItem) => void
 }
 
 export const useStore = create<EditorState>((set, get) => ({
@@ -116,9 +133,19 @@ export const useStore = create<EditorState>((set, get) => ({
     selectedClipId: null,
     timelineHeight: 320,
     aspectRatio: 16 / 9,
+    projectWidth: 1920,
+    projectHeight: 1080,
 
     canvasZoom: 100,
     editingClipId: null,
+
+    aiTemplateHistory: [],
+    setAITemplateHistory: (items) => set({ aiTemplateHistory: items }),
+    addAITemplateHistory: (item) => set((state) => {
+        // Just prepend the newly passed item without rewriting its ID or date
+        const newHistory = [item, ...state.aiTemplateHistory].slice(0, 50)
+        return { aiTemplateHistory: newHistory }
+    }),
 
     setProjectState: (newState) => set((state) => ({ ...state, ...newState })),
     setTracks: (tracks) => set({ tracks }),
@@ -149,6 +176,8 @@ export const useStore = create<EditorState>((set, get) => ({
     }),
     setTimelineHeight: (height) => set({ timelineHeight: height }),
     setAspectRatio: (ratio) => set({ aspectRatio: ratio }),
+    setProjectWidth: (width) => set({ projectWidth: width }),
+    setProjectHeight: (height) => set({ projectHeight: height }),
 
     setCanvasZoom: (zoom) => set({ canvasZoom: zoom }),
     setEditingClipId: (id) => set({ editingClipId: id }),
@@ -164,6 +193,8 @@ export const useStore = create<EditorState>((set, get) => ({
                 ...state,
                 tracks: result.tracks,
                 aspectRatio: result.aspectRatio,
+                projectWidth: result.projectWidth || 1920,
+                projectHeight: result.projectHeight || 1080,
                 currentTime: 0
             }));
 
@@ -182,10 +213,13 @@ export const useStore = create<EditorState>((set, get) => ({
                     const failedFonts = fontMapList.filter(item => !checkFontLoaded(item.family));
 
                     if (failedFonts.length > 0) {
-                        const failedNames = failedFonts.map(f => f.family).join(', ');
-                        alert(`다음 폰트를 불러오는데 실패했습니다: ${failedNames}\n확인을 누르면 메인 화면으로 이동합니다.`);
-                        window.location.href = '/';
-                        return;
+                        console.warn('Failed fonts detected:', failedFonts.map(f => f.family));
+                        // Instead of redirecting immediately, let's just warn and continue. 
+                        // The user can still edit text without custom fonts.
+                        // Or we can just log it for debugging and not block the redirect.
+                        // alert(`다음 폰트를 불러오는데 실패했습니다: ${failedNames}\n확인을 누르면 메인 화면으로 이동합니다.`);
+                        // window.location.href = '/';
+                        // return;
                     }
                 } catch (err) {
                     console.error("Failed to load template fonts:", err);

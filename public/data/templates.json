@@ -24,115 +24,51 @@
         "json": "/assets/template/MF_00002_1/MF_00002_1.json"
     },
     {
-        "id": "MF_00004_1",
-        "type": "F",
-        "name": "MF_00004_1",
-        "png": "/assets/template/MF_00004_1/MF_00004_1.png",
-        "svg": "/assets/template/MF_00004_1/MF_00004_1.svg",
-        "json": "/assets/template/MF_00004_1/MF_00004_1.json"
-    },
-    {
-        "id": "MF_00008_1",
-        "type": "F",
-        "name": "MF_00008_1",
-        "png": "/assets/template/MF_00008_1/MF_00008_1.png",
-        "svg": "/assets/template/MF_00008_1/MF_00008_1.svg",
-        "json": "/assets/template/MF_00008_1/MF_00008_1.json"
-    },
-    {
-        "id": "MS_00003_1",
+        "id": "MS_70006_1",
         "type": "S",
-        "name": "MS_00003_1",
-        "png": "/assets/template/MS_00003_1/MS_00003_1.png",
-        "svg": "/assets/template/MS_00003_1/MS_00003_1.svg",
-        "json": "/assets/template/MS_00003_1/MS_00003_1.json"
+        "name": "MS_70006_1",
+        "png": "/assets/template/MS_70006_1/MS_70006_1.png",
+        "svg": "/assets/template/MS_70006_1/MS_70006_1.svg",
+        "json": "/assets/template/MS_70006_1/MS_70006_1.json"
     },
     {
-        "id": "MS_00014_1",
+        "id": "MS_70007_1",
         "type": "S",
-        "name": "MS_00014_1",
-        "png": "/assets/template/MS_00014_1/MS_00014_1.png",
-        "svg": "/assets/template/MS_00014_1/MS_00014_1.svg",
-        "json": "/assets/template/MS_00014_1/MS_00014_1.json"
+        "name": "MS_70007_1",
+        "png": "/assets/template/MS_70007_1/MS_70007_1.png",
+        "svg": "/assets/template/MS_70007_1/MS_70007_1.svg",
+        "json": "/assets/template/MS_70007_1/MS_70007_1.json"
     },
     {
-        "id": "MS_00025_1",
+        "id": "MS_70008_1",
         "type": "S",
-        "name": "MS_00025_1",
-        "png": "/assets/template/MS_00025_1/MS_00025_1.png",
-        "svg": "/assets/template/MS_00025_1/MS_00025_1.svg",
-        "json": "/assets/template/MS_00025_1/MS_00025_1.json"
+        "name": "MS_70008_1",
+        "png": "/assets/template/MS_70008_1/MS_70008_1.png",
+        "svg": "/assets/template/MS_70008_1/MS_70008_1.svg",
+        "json": "/assets/template/MS_70008_1/MS_70008_1.json"
     },
     {
-        "id": "MS_00029_1",
-        "type": "S",
-        "name": "MS_00029_1",
-        "png": "/assets/template/MS_00029_1/MS_00029_1.png",
-        "svg": "/assets/template/MS_00029_1/MS_00029_1.svg",
-        "json": "/assets/template/MS_00029_1/MS_00029_1.json"
-    },
-    {
-        "id": "MS_00047_1",
-        "type": "S",
-        "name": "MS_00047_1",
-        "png": "/assets/template/MS_00047_1/MS_00047_1.png",
-        "svg": "/assets/template/MS_00047_1/MS_00047_1.svg",
-        "json": "/assets/template/MS_00047_1/MS_00047_1.json"
-    },
-    {
-        "id": "MT_00001_1",
+        "id": "MT_70006_1",
         "type": "T",
-        "name": "MT_00001_1",
-        "png": "/assets/template/MT_00001_1/MT_00001_1.png",
-        "svg": "/assets/template/MT_00001_1/MT_00001_1.svg",
-        "json": "/assets/template/MT_00001_1/MT_00001_1.json"
+        "name": "MT_70006_1",
+        "png": "/assets/template/MT_70006_1/MT_70006_1.png",
+        "svg": "/assets/template/MT_70006_1/MT_70006_1.svg",
+        "json": "/assets/template/MT_70006_1/MT_70006_1.json"
     },
     {
-        "id": "MT_00001_2",
+        "id": "MT_70007_1",
         "type": "T",
-        "name": "MT_00001_2",
-        "png": "/assets/template/MT_00001_2/MT_00001_2.png",
-        "svg": "/assets/template/MT_00001_2/MT_00001_2.svg",
-        "json": "/assets/template/MT_00001_2/MT_00001_2.json"
+        "name": "MT_70007_1",
+        "png": "/assets/template/MT_70007_1/MT_70007_1.png",
+        "svg": "/assets/template/MT_70007_1/MT_70007_1.svg",
+        "json": "/assets/template/MT_70007_1/MT_70007_1.json"
     },
     {
-        "id": "MT_00003_1",
+        "id": "MT_70008_1",
         "type": "T",
-        "name": "MT_00003_1",
-        "png": "/assets/template/MT_00003_1/MT_00003_1.png",
-        "svg": "/assets/template/MT_00003_1/MT_00003_1.svg",
-        "json": "/assets/template/MT_00003_1/MT_00003_1.json"
-    },
-    {
-        "id": "MT_00004_1",
-        "type": "T",
-        "name": "MT_00004_1",
-        "png": "/assets/template/MT_00004_1/MT_00004_1.png",
-        "svg": "/assets/template/MT_00004_1/MT_00004_1.svg",
-        "json": "/assets/template/MT_00004_1/MT_00004_1.json"
-    },
-    {
-        "id": "MT_00004_2",
-        "type": "T",
-        "name": "MT_00004_2",
-        "png": "/assets/template/MT_00004_2/MT_00004_2.png",
-        "svg": "/assets/template/MT_00004_2/MT_00004_2.svg",
-        "json": "/assets/template/MT_00004_2/MT_00004_2.json"
-    },
-    {
-        "id": "MT_00005_1",
-        "type": "T",
-        "name": "MT_00005_1",
-        "png": "/assets/template/MT_00005_1/MT_00005_1.png",
-        "svg": "/assets/template/MT_00005_1/MT_00005_1.svg",
-        "json": "/assets/template/MT_00005_1/MT_00005_1.json"
-    },
-    {
-        "id": "ET_00001_2",
-        "type": "T",
-        "name": "ET_00001_2",
-        "png": "/assets/template/ET_00001_2/ET_00001_2.png",
-        "svg": "/assets/template/ET_00001_2/ET_00001_2.svg",
-        "json": "/assets/template/ET_00001_2/ET_00001_2.json"
+        "name": "MT_70008_1",
+        "png": "/assets/template/MT_70008_1/MT_70008_1.png",
+        "svg": "/assets/template/MT_70008_1/MT_70008_1.svg",
+        "json": "/assets/template/MT_70008_1/MT_70008_1.json"
     }
 ]
