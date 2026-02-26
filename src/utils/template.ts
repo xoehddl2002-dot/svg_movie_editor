@@ -2,6 +2,7 @@
 import { getStrokedBBox, getBBox } from './svg/utilities'
 import { hasNonIdentityTransform, getMatrix, deltaTransformPoint, transformBox } from './svg/math'
 import { urlToDataURL } from './dataUrl'
+import { loadFont } from './fonts'
 import type { Clip, Track, ResourceType } from '../features/editor/store/useStore'
 import { transformPath, matrixTransformPath, getBoundsFromPathD } from './svg/pathUtils'
 import { getRectPath, getEllipsePath, getTrianglePath, getStarPath, getPolygonPath } from '../features/editor/utils/shapeUtils'
@@ -136,6 +137,17 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
         }
     });
 
+    // Extract image list if available and create a reverse mapping (imageMap)
+    const imageList = jsonData['image-list'] || {};
+    const imageMap: Record<string, string> = {}; // clip ID -> image URL
+    Object.entries(imageList).forEach(([url, clipIds]) => {
+        if (Array.isArray(clipIds)) {
+            clipIds.forEach((clipId: string) => {
+                imageMap[clipId] = url;
+            });
+        }
+    });
+
     // Helper to determine clip type and validity from JSON item
     interface TempClipData {
         element: Element;
@@ -150,6 +162,11 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
     Object.entries(items).forEach(([key, item]: [string, any]) => {
         const element = svgDoc.getElementById(key);
         if (!element) return; // Skip if element not found in SVG
+
+        // Infer image_id from image-list if present but omitted in item
+        if (imageMap[key] && !item.image_id) {
+            item.image_id = key;
+        }
 
         // Set JSON item attributes on the DOM element
         const attrKeys = ['editor_move', 'editor_scale', 'editor_rotate', 'attr_rock', 'image_id', 'shapes_id', 'max_length'];
@@ -197,15 +214,62 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
 
     const newClips: Clip[] = [];
 
-    // Append SVG to DOM for BBox calculations
+    // BBox 계산을 위해 SVG를 DOM에 삽입 (화면 밖, 레이아웃 미영향)
     const hiddenContainer = document.createElement('div');
-    hiddenContainer.style.visibility = 'hidden';
-    hiddenContainer.style.position = 'absolute';
+    hiddenContainer.style.position = 'fixed';
+    hiddenContainer.style.left = '-9999px';
+    hiddenContainer.style.top = '0';
     hiddenContainer.style.width = `${projectWidth}px`;
     hiddenContainer.style.height = `${projectHeight}px`;
     hiddenContainer.style.overflow = 'hidden';
+    hiddenContainer.style.visibility = 'hidden';
+    hiddenContainer.style.pointerEvents = 'none';
     hiddenContainer.appendChild(rootElement);
     document.body.appendChild(hiddenContainer);
+
+    // 이미지/폰트 완전 로드 대기 — getBBox 정확도를 위해 필수
+    // SVG 내 <image> 요소가 로드되지 않은 상태에서 getBBox를 호출하면 좌표값이 부정확함
+    const svgImages = rootElement.querySelectorAll('image');
+    if (svgImages.length > 0) {
+        const imageLoadPromises = Array.from(svgImages).map(img => {
+            return new Promise<void>((resolve) => {
+                const href = img.getAttribute('href') || img.getAttribute('xlink:href');
+                // data: URL이나 이미 로드된 이미지는 바로 resolve
+                if (!href || href.startsWith('data:')) {
+                    resolve();
+                    return;
+                }
+                // 이미 로드 완료된 이미지 체크 (naturalWidth/Height 사용 불가 — SVGImageElement이므로)
+                // load/error 이벤트로 대기
+                const onDone = () => resolve();
+                img.addEventListener('load', onDone, { once: true });
+                img.addEventListener('error', onDone, { once: true });
+                // 타임아웃 — 최대 3초 대기 후 강제 진행
+                setTimeout(onDone, 3000);
+            });
+        });
+        await Promise.all(imageLoadPromises);
+    }
+
+    // 폰트 로드 — 텍스트 getBBox 정확도를 위해 getBBox 호출 전에 반드시 실행
+    // fontList는 이미 위에서 jsonData['font-list']로 추출됨
+    const fontFamilies = Object.keys(fontList);
+    if (fontFamilies.length > 0) {
+        const fontMapList = fontFamilies.map(family => ({
+            family,
+            url: `/assets/font/${family}.woff`
+        }));
+        try {
+            await loadFont(fontMapList);
+            // document.fonts.ready 대기 — 모든 폰트 렌더링 준비 완료 보장
+            await document.fonts.ready;
+        } catch (err) {
+            console.warn('[template.ts] Font pre-loading failed, proceeding with fallback:', err);
+        }
+    }
+
+    // 레이아웃 완료를 위해 한 프레임 대기
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
     const mockAddSVGElementsFromJson = (data: any) => {
         const el = document.createElementNS("http://www.w3.org/2000/svg", data.element);
@@ -241,6 +305,14 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
 
             // Parse Transform for rotation only (position is handled by bbox)
             const elementsToFlatten = [element, ...Array.from(element.querySelectorAll('*'))];
+
+            // Set fill="none" for paths that don't have a fill attribute
+            // Because if an element is a path and has no fill, it should not default to black
+            elementsToFlatten.forEach(ele => {
+                if (ele.nodeName.toLowerCase() === 'path' && !ele.hasAttribute('fill')) {
+                    ele.setAttribute('fill', 'none');
+                }
+            });
 
             elementsToFlatten.forEach(ele => {
                 if (ele instanceof SVGGraphicsElement && hasNonIdentityTransform(ele.transform.baseVal)) {
@@ -307,15 +379,15 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
             // Calculate BBox first
             let bbox: any;
             try {
-                if (tagName === 'g') {
+                if (['g', 'line', 'path', 'polyline', 'polygon', 'rect', 'circle', 'ellipse'].includes(tagName)) {
                     bbox = getStrokedBBox([element], mockAddSVGElementsFromJson, mockPathActions);
                 } else {
                     bbox = getBBox(element as unknown as SVGGraphicsElement);
                 }
 
                 if (bbox) {
-                    width = bbox.width * scale;
-                    height = bbox.height * scale;
+                    width = Math.max(bbox.width * scale, 1);
+                    height = Math.max(bbox.height * scale, 1);
 
                     // For images, browsers sometimes return smaller bbox values or 0 when not fully loaded.
                     // Prioritize explicit attributes if they exist.
@@ -336,7 +408,7 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                         y = (tagName === 'image' && (explicitX || explicitY)) ? explicitY * scale : bbox.y * scale;
                     }
 
-                    bboxString = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`;
+                    bboxString = `${bbox.x} ${bbox.y} ${Math.max(bbox.width, 1)} ${Math.max(bbox.height, 1)}`;
                 } else {
                     width = 200;
                     height = 200;
@@ -371,13 +443,27 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 textContent = element.textContent || element.innerHTML || '';
             } else if (type === 'icon' || type === 'shape' || type === 'mask') {
                 if (type === 'shape') {
-                    fill = element.getAttribute('fill') || '#000000';
+                    const rawFill = element.getAttribute('fill');
+                    const rawStroke = element.getAttribute('stroke');
+                    
+                    if (!rawFill && rawStroke && rawStroke !== 'none') {
+                        fill = 'none';
+                    } else {
+                        fill = rawFill || '#000000';
+                    }
+
                     const shapesId = item.shapes_id;
                     if (shapesId) {
                         const shapeElement = element.querySelector(`#${shapesId}`);
                         if (shapeElement) {
-                            const shapeFill = shapeElement.getAttribute('fill');
-                            if (shapeFill) fill = shapeFill;
+                            const rawShapeFill = shapeElement.getAttribute('fill');
+                            const rawShapeStroke = shapeElement.getAttribute('stroke');
+                            
+                            if (!rawShapeFill && rawShapeStroke && rawShapeStroke !== 'none') {
+                                fill = 'none';
+                            } else if (rawShapeFill) {
+                                fill = rawShapeFill;
+                            }
                         }
                     }
                 }

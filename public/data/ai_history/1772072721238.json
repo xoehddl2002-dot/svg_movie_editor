@@ -1,0 +1,67 @@
+{
+  "id": "ai-hist-1772072721238",
+  "prompt": "우리 아이를 위한 가장 특별한 선물",
+  "type": "top",
+  "svg": "<svg width=\"1864\" height=\"90\" viewBox=\"0 0 1864 90\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"svg_1\" width=\"1864\" height=\"90\" fill=\"#FFFBEB\"/>\n  <path id=\"svg_2\" d=\"M 20 20 H 1844 V 70 H 20 Z\" stroke=\"#E0C9A6\" stroke-width=\"2\" stroke-dasharray=\"8 4\" fill=\"none\"/>\n  <g id=\"svg_3\">\n    <rect x=\"150\" y=\"35\" width=\"40\" height=\"30\" rx=\"2\" fill=\"#F28B8B\"/>\n    <path d=\"M150 50 H190 M170 35 V65\" stroke=\"#FFFFFF\" stroke-width=\"3\"/>\n    <path d=\"M170 35 C170 25 155 25 155 35 C155 25 170 25 170 35 Z\" fill=\"#F28B8B\"/>\n    <path d=\"M170 35 C170 25 185 25 185 35 C185 25 170 25 170 35 Z\" fill=\"#F28B8B\"/>\n  </g>\n  <text id=\"svg_4\" x=\"650\" y=\"56\" fill=\"#5D4037\" font-family=\"GmarketSansTTFBold\" font-size=\"38\" font-weight=\"bold\">우리 아이를 위한</text>\n  <text id=\"svg_5\" x=\"1000\" y=\"56\" fill=\"#5D4037\" font-family=\"GmarketSansTTFBold\" font-size=\"38\" font-weight=\"bold\">가장 특별한 선물</text>\n  <g id=\"svg_6\">\n    <path d=\"M1720 30 L1723 37 L1730 38 L1725 43 L1726 50 L1720 46 L1714 50 L1715 43 L1710 38 L1717 37 Z\" fill=\"#FFD93D\"/>\n    <path d=\"M1750 50 L1752 54 L1757 55 L1753 58 L1754 63 L1750 60 L1746 63 L1747 58 L1743 55 L1748 54 Z\" fill=\"#FFD93D\"/>\n    <circle cx=\"1780\" cy=\"40\" r=\"4\" fill=\"#FF8A8A\"/>\n  </g>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "path",
+        "shapes_id": "svg_2",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "g",
+        "shapes_id": "svg_3",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "text",
+        "shapes_id": "svg_4",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "text",
+        "shapes_id": "svg_5",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "g",
+        "shapes_id": "svg_6",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "GmarketSansTTFBold": [
+        "svg_4",
+        "svg_5"
+      ]
+    }
+  },
+  "date": 1772072721238
+}

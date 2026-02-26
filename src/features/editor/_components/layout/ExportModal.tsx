@@ -3,35 +3,37 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, Loader2, Video, Image as ImageIcon } from "lucide-react"
+import { Download, Loader2, Video, Image as ImageIcon, Film } from "lucide-react"
 import { useExportImage } from '@/features/editor/hooks/useExportImage'
 import { useExportVideo } from '@/features/editor/hooks/useExportVideo'
+import { useExportGif } from '@/features/editor/hooks/useExportGif'
 import { Progress } from "@/components/ui/progress"
 
 export function ExportModal() {
     const [isOpen, setIsOpen] = useState(false)
-    const [format, setFormat] = useState<'mp4' | 'png'>('png')
+    const [format, setFormat] = useState<'mp4' | 'gif' | 'png'>('png')
     const [fps, setFps] = useState<number>(20)
 
     const { exportImage, isExporting: isExportingImage, progress: progressImage, status: statusImage } = useExportImage()
-    const { exportVideo, cancelExport, isExporting: isExportingVideo, progress: progressVideo, status: statusVideo } = useExportVideo()
+    const { exportVideo, cancelExport: cancelVideoExport, isExporting: isExportingVideo, progress: progressVideo, status: statusVideo } = useExportVideo()
+    const { exportGif, cancelExport: cancelGifExport, isExporting: isExportingGif, progress: progressGif, status: statusGif } = useExportGif()
 
-    const isExporting = isExportingImage || isExportingVideo
-    const progress = isExportingVideo ? progressVideo : progressImage
-    const status = isExportingVideo ? statusVideo : statusImage
+    const isExporting = isExportingImage || isExportingVideo || isExportingGif
+    const progress = isExportingVideo ? progressVideo : isExportingGif ? progressGif : progressImage
+    const status = isExportingVideo ? statusVideo : isExportingGif ? statusGif : statusImage
 
     const handleExport = async () => {
         console.log(`[Export Debug] Handle Export Clicked. Format: ${format}, FPS: ${fps}`)
         if (format === 'mp4') {
-            // Disable video export in production (Vercel) due to memory constraints
-            // But allow it for local testing (localhost)
             const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
             if (process.env.NODE_ENV === 'production' && !isLocal) {
                 alert("Video export is currently disabled in the deployment environment due to server memory constraints. Please run locally to export video.")
                 return
             }
             await exportVideo(fps)
+            setIsOpen(false)
+        } else if (format === 'gif') {
+            await exportGif(fps)
             setIsOpen(false)
         } else {
             await exportImage()
@@ -40,9 +42,8 @@ export function ExportModal() {
     }
 
     const handleCancel = () => {
-        if (isExportingVideo) {
-            cancelExport()
-        }
+        if (isExportingVideo) cancelVideoExport()
+        if (isExportingGif) cancelGifExport()
     }
 
     return (
@@ -82,12 +83,17 @@ export function ExportModal() {
                                         <span>Video (.mp4)</span>
                                     </div>
                                 </SelectItem>
-
+                                <SelectItem value="gif">
+                                    <div className="flex items-center gap-2">
+                                        <Film className="h-4 w-4" />
+                                        <span>Animated GIF (.gif)</span>
+                                    </div>
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {(format === 'mp4') && (
+                    {(format === 'mp4' || format === 'gif') && (
                         <div className="space-y-2">
                             <Label>Frame Rate (FPS)</Label>
                             <Select
@@ -124,7 +130,7 @@ export function ExportModal() {
 
                 <div className="flex justify-end gap-2">
                     {isExporting && (
-                        <Button variant="ghost" onClick={handleCancel} disabled={!isExportingVideo}>
+                        <Button variant="ghost" onClick={handleCancel} disabled={!isExportingVideo && !isExportingGif}>
                             Cancel
                         </Button>
                     )}

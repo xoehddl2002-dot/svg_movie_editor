@@ -1,0 +1,121 @@
+{
+  "id": "ai-hist-1772000064143",
+  "prompt": "내 몸을 바꾸는 기분 좋은 땀방울! 전문 코치와 함께하는 1:1 맞춤 PT로 리즈 갱신 시작하세요.",
+  "type": "side",
+  "svg": "<svg width=\"356\" height=\"837\" viewBox=\"0 0 356 837\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"svg_13\" width=\"356\" height=\"837\" fill=\"#0F0F0F\"/>\n  <path id=\"svg_1\" d=\"M0 0H356V400C356 400 280 320 178 320C76 320 0 400 0 400V0Z\" fill=\"#222222\"/>\n  <circle id=\"svg_7\" cx=\"300\" cy=\"100\" r=\"150\" fill=\"#CCFF00\" fill-opacity=\"0.1\"/>\n  <rect id=\"svg_8\" x=\"20\" y=\"20\" width=\"40\" height=\"4\" fill=\"#CCFF00\"/>\n  \n  <text id=\"svg_2\" x=\"178\" y=\"180\" text-anchor=\"middle\" fill=\"#CCFF00\" font-family=\"GmarketSansTTFBold\" font-size=\"22\" font-weight=\"bold\">내 몸을 바꾸는</text>\n  <text id=\"svg_3\" x=\"178\" y=\"225\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"GmarketSansTTFBold\" font-size=\"34\" font-weight=\"bold\">기분 좋은 땀방울!</text>\n  \n  <path id=\"svg_9\" d=\"M40 260 H316\" stroke=\"#CCFF00\" stroke-width=\"2\"/>\n  \n  <text id=\"svg_4\" x=\"178\" y=\"480\" text-anchor=\"middle\" fill=\"#BBBBBB\" font-family=\"NEXONLv1GothicBold\" font-size=\"18\">전문 코치와 함께하는</text>\n  <text id=\"svg_5\" x=\"178\" y=\"520\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"GmarketSansTTFBold\" font-size=\"28\" font-weight=\"bold\">1:1 맞춤 PT로</text>\n  <text id=\"svg_6\" x=\"178\" y=\"570\" text-anchor=\"middle\" fill=\"#CCFF00\" font-family=\"GmarketSansTTFBold\" font-size=\"28\" font-weight=\"bold\">리즈 갱신 시작하세요.</text>\n  \n  <rect id=\"svg_10\" x=\"50\" y=\"650\" width=\"256\" height=\"60\" rx=\"30\" fill=\"#CCFF00\"/>\n  <text id=\"svg_11\" x=\"178\" y=\"688\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"GmarketSansTTFBold\" font-size=\"20\" font-weight=\"bold\">지금 상담하기</text>\n  \n  <path id=\"svg_12\" d=\"M178 750 L178 800\" stroke=\"#444444\" stroke-width=\"1\" stroke-dasharray=\"4 4\"/>\n</svg>",
+  "json": {
+    "item": {
+      "svg_13": {
+        "id": "svg_13",
+        "nodeName": "rect",
+        "shapes_id": "svg_13",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "path",
+        "shapes_id": "svg_1",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "circle",
+        "shapes_id": "svg_7",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "false"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "rect",
+        "shapes_id": "svg_8",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "path",
+        "shapes_id": "svg_9",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "rect",
+        "shapes_id": "svg_10",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_11": {
+        "id": "svg_11",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_12": {
+        "id": "svg_12",
+        "nodeName": "path",
+        "shapes_id": "svg_12",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "GmarketSansTTFBold": [
+        "svg_2",
+        "svg_3",
+        "svg_5",
+        "svg_6",
+        "svg_11"
+      ],
+      "NEXONLv1GothicBold": [
+        "svg_4"
+      ]
+    }
+  },
+  "date": 1772000064143
+}

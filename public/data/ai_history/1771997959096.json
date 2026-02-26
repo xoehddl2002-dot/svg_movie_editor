@@ -1,0 +1,187 @@
+{
+  "id": "ai-hist-1771997959096",
+  "prompt": "커피 한 잔과 함께 넘기는 종이책의 여유. 일상 속 영감이 필요한 당신을 위한 아늑한 서재입니다.",
+  "type": "side",
+  "svg": "<svg width=\"356\" height=\"837\" viewBox=\"0 0 356 837\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"svg_1\" width=\"356\" height=\"837\" fill=\"#FDF8F0\"/>\n  <path id=\"svg_2\" d=\"M0 650H356V837H0V650Z\" fill=\"#EADBC8\"/>\n  <rect id=\"svg_3\" x=\"40\" y=\"620\" width=\"276\" height=\"30\" rx=\"4\" fill=\"#6D4C41\"/>\n  \n  <!-- Books -->\n  <rect id=\"svg_4\" x=\"60\" y=\"520\" width=\"45\" height=\"100\" rx=\"2\" fill=\"#2E5A88\"/>\n  <rect id=\"svg_5\" x=\"65\" y=\"530\" width=\"35\" height=\"5\" fill=\"#FFFFFF\" fill-opacity=\"0.3\"/>\n  \n  <rect id=\"svg_6\" x=\"110\" y=\"480\" width=\"50\" height=\"140\" rx=\"2\" fill=\"#8B4513\"/>\n  <rect id=\"svg_7\" x=\"115\" y=\"495\" width=\"40\" height=\"5\" fill=\"#FFFFFF\" fill-opacity=\"0.3\"/>\n  \n  <rect id=\"svg_8\" x=\"165\" y=\"540\" width=\"40\" height=\"80\" rx=\"2\" fill=\"#435334\"/>\n  <rect id=\"svg_9\" x=\"170\" y=\"555\" width=\"30\" height=\"5\" fill=\"#FFFFFF\" fill-opacity=\"0.3\"/>\n\n  <!-- Coffee Cup -->\n  <path id=\"svg_10\" d=\"M230 580C230 571.716 236.716 565 245 565H285C293.284 565 300 571.716 300 580V605C300 613.284 293.284 620 285 620H245C236.716 620 230 613.284 230 605V580Z\" fill=\"#F5F5F5\"/>\n  <path id=\"svg_11\" d=\"M300 580C311.046 580 320 584.477 320 590C320 595.523 311.046 600 300 600\" stroke=\"#F5F5F5\" stroke-width=\"6\" stroke-linecap=\"round\"/>\n  \n  <!-- Steam lines -->\n  <path id=\"svg_12\" d=\"M250 555C250 555 255 550 250 545\" stroke=\"#A67B5B\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path id=\"svg_13\" d=\"M265 550C265 550 270 545 265 540\" stroke=\"#A67B5B\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n  <path id=\"svg_14\" d=\"M280 555C280 555 285 550 280 545\" stroke=\"#A67B5B\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n\n  <!-- Decorative window element -->\n  <rect id=\"svg_15\" x=\"80\" y=\"80\" width=\"196\" height=\"260\" rx=\"10\" stroke=\"#D7C0AE\" stroke-width=\"4\"/>\n  <line id=\"svg_16\" x1=\"178\" y1=\"80\" x2=\"178\" y2=\"340\" stroke=\"#D7C0AE\" stroke-width=\"4\"/>\n  <line id=\"svg_17\" x1=\"80\" y1=\"210\" x2=\"276\" y2=\"210\" stroke=\"#D7C0AE\" stroke-width=\"4\"/>\n\n  <!-- Texts -->\n  <text id=\"svg_18\" x=\"178\" y=\"420\" text-anchor=\"middle\" font-family=\"KimjungchulMyungjo-Bold\" font-size=\"24\" fill=\"#3E2723\">커피 한 잔과</text>\n  <text id=\"svg_19\" x=\"178\" y=\"460\" text-anchor=\"middle\" font-family=\"KimjungchulMyungjo-Bold\" font-size=\"24\" fill=\"#3E2723\">종이책의 여유</text>\n  \n  <text id=\"svg_20\" x=\"178\" y=\"720\" text-anchor=\"middle\" font-family=\"KimjungchulMyungjo-Bold\" font-size=\"18\" fill=\"#5D4037\">일상 속 영감</text>\n  <text id=\"svg_21\" x=\"178\" y=\"755\" text-anchor=\"middle\" font-family=\"KimjungchulMyungjo-Bold\" font-size=\"18\" fill=\"#5D4037\">아늑한 서재</text>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "path",
+        "shapes_id": "svg_2",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "rect",
+        "shapes_id": "svg_3",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "rect",
+        "shapes_id": "svg_4",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "rect",
+        "shapes_id": "svg_5",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "rect",
+        "shapes_id": "svg_6",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "rect",
+        "shapes_id": "svg_7",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "rect",
+        "shapes_id": "svg_8",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "rect",
+        "shapes_id": "svg_9",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "path",
+        "shapes_id": "svg_10",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_11": {
+        "id": "svg_11",
+        "nodeName": "path",
+        "shapes_id": "svg_11",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_12": {
+        "id": "svg_12",
+        "nodeName": "path",
+        "shapes_id": "svg_12",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_13": {
+        "id": "svg_13",
+        "nodeName": "path",
+        "shapes_id": "svg_13",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_14": {
+        "id": "svg_14",
+        "nodeName": "path",
+        "shapes_id": "svg_14",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_15": {
+        "id": "svg_15",
+        "nodeName": "rect",
+        "shapes_id": "svg_15",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_16": {
+        "id": "svg_16",
+        "nodeName": "line",
+        "shapes_id": "svg_16",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_17": {
+        "id": "svg_17",
+        "nodeName": "line",
+        "shapes_id": "svg_17",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_18": {
+        "id": "svg_18",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_19": {
+        "id": "svg_19",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_20": {
+        "id": "svg_20",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_21": {
+        "id": "svg_21",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      }
+    },
+    "font-list": {
+      "KimjungchulMyungjo-Bold": [
+        "svg_18",
+        "svg_19",
+        "svg_20",
+        "svg_21"
+      ]
+    }
+  },
+  "date": 1771997959096
+}

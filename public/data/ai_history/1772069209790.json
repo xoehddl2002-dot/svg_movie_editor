@@ -1,0 +1,77 @@
+{
+  "id": "ai-hist-1772069209790",
+  "prompt": "정감있는 추억을 마시는 역전할머니맥주 입니다.",
+  "type": "full",
+  "svg": "<svg width=\"1920\" height=\"1080\" viewBox=\"0 0 1920 1080\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"svg_1\" x=\"0\" y=\"0\" width=\"1920\" height=\"1080\" fill=\"#120D0B\" />\n  <rect id=\"svg_2\" x=\"0\" y=\"850\" width=\"1920\" height=\"230\" fill=\"#2C1810\" />\n  <g id=\"svg_3\">\n    <rect x=\"400\" y=\"350\" width=\"300\" height=\"450\" rx=\"30\" fill=\"#FFB300\" />\n    <path d=\"M400 350 Q400 320 430 320 L670 320 Q700 320 700 350 L700 420 L400 420 Z\" fill=\"#FFFFFF\" />\n    <path d=\"M700 450 Q780 450 780 520 L780 630 Q780 700 700 700\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"25\" stroke-linecap=\"round\" />\n    <rect x=\"420\" y=\"380\" width=\"20\" height=\"380\" rx=\"10\" fill=\"#FFFFFF\" fill-opacity=\"0.3\" />\n    <rect x=\"480\" y=\"380\" width=\"15\" height=\"380\" rx=\"7\" fill=\"#FFFFFF\" fill-opacity=\"0.2\" />\n    <circle cx=\"450\" cy=\"360\" r=\"15\" fill=\"#FFFFFF\" />\n    <circle cx=\"520\" cy=\"340\" r=\"20\" fill=\"#FFFFFF\" />\n    <circle cx=\"600\" cy=\"350\" r=\"18\" fill=\"#FFFFFF\" />\n    <circle cx=\"660\" cy=\"370\" r=\"12\" fill=\"#FFFFFF\" />\n  </g>\n  <text id=\"svg_4\" x=\"1400\" y=\"460\" font-family=\"establishRetrosans\" font-size=\"54\" fill=\"#E0C097\" text-anchor=\"middle\">정감있는 추억을 마시는</text>\n  <text id=\"svg_5\" x=\"1400\" y=\"620\" font-family=\"Typo_SsangmunDong_B\" font-size=\"140\" fill=\"#F44336\" text-anchor=\"middle\" stroke=\"#FFFFFF\" stroke-width=\"4\">역전할머니맥주</text>\n  <path id=\"svg_6\" d=\"M1000 520 L1800 520\" stroke=\"#FFD54F\" stroke-width=\"6\" stroke-dasharray=\"15,15\" />\n  <g id=\"svg_7\">\n    <circle cx=\"1400\" cy=\"540\" r=\"450\" fill=\"none\" stroke=\"#3E2723\" stroke-width=\"2\" />\n    <circle cx=\"1400\" cy=\"540\" r=\"470\" fill=\"none\" stroke=\"#3E2723\" stroke-width=\"1\" />\n  </g>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "rect",
+        "shapes_id": "svg_2",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "false"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "g",
+        "shapes_id": "svg_3",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "text",
+        "shapes_id": "svg_4",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "text",
+        "shapes_id": "svg_5",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "path",
+        "shapes_id": "svg_6",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "g",
+        "shapes_id": "svg_7",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "establishRetrosans": [
+        "svg_4"
+      ],
+      "Typo_SsangmunDong_B": [
+        "svg_5"
+      ]
+    }
+  },
+  "date": 1772069209790
+}

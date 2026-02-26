@@ -19,7 +19,7 @@ interface ColorPickerProps {
 }
 
 function ColorPicker({ value, onChange }: ColorPickerProps) {
-    const presets = ['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
+    const presets = ['none', '#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
 
     return (
         <div className="space-y-2">
@@ -27,10 +27,19 @@ function ColorPicker({ value, onChange }: ColorPickerProps) {
                 {presets.map(color => (
                     <div
                         key={color}
-                        className={`w-6 h-6 rounded-full cursor-pointer border ${value === color ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-                        style={{ backgroundColor: color }}
+                        className={`w-6 h-6 rounded-full cursor-pointer border flex item-center justify-center relative overflow-hidden ${value === color ? 'ring-2 ring-primary ring-offset-2 z-10' : ''}`}
+                        style={{ backgroundColor: color === 'none' ? 'transparent' : color }}
                         onClick={() => onChange(color)}
-                    />
+                        title={color === 'none' ? 'No Color (Transparent)' : color}
+                    >
+                        {color === 'none' && (
+                            <div className="absolute inset-0 w-full h-full">
+                                <svg width="100%" height="100%" viewBox="0 0 24 24">
+                                    <line x1="0" y1="24" x2="24" y2="0" stroke="red" strokeWidth="2" />
+                                </svg>
+                            </div>
+                        )}
+                    </div>
                 ))}
             </div>
             <div className="flex items-center gap-2">

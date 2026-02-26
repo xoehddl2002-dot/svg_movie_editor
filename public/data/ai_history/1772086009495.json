@@ -1,0 +1,42 @@
+{
+  "id": "ai-hist-1772086009495",
+  "prompt": "맨 밑에 텍스트만 사용해줘",
+  "type": "top",
+  "svg": "<svg width=\"1864\" height=\"90\" viewBox=\"0 0 1864 90\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"svg_1\" width=\"1864\" height=\"90\" fill=\"#E60012\" />\n  <text id=\"svg_2\" x=\"650\" y=\"58\" font-family=\"KyoboHandwriting2020\" font-size=\"42\" fill=\"#000000\" text-anchor=\"middle\" font-weight=\"bold\">지친 현생에서 벗어나</text>\n  <text id=\"svg_3\" x=\"1214\" y=\"58\" font-family=\"KyoboHandwriting2020\" font-size=\"42\" fill=\"#000000\" text-anchor=\"middle\" font-weight=\"bold\">진짜 휴식을 선물하는 시간!</text>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      }
+    },
+    "font-list": {
+      "KyoboHandwriting2020": [
+        "svg_2",
+        "svg_3"
+      ]
+    },
+    "image-list": {}
+  },
+  "date": 1772086009495
+}

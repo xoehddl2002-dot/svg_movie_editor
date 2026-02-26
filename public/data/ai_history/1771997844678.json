@@ -1,0 +1,134 @@
+{
+  "id": "ai-hist-1771997844678",
+  "prompt": "도심을 떠나 만나는 완벽한 휴식. 자연 속 프라이빗한 공간에서 잊지 못할 추억을 만들어보세요.",
+  "type": "full",
+  "svg": "<svg width=\"1920\" height=\"1080\" viewBox=\"0 0 1920 1080\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"bg_rect\" width=\"1920\" height=\"1080\" fill=\"#F4F7F2\"/>\n  <circle id=\"sun_deco\" cx=\"1600\" cy=\"250\" r=\"80\" fill=\"#FFD700\" opacity=\"0.6\"/>\n  <path id=\"mtn_1\" d=\"M0 1080L450 400L900 1080H0Z\" fill=\"#D1DBBD\" opacity=\"0.8\"/>\n  <path id=\"mtn_2\" d=\"M600 1080L1100 300L1600 1080H600Z\" fill=\"#A7C4A0\" opacity=\"0.7\"/>\n  <path id=\"mtn_3\" d=\"M1200 1080L1650 550L2100 1080H1200Z\" fill=\"#88A07A\" opacity=\"0.6\"/>\n  \n  <rect id=\"svg_line\" x=\"860\" y=\"440\" width=\"200\" height=\"4\" fill=\"#4A5D4E\"/>\n  \n  <text id=\"svg_t1\" x=\"960\" y=\"380\" text-anchor=\"middle\" font-family=\"GmarketSansTTFBold\" font-size=\"52\" fill=\"#2D3A2F\">도심을 떠나 만나는</text>\n  <text id=\"svg_t2\" x=\"960\" y=\"550\" text-anchor=\"middle\" font-family=\"GmarketSansTTFBold\" font-size=\"110\" fill=\"#1B261D\">완벽한 휴식</text>\n  \n  <text id=\"svg_s1\" x=\"960\" y=\"680\" text-anchor=\"middle\" font-family=\"NotoSansKR-Medium\" font-size=\"36\" fill=\"#4A5D4E\">자연 속 프라이빗한 공간에서</text>\n  <text id=\"svg_s2\" x=\"960\" y=\"740\" text-anchor=\"middle\" font-family=\"NotoSansKR-Medium\" font-size=\"36\" fill=\"#4A5D4E\">잊지 못할 추억을</text>\n  <text id=\"svg_s3\" x=\"960\" y=\"800\" text-anchor=\"middle\" font-family=\"NotoSansKR-Medium\" font-size=\"36\" fill=\"#4A5D4E\">만들어보세요</text>\n\n  <path id=\"tree_1\" d=\"M200 1080 L250 950 L300 1080 Z\" fill=\"#4A5D4E\"/>\n  <path id=\"tree_2\" d=\"M280 1080 L320 980 L360 1080 Z\" fill=\"#4A5D4E\"/>\n  <path id=\"tree_3\" d=\"M1700 1080 L1760 920 L1820 1080 Z\" fill=\"#4A5D4E\"/>\n</svg>",
+  "json": {
+    "item": {
+      "bg_rect": {
+        "id": "bg_rect",
+        "nodeName": "rect",
+        "shapes_id": "bg_rect",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "sun_deco": {
+        "id": "sun_deco",
+        "nodeName": "circle",
+        "shapes_id": "sun_deco",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "mtn_1": {
+        "id": "mtn_1",
+        "nodeName": "path",
+        "shapes_id": "mtn_1",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "mtn_2": {
+        "id": "mtn_2",
+        "nodeName": "path",
+        "shapes_id": "mtn_2",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "mtn_3": {
+        "id": "mtn_3",
+        "nodeName": "path",
+        "shapes_id": "mtn_3",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_line": {
+        "id": "svg_line",
+        "nodeName": "rect",
+        "shapes_id": "svg_line",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_t1": {
+        "id": "svg_t1",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_t2": {
+        "id": "svg_t2",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_s1": {
+        "id": "svg_s1",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_s2": {
+        "id": "svg_s2",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_s3": {
+        "id": "svg_s3",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "tree_1": {
+        "id": "tree_1",
+        "nodeName": "path",
+        "shapes_id": "tree_1",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "tree_2": {
+        "id": "tree_2",
+        "nodeName": "path",
+        "shapes_id": "tree_2",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "tree_3": {
+        "id": "tree_3",
+        "nodeName": "path",
+        "shapes_id": "tree_3",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "GmarketSansTTFBold": [
+        "svg_t1",
+        "svg_t2"
+      ],
+      "NotoSansKR-Medium": [
+        "svg_s1",
+        "svg_s2",
+        "svg_s3"
+      ]
+    }
+  },
+  "date": 1771997844678
+}

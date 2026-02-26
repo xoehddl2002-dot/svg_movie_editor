@@ -1,0 +1,139 @@
+{
+  "id": "ai-hist-1771998870927",
+  "prompt": "나른한 오후, 직접 로스팅한 원두의 깊은 향으로 힐링하세요. 지금 방문하시면 수제 쿠키를 드려요!",
+  "type": "full",
+  "svg": "<svg width=\"1920\" height=\"1080\" viewBox=\"0 0 1920 1080\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <!-- Background -->\n  <rect id=\"svg_1\" width=\"1920\" height=\"1080\" fill=\"#FDF5E6\"/>\n  \n  <!-- Decorative Background Shapes -->\n  <circle id=\"svg_2\" cx=\"1700\" cy=\"200\" r=\"300\" fill=\"#F3E5AB\" fill-opacity=\"0.4\"/>\n  <circle id=\"svg_3\" cx=\"200\" cy=\"900\" r=\"250\" fill=\"#E6CCB2\" fill-opacity=\"0.3\"/>\n  \n  <!-- Coffee Cup Illustration -->\n  <g id=\"svg_4\">\n    <path d=\"M1400 650C1400 750 1300 820 1150 820C1000 820 900 750 900 650\" stroke=\"#6F4E37\" stroke-width=\"12\" stroke-linecap=\"round\"/>\n    <path d=\"M900 650C900 550 1000 500 1150 500C1300 500 1400 550 1400 650\" stroke=\"#6F4E37\" stroke-width=\"12\" stroke-linecap=\"round\"/>\n    <path d=\"M1400 600C1450 600 1480 630 1480 670C1480 710 1450 740 1400 740\" stroke=\"#6F4E37\" stroke-width=\"12\" stroke-linecap=\"round\"/>\n    <ellipse cx=\"1150\" cy=\"650\" rx=\"230\" ry=\"130\" fill=\"#3D2B1F\"/>\n    <path d=\"M1150 580C1180 580 1200 600 1200 630\" stroke=\"white\" stroke-width=\"4\" stroke-linecap=\"round\" opacity=\"0.4\"/>\n  </g>\n  \n  <!-- Steam Lines -->\n  <path id=\"svg_5\" d=\"M1100 450Q1120 400 1100 350M1180 430Q1200 380 1180 330M1260 450Q1280 400 1260 350\" stroke=\"#A0522D\" stroke-width=\"8\" stroke-linecap=\"round\" opacity=\"0.6\"/>\n\n  <!-- Coffee Beans -->\n  <path id=\"svg_13\" d=\"M1500 850Q1520 830 1550 850Q1580 870 1550 900Q1520 930 1490 900Q1470 880 1500 850Z\" fill=\"#4B3621\"/>\n  <path id=\"svg_14\" d=\"M1600 780Q1620 760 1650 780Q1680 800 1650 830Q1620 860 1590 830Q1570 810 1600 780Z\" fill=\"#6F4E37\"/>\n\n  <!-- Cookie Illustration -->\n  <g id=\"svg_12\">\n    <circle cx=\"800\" cy=\"850\" r=\"80\" fill=\"#D2B48C\"/>\n    <circle cx=\"770\" cy=\"820\" r=\"10\" fill=\"#4B3621\"/>\n    <circle cx=\"820\" cy=\"840\" r=\"8\" fill=\"#4B3621\"/>\n    <circle cx=\"790\" cy=\"880\" r=\"12\" fill=\"#4B3621\"/>\n    <circle cx=\"830\" cy=\"880\" r=\"9\" fill=\"#4B3621\"/>\n    <circle cx=\"750\" cy=\"860\" r=\"7\" fill=\"#4B3621\"/>\n  </g>\n\n  <!-- Main Text Elements -->\n  <text id=\"svg_6\" x=\"200\" y=\"300\" fill=\"#6F4E37\" font-family=\"ELANDNiceM\" font-size=\"70\" font-weight=\"bold\">나른한 오후,</text>\n  <text id=\"svg_7\" x=\"200\" y=\"420\" fill=\"#3D2B1F\" font-family=\"ELANDNiceM\" font-size=\"90\" font-weight=\"bold\">직접 로스팅한 원두의</text>\n  <text id=\"svg_8\" x=\"200\" y=\"540\" fill=\"#3D2B1F\" font-family=\"ELANDNiceM\" font-size=\"90\" font-weight=\"bold\">깊은 향으로 힐링하세요</text>\n\n  <!-- CTA Section -->\n  <rect id=\"svg_9\" x=\"200\" y=\"650\" width=\"650\" height=\"220\" rx=\"30\" fill=\"#A0522D\"/>\n  <text id=\"svg_10\" x=\"250\" y=\"740\" fill=\"#FFFFFF\" font-family=\"GmarketSansTTFBold\" font-size=\"45\">지금 방문하시면</text>\n  <text id=\"svg_11\" x=\"250\" y=\"820\" fill=\"#FFFFFF\" font-family=\"GmarketSansTTFBold\" font-size=\"55\">수제 쿠키를 드려요!</text>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "circle",
+        "shapes_id": "svg_2",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "circle",
+        "shapes_id": "svg_3",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "g",
+        "shapes_id": "svg_4",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "path",
+        "shapes_id": "svg_5",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "text",
+        "shapes_id": "svg_6",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "text",
+        "shapes_id": "svg_7",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "text",
+        "shapes_id": "svg_8",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "rect",
+        "shapes_id": "svg_9",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "text",
+        "shapes_id": "svg_10",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_11": {
+        "id": "svg_11",
+        "nodeName": "text",
+        "shapes_id": "svg_11",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_12": {
+        "id": "svg_12",
+        "nodeName": "g",
+        "shapes_id": "svg_12",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_13": {
+        "id": "svg_13",
+        "nodeName": "path",
+        "shapes_id": "svg_13",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_14": {
+        "id": "svg_14",
+        "nodeName": "path",
+        "shapes_id": "svg_14",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "ELANDNiceM": [
+        "svg_6",
+        "svg_7",
+        "svg_8"
+      ],
+      "GmarketSansTTFBold": [
+        "svg_10",
+        "svg_11"
+      ]
+    }
+  },
+  "date": 1771998870927
+}

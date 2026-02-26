@@ -1,0 +1,89 @@
+{
+  "id": "ai-hist-1772084386481",
+  "prompt": "워터마크 MIRICANVAS 지워줘",
+  "type": "full",
+  "svg": "<svg width=\"1920\" height=\"1080\" viewBox=\"0 0 1920 1080\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <!-- Background Sky -->\n  <rect id=\"svg_1\" width=\"1920\" height=\"1080\" fill=\"#BCE4F9\" />\n  \n  <!-- Clouds Group -->\n  <g id=\"svg_2\">\n    <path d=\"M200 200C200 170 240 150 280 150C300 120 360 120 380 150C420 150 460 170 460 200H200Z\" fill=\"white\" opacity=\"0.8\" />\n    <path d=\"M1500 150C1500 120 1540 100 1580 100C1600 70 1660 70 1680 100C1720 100 1760 120 1760 150H1500Z\" fill=\"white\" opacity=\"0.8\" />\n    <path d=\"M800 100C800 80 830 60 860 60C880 40 920 40 940 60C970 60 1000 80 1000 100H800Z\" fill=\"white\" opacity=\"0.6\" />\n  </g>\n\n  <!-- Illustration Placeholder (Hills and Flowers) -->\n  <g id=\"svg_3\" clip-path=\"url(#clip_0)\">\n    <defs>\n      <clipPath id=\"clip_0\">\n        <rect width=\"1920\" height=\"600\" y=\"480\" />\n      </clipPath>\n    </defs>\n    <!-- Fallback simple shapes to represent the hill if image is missing -->\n    <path d=\"M0 1080V700C300 650 600 600 960 620C1320 640 1620 600 1920 550V1080H0Z\" fill=\"#88B04B\" opacity=\"0.5\" />\n  </g>\n\n  <!-- Header Text: Hello -->\n  <text id=\"svg_4\" x=\"960\" y=\"220\" text-anchor=\"middle\" fill=\"#FFEB3B\" font-family=\"KyoboHandwriting2020\" font-size=\"120\" font-weight=\"bold\">Hello</text>\n  \n  <!-- Header Text: Spring -->\n  <text id=\"svg_5\" x=\"960\" y=\"340\" text-anchor=\"middle\" fill=\"#4A90E2\" font-family=\"KyoboHandwriting2020\" font-size=\"180\" font-weight=\"bold\">Spring</text>\n\n  <!-- Descriptive Text Split for constraints -->\n  <text id=\"svg_6\" x=\"960\" y=\"420\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"NotoSansKR-Medium\" font-size=\"32\">Spring is a</text>\n  <text id=\"svg_7\" x=\"960\" y=\"465\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"NotoSansKR-Medium\" font-size=\"32\">season full of</text>\n  <text id=\"svg_8\" x=\"960\" y=\"510\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"NotoSansKR-Medium\" font-size=\"32\">beauty &amp; wonder</text>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      }
+    },
+    "font-list": {
+      "KyoboHandwriting2020": [
+        "svg_4",
+        "svg_5"
+      ],
+      "NotoSansKR-Medium": [
+        "svg_6",
+        "svg_7",
+        "svg_8"
+      ]
+    },
+    "image-list": {
+      "https://via.placeholder.com/1920x600": [
+        "svg_3"
+      ]
+    }
+  },
+  "date": 1772084386481
+}

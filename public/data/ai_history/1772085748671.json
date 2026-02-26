@@ -1,0 +1,120 @@
+{
+  "id": "ai-hist-1772085748671",
+  "prompt": "Image to Template",
+  "type": "side",
+  "svg": "<svg width=\"356\" height=\"837\" viewBox=\"0 0 356 837\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs>\n    <clipPath id=\"clip_hand\">\n      <rect width=\"40\" height=\"40\" rx=\"4\" />\n    </clipPath>\n  </defs>\n  <!-- Background -->\n  <rect id=\"svg_1\" width=\"356\" height=\"837\" fill=\"#121212\" />\n  <!-- Top Decorative Pattern -->\n  <g id=\"svg_2\">\n    <path d=\"M0 0C10 20 20 20 30 0M30 0C40 20 50 20 60 0M60 0C70 20 80 20 90 0M90 0C100 20 110 20 120 0M120 0C130 20 140 20 150 0M150 0C160 20 170 20 180 0M180 0C190 20 200 20 210 0M210 0C220 20 230 20 240 0M240 0C250 20 260 20 270 0M270 0C280 20 290 20 300 0M300 0C310 20 320 20 330 0M330 0C340 20 350 20 360 0\" stroke=\"#E30613\" stroke-width=\"2\" />\n    <path d=\"M0 10C10 30 20 30 30 10M30 10C40 30 50 30 60 10M60 10C70 30 80 30 90 10M90 10C100 30 110 30 120 10M120 10C130 30 140 30 150 10M150 10C160 30 170 30 180 10M180 10C190 30 200 30 210 10M210 10C220 30 230 30 240 10M240 10C250 30 260 30 270 10M270 10C280 30 290 30 300 10M300 10C310 30 320 30 330 10M330 10C340 30 350 30 360 10\" stroke=\"#E30613\" stroke-width=\"2\" />\n  </g>\n  <!-- Small Title -->\n  <text id=\"svg_3\" x=\"178\" y=\"140\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"GmarketSansTTFBold\" font-size=\"16\">극락도락동아리?</text>\n  <!-- Main Title -->\n  <text id=\"svg_4\" x=\"178\" y=\"220\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"KyoboHandwriting2020\" font-size=\"44\">무엇이든 물어보살!</text>\n  <!-- Bubble 1 -->\n  <g id=\"svg_5\">\n    <path d=\"M40 310 C40 296 50 286 64 286 H292 C306 286 316 296 316 310 V334 C316 348 306 358 292 358 H188 L178 368 L168 358 H64 C50 358 40 348 40 334 V310 Z\" fill=\"#FFFFFF\" />\n    <text x=\"178\" y=\"328\" text-anchor=\"middle\" fill=\"#121212\" font-family=\"NotoSansKR-Medium\" font-size=\"17\">거기 스님 되려고 가는 데 아님?</text>\n  </g>\n  <!-- Bubble 2 -->\n  <g id=\"svg_6\">\n    <path d=\"M40 394 C40 380 50 370 64 370 H292 C306 370 316 380 316 394 V418 C316 432 306 442 292 442 H188 L178 452 L168 442 H64 C50 442 40 432 40 418 V394 Z\" fill=\"#FFFFFF\" />\n    <text x=\"178\" y=\"412\" text-anchor=\"middle\" fill=\"#121212\" font-family=\"NotoSansKR-Medium\" font-size=\"17\">회식으로 고기 못먹나요?</text>\n  </g>\n  <!-- Bubble 3 -->\n  <g id=\"svg_7\">\n    <path d=\"M40 478 C40 464 50 454 64 454 H292 C306 454 316 464 316 478 V502 C316 516 306 526 292 526 H188 L178 536 L168 526 H64 C50 526 40 516 40 502 V478 Z\" fill=\"#FFFFFF\" />\n    <text x=\"178\" y=\"496\" text-anchor=\"middle\" fill=\"#121212\" font-family=\"NotoSansKR-Medium\" font-size=\"17\">맨날 108배 하나요?</text>\n  </g>\n  <!-- Divider -->\n  <path id=\"svg_8\" d=\"M40 600 H316\" stroke=\"#E30613\" stroke-width=\"2\" stroke-dasharray=\"2 4\" />\n  <!-- Description -->\n  <g id=\"svg_9\">\n    <text x=\"178\" y=\"650\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"NotoSansKR-Medium\" font-size=\"18\">라고 오해하는</text>\n    <text x=\"178\" y=\"680\" text-anchor=\"middle\" fill=\"#FFFFFF\" font-family=\"NotoSansKR-Medium\" font-size=\"18\">당신을 위해 준비했습니다.</text>\n  </g>\n  <!-- Bottom Bar -->\n  <rect id=\"svg_10\" x=\"0\" y=\"750\" width=\"356\" height=\"87\" fill=\"#E30613\" />\n  <!-- Bottom Text Group -->\n  <g id=\"svg_11\">\n    <text x=\"165\" y=\"790\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"NotoSansKR-Bold\" font-size=\"18\">극락도락 동아리 팩트체크</text>\n    <text x=\"165\" y=\"815\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"NotoSansKR-Bold\" font-size=\"18\">바로가기</text>\n  </g>\n  <!-- Hand Icon Placeholder -->\n  <g id=\"svg_12\" transform=\"translate(280, 775)\" clip-path=\"url(#clip_hand)\">\n    <image href=\"/assets/no-img.svg\" width=\"40\" height=\"40\" preserveAspectRatio=\"xMidYMid slice\" />\n  </g>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "path",
+        "shapes_id": "svg_8",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "rect",
+        "shapes_id": "svg_10",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_11": {
+        "id": "svg_11",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_12": {
+        "id": "svg_12",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "GmarketSansTTFBold": [
+        "svg_3"
+      ],
+      "KyoboHandwriting2020": [
+        "svg_4"
+      ],
+      "NotoSansKR-Medium": [
+        "svg_5",
+        "svg_6",
+        "svg_7",
+        "svg_9"
+      ],
+      "NotoSansKR-Bold": [
+        "svg_11"
+      ]
+    },
+    "image-list": {
+      "/assets/no-img.svg": [
+        "svg_12"
+      ]
+    }
+  },
+  "date": 1772085748671
+}

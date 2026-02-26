@@ -1,0 +1,102 @@
+{
+  "id": "ai-hist-1772002804029",
+  "prompt": "매일 아침 갓 구워낸 고소한 빵 냄새! 정성이 가득 담긴 천연 발효빵으로 건강한 아침을 여세요.",
+  "type": "full",
+  "svg": "<svg width=\"1920\" height=\"1080\" viewBox=\"0 0 1920 1080\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"svg_1\" width=\"1920\" height=\"1080\" fill=\"#FFF9EB\"/>\n  <g id=\"svg_2\">\n    <circle cx=\"1650\" cy=\"250\" r=\"180\" fill=\"#FFECB3\" fill-opacity=\"0.6\"/>\n    <circle cx=\"1650\" cy=\"250\" r=\"130\" fill=\"#FFE082\" fill-opacity=\"0.8\"/>\n  </g>\n  <g id=\"svg_3\">\n    <path d=\"M400 900 C 450 650, 650 600, 960 550 C 1270 600, 1470 650, 1520 900 L 1520 950 C 1470 1020, 450 1020, 400 950 Z\" fill=\"#D35400\"/>\n    <path d=\"M430 890 C 480 680, 660 630, 960 580 C 1260 630, 1440 680, 1490 890\" fill=\"#E67E22\"/>\n    <path d=\"M700 680 Q 750 650 800 690\" stroke=\"#FFF9EB\" stroke-width=\"8\" stroke-linecap=\"round\" fill=\"none\"/>\n    <path d=\"M910 660 Q 960 630 1010 670\" stroke=\"#FFF9EB\" stroke-width=\"8\" stroke-linecap=\"round\" fill=\"none\"/>\n    <path d=\"M1120 680 Q 1170 650 1220 690\" stroke=\"#FFF9EB\" stroke-width=\"8\" stroke-linecap=\"round\" fill=\"none\"/>\n  </g>\n  <g id=\"svg_4\">\n    <path d=\"M200 1000 Q 250 800 200 600\" stroke=\"#C0A16B\" stroke-width=\"10\" fill=\"none\"/>\n    <ellipse cx=\"180\" cy=\"620\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(-30 180 620)\"/>\n    <ellipse cx=\"220\" cy=\"620\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(30 220 620)\"/>\n    <ellipse cx=\"170\" cy=\"680\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(-30 170 680)\"/>\n    <ellipse cx=\"230\" cy=\"680\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(30 230 680)\"/>\n    <ellipse cx=\"180\" cy=\"740\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(-30 180 740)\"/>\n    <ellipse cx=\"220\" cy=\"740\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(30 220 740)\"/>\n  </g>\n  <g id=\"svg_5\">\n    <path d=\"M1720 1000 Q 1670 800 1720 600\" stroke=\"#C0A16B\" stroke-width=\"10\" fill=\"none\"/>\n    <ellipse cx=\"1740\" cy=\"620\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(30 1740 620)\"/>\n    <ellipse cx=\"1700\" cy=\"620\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(-30 1700 620)\"/>\n    <ellipse cx=\"1750\" cy=\"680\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(30 1750 680)\"/>\n    <ellipse cx=\"1690\" cy=\"680\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(-30 1690 680)\"/>\n    <ellipse cx=\"1740\" cy=\"740\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(30 1740 740)\"/>\n    <ellipse cx=\"1700\" cy=\"740\" rx=\"15\" ry=\"30\" fill=\"#C0A16B\" transform=\"rotate(-30 1700 740)\"/>\n  </g>\n  <text id=\"svg_6\" x=\"960\" y=\"250\" text-anchor=\"middle\" font-family=\"RecipekoreaM\" font-size=\"80\" fill=\"#5D4037\">매일 아침 갓 구워낸</text>\n  <text id=\"svg_7\" x=\"960\" y=\"370\" text-anchor=\"middle\" font-family=\"RecipekoreaM\" font-size=\"120\" fill=\"#3E2723\">고소한 빵 냄새!</text>\n  <text id=\"svg_8\" x=\"960\" y=\"480\" text-anchor=\"middle\" font-family=\"GmarketSansTTFBold\" font-size=\"45\" fill=\"#8D6E63\">정성이 가득 담긴</text>\n  <text id=\"svg_9\" x=\"960\" y=\"550\" text-anchor=\"middle\" font-family=\"GmarketSansTTFBold\" font-size=\"45\" fill=\"#8D6E63\">천연 발효빵으로</text>\n  <text id=\"svg_10\" x=\"960\" y=\"620\" text-anchor=\"middle\" font-family=\"GmarketSansTTFBold\" font-size=\"45\" fill=\"#8D6E63\">건강한 아침을 여세요</text>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "g",
+        "shapes_id": "svg_2",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "g",
+        "shapes_id": "svg_3",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "g",
+        "shapes_id": "svg_4",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "g",
+        "shapes_id": "svg_5",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "text",
+        "shapes_id": "svg_6",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "text",
+        "shapes_id": "svg_7",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "text",
+        "shapes_id": "svg_8",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "text",
+        "shapes_id": "svg_9",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "text",
+        "shapes_id": "svg_10",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "RecipekoreaM": [
+        "svg_6",
+        "svg_7"
+      ],
+      "GmarketSansTTFBold": [
+        "svg_8",
+        "svg_9",
+        "svg_10"
+      ]
+    }
+  },
+  "date": 1772002804029
+}

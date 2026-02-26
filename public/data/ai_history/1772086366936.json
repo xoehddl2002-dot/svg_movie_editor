@@ -1,0 +1,128 @@
+{
+  "id": "ai-hist-1772086366936",
+  "prompt": "Image to Template",
+  "type": "full",
+  "svg": "<svg width=\"1920\" height=\"1080\" viewBox=\"0 0 1920 1080\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"svg_1\" width=\"1920\" height=\"1080\" fill=\"#1A1A1A\" />\n  <text id=\"svg_2\" x=\"960\" y=\"90\" fill=\"#FFFFFF\" font-size=\"40\" font-family=\"NEXONLv1GothicBold\" text-anchor=\"middle\">극락도락동아리 99기 모집</text>\n  <text id=\"svg_3\" x=\"960\" y=\"240\" fill=\"#FFFFFF\" font-size=\"160\" font-family=\"KyoboHandwriting2020\" text-anchor=\"middle\">극락도 락이다</text>\n  <path id=\"svg_4\" d=\"M960 320C1200 320 1450 400 1450 550C1450 700 1200 780 960 780C720 780 470 700 470 550C470 400 720 320 960 320Z\" fill=\"#E60012\" stroke=\"#000000\" stroke-width=\"5\" />\n  <g id=\"svg_5\" clip-path=\"url(#clip_buddha)\">\n    <defs>\n      <clipPath id=\"clip_buddha\">\n        <circle cx=\"960\" cy=\"550\" r=\"220\" />\n      </clipPath>\n    </defs>\n    <rect x=\"740\" y=\"330\" width=\"440\" height=\"440\" fill=\"#CCCCCC\" />\n    <image href=\"/assets/no-img.svg\" x=\"740\" y=\"330\" width=\"440\" height=\"440\" preserveAspectRatio=\"xMidYMid slice\" />\n  </g>\n  <text id=\"svg_6\" x=\"650\" y=\"580\" fill=\"#000000\" font-size=\"120\" font-family=\"NotoSansKR-Black\" text-anchor=\"middle\">極</text>\n  <text id=\"svg_7\" x=\"1270\" y=\"580\" fill=\"#000000\" font-size=\"120\" font-family=\"NotoSansKR-Black\" text-anchor=\"middle\">樂</text>\n  <g id=\"svg_8\">\n    <path d=\"M0 800 Q 40 760 80 800 T 160 800 T 240 800 T 320 800 T 400 800 T 480 800 T 560 800 T 640 800 T 720 800 T 800 800 T 880 800 T 960 800 T 1040 800 T 1120 800 T 1200 800 T 1280 800 T 1360 800 T 1440 800 T 1520 800 T 1600 800 T 1680 800 T 1760 800 T 1840 800 T 1920 800\" stroke=\"#E60012\" stroke-width=\"20\" fill=\"none\" />\n    <path d=\"M0 830 Q 40 790 80 830 T 160 830 T 240 830 T 320 830 T 400 830 T 480 830 T 560 830 T 640 830 T 720 830 T 800 830 T 880 830 T 960 830 T 1040 830 T 1120 830 T 1200 830 T 1280 830 T 1360 830 T 1440 830 T 1520 830 T 1600 830 T 1680 830 T 1760 830 T 1840 830 T 1920 830\" stroke=\"#E60012\" stroke-width=\"20\" fill=\"none\" />\n  </g>\n  <rect id=\"svg_9\" x=\"0\" y=\"850\" width=\"1920\" height=\"230\" fill=\"#E60012\" />\n  <text id=\"svg_10\" x=\"150\" y=\"930\" fill=\"#000000\" font-size=\"45\" font-family=\"GmarketSansTTFBold\" text-anchor=\"start\">불교연구회</text>\n  <text id=\"svg_11\" x=\"150\" y=\"1000\" fill=\"#000000\" font-size=\"45\" font-family=\"GmarketSansTTFBold\" text-anchor=\"start\">신입부원 모집중</text>\n  <g id=\"svg_12\">\n    <rect x=\"1450\" y=\"900\" width=\"380\" height=\"100\" rx=\"50\" fill=\"#E60012\" stroke=\"#000000\" stroke-width=\"5\" />\n    <text x=\"1600\" y=\"965\" fill=\"#000000\" font-size=\"45\" font-family=\"GmarketSansTTFBold\" text-anchor=\"middle\">보러가기</text>\n    <path d=\"M1750 930 C1750 930 1780 920 1790 940 L1810 940 C1820 940 1820 960 1810 960 L1790 960 L1790 970 C1790 980 1770 980 1770 970 L1770 950 L1750 950 Z\" fill=\"#FFFFFF\" stroke=\"#000000\" stroke-width=\"2\" />\n  </g>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "path",
+        "shapes_id": "svg_4",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "g",
+        "image_id": "svg_5",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "g",
+        "shapes_id": "svg_8",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "rect",
+        "shapes_id": "svg_9",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_11": {
+        "id": "svg_11",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_12": {
+        "id": "svg_12",
+        "nodeName": "g",
+        "shapes_id": "svg_12",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "NEXONLv1GothicBold": [
+        "svg_2"
+      ],
+      "KyoboHandwriting2020": [
+        "svg_3"
+      ],
+      "NotoSansKR-Black": [
+        "svg_6",
+        "svg_7"
+      ],
+      "GmarketSansTTFBold": [
+        "svg_10",
+        "svg_11"
+      ]
+    },
+    "image-list": {
+      "/assets/no-img.svg": [
+        "svg_5"
+      ]
+    }
+  },
+  "date": 1772086366936
+}

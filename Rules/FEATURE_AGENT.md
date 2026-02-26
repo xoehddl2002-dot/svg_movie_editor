@@ -103,3 +103,4 @@ src/lib/
 
 ## 참조 파일
 - `Rules/AI_ENGINEERING_CONTRACT.md` — 전체 프로젝트 규칙
+template 사이즈중에 side template을 불러오면 

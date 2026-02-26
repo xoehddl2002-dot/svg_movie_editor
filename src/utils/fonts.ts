@@ -29,7 +29,7 @@ export const loadFont = async (fontMapList: FontMapItem | FontMapItem[]): Promis
                 }
 
                 const safeFamily = family.replace(/['"]/g, '');
-                return new FontFace(`"${safeFamily}"`, source, data);
+                return new FontFace(safeFamily, source, data);
             })
     );
 
