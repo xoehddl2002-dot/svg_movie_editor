@@ -1,0 +1,111 @@
+{
+  "id": "ai-hist-1772094059064",
+  "prompt": "miricanva 워터마크는 지우고 추가해줘",
+  "type": "full",
+  "svg": "<svg width=\"1920\" height=\"1080\" viewBox=\"0 0 1920 1080\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect id=\"svg_1\" width=\"1920\" height=\"1080\" fill=\"#B3E5FC\" />\n  <g id=\"svg_2\">\n    <circle cx=\"300\" cy=\"200\" r=\"100\" fill=\"white\" opacity=\"0.8\" />\n    <circle cx=\"400\" cy=\"220\" r=\"120\" fill=\"white\" opacity=\"0.8\" />\n    <circle cx=\"500\" cy=\"180\" r=\"90\" fill=\"white\" opacity=\"0.8\" />\n    <circle cx=\"1500\" cy=\"150\" r=\"110\" fill=\"white\" opacity=\"0.8\" />\n    <circle cx=\"1650\" cy=\"180\" r=\"130\" fill=\"white\" opacity=\"0.8\" />\n    <circle cx=\"1400\" cy=\"450\" r=\"150\" fill=\"white\" opacity=\"0.6\" />\n    <circle cx=\"1600\" cy=\"480\" r=\"180\" fill=\"white\" opacity=\"0.6\" />\n    <circle cx=\"200\" cy=\"500\" r=\"150\" fill=\"white\" opacity=\"0.6\" />\n    <circle cx=\"400\" cy=\"550\" r=\"180\" fill=\"white\" opacity=\"0.6\" />\n  </g>\n  <path id=\"svg_3\" d=\"M0 700C300 650 600 600 960 650C1320 700 1620 750 1920 700V1080H0V700Z\" fill=\"#92D050\" />\n  <g id=\"svg_4\">\n    <rect x=\"350\" y=\"580\" width=\"15\" height=\"100\" fill=\"#795548\" />\n    <ellipse cx=\"357\" cy=\"580\" rx=\"30\" ry=\"50\" fill=\"#4CAF50\" />\n    <rect x=\"500\" y=\"600\" width=\"12\" height=\"80\" fill=\"#795548\" />\n    <ellipse cx=\"506\" cy=\"600\" rx=\"25\" ry=\"40\" fill=\"#66BB6A\" />\n    <rect x=\"1500\" y=\"550\" width=\"20\" height=\"120\" fill=\"#795548\" />\n    <path d=\"M1510 550 L1470 650 L1550 650 Z\" fill=\"#2E7D32\" />\n    <rect x=\"1650\" y=\"580\" width=\"15\" height=\"90\" fill=\"#795548\" />\n    <ellipse cx=\"1657\" cy=\"580\" rx=\"35\" ry=\"55\" fill=\"#43A047\" />\n  </g>\n  <g id=\"svg_5\">\n    <path d=\"M1000 620 L940 620 L940 660 L1060 660 L1060 620 Z\" fill=\"#FFF9C4\" />\n    <path d=\"M930 620 L1070 620 L1000 580 Z\" fill=\"#EF5350\" />\n    <rect x=\"985\" y=\"635\" width=\"30\" height=\"25\" fill=\"#B3E5FC\" />\n  </g>\n  <g id=\"svg_6\">\n    <circle cx=\"200\" cy=\"950\" r=\"30\" fill=\"#FFEB3B\" />\n    <rect x=\"195\" y=\"980\" width=\"10\" height=\"100\" fill=\"#388E3C\" />\n    <circle cx=\"400\" cy=\"900\" r=\"25\" fill=\"#FFEB3B\" />\n    <rect x=\"396\" y=\"925\" width=\"8\" height=\"155\" fill=\"#388E3C\" />\n    <circle cx=\"800\" cy=\"920\" r=\"35\" fill=\"#FFEB3B\" />\n    <rect x=\"795\" y=\"955\" width=\"10\" height=\"125\" fill=\"#388E3C\" />\n    <circle cx=\"1200\" cy=\"880\" r=\"20\" fill=\"#FFEB3B\" />\n    <rect x=\"1197\" y=\"900\" width=\"6\" height=\"180\" fill=\"#388E3C\" />\n    <circle cx=\"1600\" cy=\"940\" r=\"40\" fill=\"#FFEB3B\" />\n    <rect x=\"1595\" y=\"980\" width=\"12\" height=\"100\" fill=\"#388E3C\" />\n  </g>\n  <text id=\"svg_7\" x=\"960\" y=\"250\" text-anchor=\"middle\" font-family=\"SimKyungha\" font-size=\"120\" fill=\"#FFEB3B\">Hello</text>\n  <text id=\"svg_8\" x=\"960\" y=\"380\" text-anchor=\"middle\" font-family=\"SimKyungha\" font-size=\"200\" fill=\"#42A5F5\">Spring</text>\n  <text id=\"svg_9\" x=\"960\" y=\"450\" text-anchor=\"middle\" font-family=\"NotoSansKR-Medium\" font-size=\"36\" fill=\"white\">Spring is a</text>\n  <text id=\"svg_10\" x=\"960\" y=\"500\" text-anchor=\"middle\" font-family=\"NotoSansKR-Medium\" font-size=\"36\" fill=\"white\">season full of</text>\n  <text id=\"svg_11\" x=\"960\" y=\"550\" text-anchor=\"middle\" font-family=\"NotoSansKR-Medium\" font-size=\"36\" fill=\"white\">beauty &amp; wonder</text>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "g",
+        "image_id": "svg_2",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "path",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "g",
+        "image_id": "svg_4",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "g",
+        "image_id": "svg_5",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "g",
+        "image_id": "svg_6",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_11": {
+        "id": "svg_11",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "SimKyungha": [
+        "svg_7",
+        "svg_8"
+      ],
+      "NotoSansKR-Medium": [
+        "svg_9",
+        "svg_10",
+        "svg_11"
+      ]
+    },
+    "image-list": {
+      "/assets/no-img.svg": [
+        "svg_2",
+        "svg_4",
+        "svg_5",
+        "svg_6"
+      ]
+    }
+  },
+  "date": 1772094059064
+}

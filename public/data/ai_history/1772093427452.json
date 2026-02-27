@@ -1,0 +1,108 @@
+{
+  "id": "ai-hist-1772093427452",
+  "prompt": "이미지는 최대한 비슷한 svg로 만들어줘",
+  "type": "side",
+  "svg": "<svg width=\"356\" height=\"837\" viewBox=\"0 0 356 837\" xmlns=\"http://www.w3.org/2000/svg\">\n  <defs>\n    <rect id=\"shape-7\" x=\"20\" y=\"520\" width=\"316\" height=\"280\" />\n    <clipPath id=\"clip-7\">\n      <use href=\"#shape-7\" />\n    </clipPath>\n  </defs>\n  <rect id=\"svg_1\" width=\"356\" height=\"837\" fill=\"#121212\" />\n  <g id=\"svg_2\">\n    <path d=\"M0 10 Q 15 0, 30 10 T 60 10 T 90 10 T 120 10 T 150 10 T 180 10 T 210 10 T 240 10 T 270 10 T 300 10 T 330 10 T 360 10\" fill=\"none\" stroke=\"#d32f2f\" stroke-width=\"2\" />\n    <path d=\"M0 20 Q 15 10, 30 20 T 60 20 T 90 20 T 120 20 T 150 20 T 180 20 T 210 20 T 240 20 T 270 20 T 300 20 T 330 20 T 360 20\" fill=\"none\" stroke=\"#d32f2f\" stroke-width=\"2\" />\n    <path d=\"M0 30 Q 15 20, 30 30 T 60 30 T 90 30 T 120 30 T 150 30 T 180 30 T 210 30 T 240 30 T 270 30 T 300 30 T 330 30 T 360 30\" fill=\"none\" stroke=\"#d32f2f\" stroke-width=\"2\" />\n  </g>\n  <text id=\"svg_3\" x=\"178\" y=\"90\" text-anchor=\"middle\" fill=\"#ffffff\" font-family=\"BMJUA\" font-size=\"18\">극락도락동아리 Q&amp;A 2</text>\n  <text id=\"svg_4\" x=\"178\" y=\"180\" text-anchor=\"middle\" fill=\"#ffffff\" font-family=\"RecipekoreaM\" font-size=\"42\">엄근진동아리임?</text>\n  <g id=\"svg_5\">\n    <rect x=\"70\" y=\"240\" width=\"220\" height=\"60\" rx=\"10\" fill=\"#ffffff\" />\n    <path d=\"M70 270 L55 285 L70 290 Z\" fill=\"#ffffff\" />\n    <rect x=\"35\" y=\"255\" width=\"28\" height=\"28\" rx=\"5\" fill=\"#000000\" />\n    <text x=\"49\" y=\"275\" text-anchor=\"middle\" fill=\"#ffffff\" font-family=\"BMJUA\" font-size=\"16\">Q</text>\n    <text x=\"180\" y=\"277\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"16\">가면 경전만 읽나요?</text>\n  </g>\n  <g id=\"svg_6\">\n    <rect x=\"40\" y=\"340\" width=\"260\" height=\"130\" rx=\"10\" fill=\"#d32f2f\" />\n    <path d=\"M300 450 L315 465 L300 470 Z\" fill=\"#d32f2f\" />\n    <rect x=\"310\" y=\"440\" width=\"28\" height=\"28\" rx=\"5\" fill=\"#000000\" />\n    <text x=\"324\" y=\"460\" text-anchor=\"middle\" fill=\"#ffffff\" font-family=\"BMJUA\" font-size=\"16\">A</text>\n    <text x=\"170\" y=\"375\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"15\">놉! 우리는 그냥 놉니다.</text>\n    <text x=\"170\" y=\"400\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"15\">평소엔 맛집 탐방하고</text>\n    <text x=\"170\" y=\"425\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"15\">수다 떨며 번뇌를 나누는</text>\n    <text x=\"170\" y=\"450\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"15\">힐링 모임이에요.</text>\n  </g>\n  <g id=\"svg_7\" clip-path=\"url(#clip-7)\">\n    <image href=\"/assets/no-img.svg\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid slice\" />\n  </g>\n  <g id=\"svg_8\">\n    <path d=\"M30 550 Q 30 530, 60 530 Q 90 530, 90 550 Q 110 550, 110 575 Q 110 600, 90 600 Q 90 620, 60 620 Q 30 620, 30 600 Q 10 600, 10 575 Q 10 550, 30 550 Z\" fill=\"#ffffff\" />\n    <text x=\"60\" y=\"565\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"13\">번뇌는</text>\n    <text x=\"60\" y=\"585\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"13\">너무해</text>\n  </g>\n  <g id=\"svg_9\">\n    <path d=\"M260 550 Q 260 530, 290 530 Q 320 530, 320 550 Q 340 550, 340 575 Q 340 600, 320 600 Q 320 620, 290 620 Q 260 620, 260 600 Q 240 600, 240 575 Q 240 550, 260 550 Z\" fill=\"#ffffff\" />\n    <text x=\"290\" y=\"565\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"13\">안내면</text>\n    <text x=\"290\" y=\"585\" text-anchor=\"middle\" fill=\"#000000\" font-family=\"KyoboHandwriting2020\" font-size=\"13\">번뇌</text>\n  </g>\n  <rect id=\"svg_10\" x=\"0\" y=\"800\" width=\"356\" height=\"37\" fill=\"#d32f2f\" />\n  <path id=\"svg_11\" d=\"M310 810 C 315 810, 320 815, 320 820 L 335 820 C 340 820, 340 825, 335 825 L 320 825 L 320 830 C 320 835, 315 835, 310 835 L 300 835 Q 295 835, 295 825 Q 295 815, 300 810 Z\" fill=\"#ffffff\" />\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "text",
+        "editor_move": "true",
+        "editor_scale": "false",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "g",
+        "image_id": "svg_7",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "g",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "rect",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_11": {
+        "id": "svg_11",
+        "nodeName": "path",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      }
+    },
+    "font-list": {
+      "BMJUA": [
+        "svg_3"
+      ],
+      "RecipekoreaM": [
+        "svg_4"
+      ],
+      "KyoboHandwriting2020": [
+        "svg_5",
+        "svg_6",
+        "svg_8",
+        "svg_9"
+      ]
+    },
+    "image-list": {
+      "/assets/no-img.svg": [
+        "svg_7"
+      ]
+    }
+  },
+  "date": 1772093427452
+}
