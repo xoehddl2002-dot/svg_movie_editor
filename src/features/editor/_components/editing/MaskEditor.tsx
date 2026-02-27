@@ -441,7 +441,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         <video
                                             ref={videoRef}
                                             src={resourceSrc}
-                                            className="w-full h-full object-fill"
+                                            className="w-full h-full object-contain"
                                             controls={false}
                                             muted
                                             autoPlay
@@ -455,6 +455,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         y={imageSvgBounds.y}
                                         width={imageSvgBounds.width}
                                         height={imageSvgBounds.height}
+                                        preserveAspectRatio="xMidYMid meet"
                                     />
                                 )}
                             </g>

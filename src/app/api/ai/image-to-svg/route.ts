@@ -103,9 +103,20 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'AI output missing SVG or JSON blocks.' }, { status: 500 });
         }
 
+        // Replace the placeholder with the actual base64 image data url
+        if (svgCode) {
+            svgCode = svgCode.replace(/___BASE64_IMAGE___/g, base64Image);
+        }
+
         let parsedJson;
         try {
             parsedJson = JSON.parse(jsonCode);
+            
+            // Re-map the placeholder in the JSON image-list to the actual base64 URL
+            if (parsedJson['image-list'] && parsedJson['image-list']['___BASE64_IMAGE___']) {
+                parsedJson['image-list'][base64Image] = parsedJson['image-list']['___BASE64_IMAGE___'];
+                delete parsedJson['image-list']['___BASE64_IMAGE___'];
+            }
         } catch (e) {
             console.error('Failed to parse AI JSON block:', jsonCode);
             return NextResponse.json(

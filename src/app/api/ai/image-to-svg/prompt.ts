@@ -19,11 +19,24 @@ Goal: Generate a full ${width}x${height} SVG composition and its corresponding m
 Do NOT just trace the image into a single complex path. You must abstract the image into a reusable TEMPLATE.
 
 TEMPLATE RULES:
-1. Photos/Images in the original: If the original image has a photo or illustration, represent it as an editable image placeholder wrapper.
-   - You MUST generate a \`<g clip-path="url(#some-id)">\` and put an \`<image href="/assets/no-img.svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" />\` inside it.
-   - The JSON should list ONLY the \`<g>\` tag in the "item" object.
-   - You MUST add an "image-list" object in the JSON mapping the \`<g>\`'s id to the default placeholder image URL: "/assets/no-img.svg".
-   - CRITICAL: Never use random external image URLs. ONLY use "/assets/no-img.svg" for the \`href\` attribute.
+1. Photos/Images in the original: If the original image has a photo or illustration, represent it as a masked section using the EXACT following nested structure.
+   - You MUST generate this exact structure:
+     <g id="svg_wrapper_1">
+       <defs>
+         <rect id="shape_1" x="something" y="something" width="something" height="something" />
+       </defs>
+       <clipPath id="clip_1">
+         <use href="#shape_1"/>
+       </clipPath>
+       <g clip-path="url(#clip_1)" id="svg_clip_1">
+         <image id="svg_img_1" href="___BASE64_IMAGE___" x="image_x" y="image_y" width="image_w" height="image_h" preserveAspectRatio="none" />
+       </g>
+     </g>
+   - For the boundary shape (\`rect\`), use simple shapes like \`<rect>\` or \`<circle>\` (DO NOT use \`<path>\`).
+   - Fill in \`image_x\`, \`image_y\`, \`image_w\`, \`image_h\` so the image covers the required area.
+   - The JSON should list ONLY the OUTERMOST \`<g>\` tag (the one with \`id="svg_wrapper_1"\`) in the "item" object.
+   - For this item, set \`"nodeName": "g"\` and \`"image_id": "svg_wrapper_1"\`.
+   - You MUST add an "image-list" object in the JSON mapping the outer \`<g>\`'s id to the URL: "___BASE64_IMAGE___".
 2. Text in the original: Convert text into editable \`<text>\` elements. Try to match the font size, color, and position.
 3. Shapes/Backgrounds: Convert buttons, borders, backgrounds, and simple icons into \`<rect>\`, \`<circle>\`, \`<path>\`, etc.
 

@@ -12,7 +12,7 @@ const getMediaStyle = (clip: Clip): React.CSSProperties => {
     return {
         width: '100%',
         height: '100%',
-        objectFit: 'fill',
+        objectFit: clip.type === 'mask' ? 'contain' : 'fill',
         pointerEvents: 'none'
     }
 }
@@ -116,8 +116,7 @@ function AudioClip({ clip, currentTime, isPlaying, onReady, forceCheck }: { clip
     const mediaRef = useRef<HTMLMediaElement>(null)
     const relativeTime = currentTime - clip.start
     const mediaTime = relativeTime + (clip.mediaStart || 0)
-
-    const isVideoSource = clip.src.match(/\.(mp4|webm|mov|m4v)$|blob:/i)
+    const isVideoSource = clip.mediaType === 'video' || (clip.src && clip.src.match(/\.(mp4|webm|mov|m4v)$/i));
 
     useEffect(() => {
         const media = mediaRef.current
@@ -688,8 +687,8 @@ export function PreviewPlayer() {
                         </foreignObject>
                     )
                 case 'mask':
-                    // Determine subtype based on src
-                    const isVideo = clip.src && (clip.src.match(/\.(mp4|webm|mov|m4v)$/i) || clip.src.startsWith('blob:'));
+                    // Determine subtype based on src and mediaType
+                    const isVideo = clip.mediaType === 'video' || (clip.src && clip.src.match(/\.(mp4|webm|mov|m4v)$/i));
                     const isSvg = clip.src && (clip.src.toLowerCase().split('?')[0].endsWith('.svg') || clip.src.startsWith('data:image/svg+xml'));
 
                     if (isVideo) {
