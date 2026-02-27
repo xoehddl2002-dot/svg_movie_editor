@@ -2,8 +2,9 @@
 import { Clip } from "@/features/editor/store/useStore";
 
 /**
- * Calculates the width and height of a text clip's content.
- * Uses an offscreen canvas to measure the text width accurately.
+ * 텍스트 클립의 콘텐츠 너비와 높이를 계산합니다.
+ * canvas.measureText()의 fontBoundingBox 메트릭을 활용하여
+ * 폰트별 정확한 크기를 측정합니다.
  */
 export const getTextDimensions = (clip: Clip): { width: number; height: number } => {
     const fontSize = clip.fontSize || 120;
@@ -12,21 +13,30 @@ export const getTextDimensions = (clip: Clip): { width: number; height: number }
     const fontFamily = clip.fontFamily || 'sans-serif';
 
     let maxLineMeasuredWidth = 0;
+    // 폰트별 실제 라인 높이 (fontBoundingBoxAscent + fontBoundingBoxDescent)
+    let measuredLineHeight = fontSize * 1.2; // 폴백 기본값
 
     try {
-        // Create a temporary canvas to measure text
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
 
         if (context) {
-            // Ensure font string matches CSS rendering
+            // CSS 렌더링과 동일한 폰트 문자열 사용
             context.font = `bold ${fontSize}px "${fontFamily}"`;
+
             textLines.forEach(line => {
                 const metrics = context.measureText(line);
                 maxLineMeasuredWidth = Math.max(maxLineMeasuredWidth, metrics.width);
+
+                // fontBoundingBox 메트릭으로 폰트 고유의 정확한 라인 높이 계산
+                if (metrics.fontBoundingBoxAscent !== undefined &&
+                    metrics.fontBoundingBoxDescent !== undefined) {
+                    const lineH = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+                    measuredLineHeight = Math.max(measuredLineHeight, lineH);
+                }
             });
         } else {
-            // Fallback estimation if canvas context fails (unlikely in browser)
+            // Canvas context 생성 실패 시 추정값 사용
             textLines.forEach(line => {
                 let estimatedWidth = 0;
                 for (let i = 0; i < line.length; i++) {
@@ -37,15 +47,16 @@ export const getTextDimensions = (clip: Clip): { width: number; height: number }
             });
         }
     } catch (e) {
-        console.warn("Failed to measure text dimensions", e);
-        // Fallback estimation
+        console.warn("텍스트 크기 측정 실패", e);
         textLines.forEach(line => {
             maxLineMeasuredWidth = Math.max(maxLineMeasuredWidth, line.length * fontSize * 0.6);
         });
     }
 
-    const width = maxLineMeasuredWidth;
-    const height = textLines.length * fontSize * 1.2; // ~1.2 line height
+    // textShadow, 렌더링 차이 등을 보정하기 위한 소량의 여유 패딩
+    const PADDING = fontSize * 0.125;
+    const width = maxLineMeasuredWidth + PADDING;
+    const height = textLines.length * measuredLineHeight;
 
     return { width, height };
 };

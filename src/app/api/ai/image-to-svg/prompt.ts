@@ -28,7 +28,7 @@ TEMPLATE RULES:
        <clipPath id="clip_1">
          <use href="#shape_1"/>
        </clipPath>
-       <g clip-path="url(#clip_1)" id="svg_clip_1">
+       <g clip-path="url(#shape_1)" id="svg_clip_1">
          <image id="svg_img_1" href="___BASE64_IMAGE___" x="image_x" y="image_y" width="image_w" height="image_h" preserveAspectRatio="none" />
        </g>
      </g>

@@ -58,11 +58,13 @@ describe('getTextDimensions — 텍스트 크기 계산', () => {
         expect(largeDim.height).toBeGreaterThan(smallDim.height)
     })
 
-    it('높이는 라인 수 × fontSize × 1.2 이어야 한다', () => {
+    it('높이는 라인 수에 비례해야 한다 (폰트 메트릭 기반)', () => {
         const fontSize = 100
         const clip = createTextClip({ text: 'Line 1\nLine 2', fontSize })
         const { height } = getTextDimensions(clip)
 
-        expect(height).toBeCloseTo(2 * fontSize * 1.2)
+        // 최소 fontSize * 라인수 이상이어야 하고, fontSize * 1.5 * 라인수 이하
+        expect(height).toBeGreaterThanOrEqual(2 * fontSize)
+        expect(height).toBeLessThanOrEqual(2 * fontSize * 1.5)
     })
 })
