@@ -70,7 +70,7 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
         svgElement.setAttribute('data-modified', 'true');
         lastAppliedDataRef.current = currentData;
 
-        // Ensure viewBox exists for proper scaling
+        // viewBox가 없으면 width/height에서 생성
         if (!svgElement.getAttribute('viewBox')) {
             const w = svgElement.getAttribute('width');
             const h = svgElement.getAttribute('height');
@@ -81,9 +81,31 @@ export const DynamicSvg = React.memo(function DynamicSvg({ src, style, templateD
             }
         }
 
+        // stroke-width를 고려하여 viewBox 확장 (stroke가 viewBox 경계에서 잘리지 않도록)
+        const currentViewBox = svgElement.getAttribute('viewBox');
+        if (currentViewBox) {
+            const vbParts = currentViewBox.split(/[\s,]+/).map(Number);
+            if (vbParts.length === 4) {
+                let [vx, vy, vw, vh] = vbParts;
+                // SVG 내 모든 요소의 stroke-width 중 최대값 탐색
+                let maxStroke = 0;
+                const strokables = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline, line');
+                strokables.forEach(el => {
+                    const sw = parseFloat(el.getAttribute('stroke-width') || '0');
+                    if (sw > maxStroke) maxStroke = sw;
+                });
+                // stroke는 경계 중심에 그려지므로 절반만큼 viewBox를 각 방향으로 확장
+                if (maxStroke > 0) {
+                    const pad = maxStroke / 2;
+                    svgElement.setAttribute('viewBox', `${vx - pad} ${vy - pad} ${vw + maxStroke} ${vh + maxStroke}`);
+                }
+            }
+        }
+
         svgElement.setAttribute('width', '100%');
         svgElement.setAttribute('height', '100%');
         svgElement.setAttribute('preserveAspectRatio', 'none');
+
 
         if (fill) {
             const shapeElements = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');

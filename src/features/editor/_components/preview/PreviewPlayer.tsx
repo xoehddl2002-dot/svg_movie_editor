@@ -268,6 +268,8 @@ export function PreviewPlayer() {
     const [isPlaying, setIsPlaying] = useState(false)
     const [readyAssets, setReadyAssets] = useState<Set<string>>(new Set())
     const [forceCheck, setForceCheck] = useState(0)
+    // 폰트 로딩 완료 시 텍스트 크기 재계산을 위한 리비전 카운터
+    const [fontRevision, setFontRevision] = useState(0)
     const requestRef = useRef<number | null>(null)
     const lastTimeRef = useRef<number>(0)
     const svgRef = useRef<SVGSVGElement>(null)
@@ -288,6 +290,17 @@ export function PreviewPlayer() {
             setForceCheck(prev => prev + 1)
         }
     }, [currentTime, isPlaying])
+
+    // 폰트 로딩 완료 감지 — 텍스트 클립 bounding box 재계산 트리거
+    useEffect(() => {
+        const handleFontLoad = () => {
+            setFontRevision(prev => prev + 1)
+        }
+        document.fonts.addEventListener('loadingdone', handleFontLoad)
+        return () => {
+            document.fonts.removeEventListener('loadingdone', handleFontLoad)
+        }
+    }, [])
 
     const activeClips = React.useMemo(() => {
         return tracks
