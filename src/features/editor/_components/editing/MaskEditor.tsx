@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Image as ImageIcon, Film, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, MousePointer2, Square, Circle, Triangle, Star, Hexagon, Upload } from "lucide-react"
+import { Image as ImageIcon, Film, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, MousePointer2, Square, Circle, Triangle, Star, Hexagon, Upload, Info, Monitor, Scan, ImagePlus, ZoomIn, ZoomOut } from "lucide-react"
 import { Clip } from "@/features/editor/store/useStore"
 import { cn } from "@/lib/utils"
 import { getRectPath, getEllipsePath, getTrianglePath, getStarPath, getPolygonPath } from "@/features/editor/utils/shapeUtils"
@@ -86,8 +86,51 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     } | null>(null);
 
     const [isResourceLoaded, setIsResourceLoaded] = useState(false);
+    // 원본 리소스의 자연 크기 (natural dimensions) 추적
+    const [naturalDimensions, setNaturalDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+    const [zoom, setZoom] = useState(1);
     // 리소스가 처음 로드된 것인지(기존 클립) vs 교체된 것인지 구분
     const isInitialLoad = useRef(true);
+
+    // Local state to prevent premature saving on Cancel
+    const [localClip, setLocalClip] = useState<Partial<Clip>>(clip);
+
+    // Initial check: Ensure at least one shape exists (Wait for resource load)
+    useEffect(() => {
+        if (!isResourceLoaded) return;
+
+        // If no template data exists, initialize with a full-size rect
+        if (!localClip.templateData || Object.keys(localClip.templateData).length === 0) {
+            const w = imageSvgBounds.width;
+            const h = imageSvgBounds.height;
+            const pathD = getRectPath(0, 0, w, h);
+            const newData = {
+                "shape-1": {
+                    type: "path",
+                    d: pathD,
+                    fill: "white",
+                    id: "shape-1",
+                    "data-shape-type": "rect",
+                    x: 0,
+                    y: 0,
+                    width: w,
+                    height: h
+                }
+            };
+            setLocalClip(prev => ({
+                ...prev,
+                templateData: newData,
+                viewBox: `0 0 ${w} ${h}`
+            }));
+            setActiveComponentId("shape-1");
+        } else if (localClip.templateData && !activeComponentId) {
+            // Auto-select first shape
+            const ids = Object.keys(localClip.templateData);
+            if (ids.length > 0) {
+                setActiveComponentId(ids[0]);
+            }
+        }
+    }, [isResourceLoaded, imageSvgBounds, localClip.templateData]);
 
     // Load resource and set coordinate system based on resource dimensions
     useEffect(() => {
@@ -95,38 +138,77 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         if (!resourceSrc) return;
 
         const applyDimensions = (natW: number, natH: number) => {
+            let actW = natW;
+            let actH = natH;
+            
+            // Extract exact SVG viewBox boundaries to avoid browser image scale-down bugs
+            let trueSvgW = 0;
+            let trueSvgH = 0;
+            if (resourceSrc.startsWith('data:image/svg+xml')) {
+                try {
+                    const decoded = decodeURIComponent(resourceSrc.split(',')[1] || '');
+                    const match = decoded.match(/viewBox=["'][\d\.\s,-]+?([\d\.]+)\s+([\d\.]+)["']/i);
+                    if (match && match[1] && match[2]) {
+                        trueSvgW = parseFloat(match[1]);
+                        trueSvgH = parseFloat(match[2]);
+                    }
+                } catch(e) {}
+            }
+
+            if (trueSvgW > 0 && trueSvgH > 0) {
+                actW = trueSvgW;
+                actH = trueSvgH;
+            } else if (isInitialLoad.current) {
+                actW = localClip.width || natW;
+                actH = localClip.height || natH;
+            }
+
+            setNaturalDimensions({ width: actW, height: actH });
+            
             const isInitial = isInitialLoad.current;
             isInitialLoad.current = false;
 
-            let useW: number, useH: number;
+            let useW = actW;
+            let useH = actH;
 
             if (isInitial) {
-                // 최초 로드: 기존 viewBox 좌표계 사용 (템플릿 마스크 shape과 일치해야 함)
-                if (clip.viewBox) {
-                    const parts = clip.viewBox.split(/[ ,]+/).filter(Boolean).map(Number);
+                // Determine the correct dimensions for the mask Container.
+                // Trust extracted trueSvgW/trueSvgH over localClip values to heal corrupted 64x150 saves
+                if (trueSvgW > 0 && trueSvgH > 0) {
+                    useW = trueSvgW;
+                    useH = trueSvgH;
+                } else if (localClip.viewBox) {
+                    const parts = localClip.viewBox.split(/[ ,]+/).filter(Boolean).map(Number);
                     if (parts.length === 4) {
                         useW = parts[2];
                         useH = parts[3];
                     } else {
-                        useW = clip.width || natW;
-                        useH = clip.height || natH;
+                        useW = localClip.width || natW;
+                        useH = localClip.height || natH;
                     }
                 } else {
-                    useW = clip.width || natW;
-                    useH = clip.height || natH;
+                    useW = localClip.width || natW;
+                    useH = localClip.height || natH;
                 }
             } else {
-                // 리소스 교체: 새 리소스의 자연 크기로 조정
-                useW = natW;
-                useH = natH;
+                // RESOURCE REPLACEMENT!
+                // Do not change the mask boundary dimensions. 
+                // We keep the old frame, and the new resource will be drawn inside it.
+                useW = localClip.width || 100;
+                useH = localClip.height || 100;
             }
 
             setImageSvgBounds({ x: 0, y: 0, width: useW, height: useH });
             setIsResourceLoaded(true);
 
-            if (!isInitial) {
-                // 리소스 교체 시에만 clip 크기 + viewBox 업데이트
-                onUpdate({ width: useW, height: useH, viewBox: `0 0 ${useW} ${useH}` });
+            // Self-heal corrupted dimensions on initial load
+            if (isInitial && (useW !== localClip.width || useH !== localClip.height)) {
+                setLocalClip(prev => ({
+                    ...prev,
+                    width: useW,
+                    height: useH,
+                    viewBox: `0 0 ${useW} ${useH}`
+                }));
             }
         };
 
@@ -149,43 +231,6 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         }
     }, [resourceSrc, resourceType]);
 
-    // Initial check: Ensure at least one shape exists (Wait for resource load)
-    useEffect(() => {
-        if (!isResourceLoaded) return;
-
-        // If no template data exists, initialize with a full-size rect
-        if (!clip.templateData || Object.keys(clip.templateData).length === 0) {
-            const w = imageSvgBounds.width;
-            const h = imageSvgBounds.height;
-            const pathD = getRectPath(0, 0, w, h);
-            const newData = {
-                "shape-1": {
-                    type: "path",
-                    d: pathD,
-                    fill: "white",
-                    id: "shape-1",
-                    "data-shape-type": "rect",
-                    x: 0,
-                    y: 0,
-                    width: w,
-                    height: h
-                }
-            };
-            onUpdate({
-                templateData: newData,
-                // Ensure viewBox is synced here as well just in case
-                viewBox: `0 0 ${w} ${h}`
-            });
-            setActiveComponentId("shape-1");
-        } else if (clip.templateData && !activeComponentId) {
-            // Auto-select first shape
-            const ids = Object.keys(clip.templateData);
-            if (ids.length > 0) {
-                setActiveComponentId(ids[0]);
-            }
-        }
-    }, [isResourceLoaded, imageSvgBounds, clip.templateData]);
-
     const getSVGPoint = (e: React.MouseEvent | MouseEvent) => {
         if (!svgRef.current) return { x: 0, y: 0 };
         const svg = svgRef.current;
@@ -199,10 +244,10 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         e.stopPropagation();
         e.preventDefault();
 
-        if (!clip.templateData || !clip.templateData[id]) return;
+        if (!localClip.templateData || !localClip.templateData[id]) return;
 
         setActiveComponentId(id);
-        const data = clip.templateData[id];
+        const data = localClip.templateData[id];
         const pt = getSVGPoint(e);
 
         let sx = data.x || 0;
@@ -224,7 +269,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            if (!mode || !startRef.current || !activeComponentId || !clip.templateData) return;
+            if (!mode || !startRef.current || !activeComponentId || !localClip.templateData) return;
 
             const pt = getSVGPoint(e);
             const start = startRef.current;
@@ -255,7 +300,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
             }
 
             // Update templateData
-            const newData = { ...clip.templateData };
+            const newData = { ...localClip.templateData };
             const currentItem = newData[activeComponentId];
             const shapeType = currentItem['data-shape-type'] || 'rect';
 
@@ -291,7 +336,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                 d: newD
             };
 
-            onUpdate({ templateData: newData });
+            setLocalClip(prev => ({ ...prev, templateData: newData }));
         };
 
         const handleMouseUp = () => {
@@ -308,24 +353,25 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [mode, activeComponentId, clip.templateData, onUpdate]);
+    }, [mode, activeComponentId, localClip.templateData]);
 
 
     const handleSave = () => {
         const updates: Partial<Clip> = {
+            ...localClip,
             flipH,
             flipV,
             src: resourceSrc,
             // type: resourceType as any // No longer needed, type is always 'mask'
-        }
+        };
 
         if (rotationChanged) {
             updates.rotation = rotation;
         }
 
-        onUpdate(updates)
-        onClose()
-    }
+        onUpdate(updates);
+        onClose();
+    };
 
     const rotateLeft = () => {
         setRotation(r => ((r - 90) % 360 + 360) % 360)
@@ -367,10 +413,11 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
             }
         };
 
-        onUpdate({
+        setLocalClip(prev => ({
+            ...prev,
             templateData: newData,
             viewBox: `${imageSvgBounds.x} ${imageSvgBounds.y} ${imageSvgBounds.width} ${imageSvgBounds.height}`
-        });
+        }));
         setActiveComponentId(id);
     };
 
@@ -434,16 +481,17 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
             <div className="flex flex-1 overflow-hidden bg-white dark:bg-zinc-950">
                 {/* Left: Preview Area */}
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center p-8 border-r overflow-hidden relative group">
+                <div className="flex-1 bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center p-12 border-r overflow-hidden relative group">
                     <div className="absolute inset-0 pattern-grid-lg opacity-5 pointer-events-none" />
 
                     <div
-                        className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 w-full h-full overflow-hidden flex items-center justify-center"
+                        className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 w-full h-full flex items-center justify-center transition-transform duration-200"
+                        style={{ transform: `scale(${zoom})` }}
                     >
                         <svg
                             ref={svgRef}
                             viewBox={`${imageSvgBounds.x} ${imageSvgBounds.y} ${imageSvgBounds.width} ${imageSvgBounds.height}`}
-                            className="w-full h-full"
+                            className="w-full h-full overflow-visible"
                             preserveAspectRatio="xMidYMid meet"
                         >
                             {/* 1. Background (Image or Video) */}
@@ -484,29 +532,40 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
                             {/* 2. Mask Shapes Overlay — no rotation/flip, those are resource-only */}
                             <g>
-                                {clip.templateData && Object.entries(clip.templateData).map(([id, data]: [string, any]) => {
-                                    const isActive = id === activeComponentId;
-                                    const bx = data.x || 0;
-                                    const by = data.y || 0;
-                                    const bw = data.width || 0;
-                                    const bh = data.height || 0;
-
-                                    const commonProps = {
-                                        fill: isActive ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 0, 255, 0.2)",
-                                        stroke: isActive ? "red" : "blue",
-                                        strokeWidth: isActive ? Math.max(1, imageSvgBounds.width / 500) : Math.max(0.5, imageSvgBounds.width / 1000),
-                                        vectorEffect: "non-scaling-stroke" as any,
-                                        style: { cursor: 'move', pointerEvents: 'auto' } as React.CSSProperties
-                                    };
-
-                                    const mouseDownHandler = (e: React.MouseEvent) => handleMouseDown(e, 'move', id);
+                                {localClip.templateData && Object.entries(localClip.templateData).map(([id, data]: [string, any]) => {
+                                    const isSelected = id === activeComponentId;
+                                    const fill = isSelected ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,0.6)';
 
                                     return (
                                         <g key={id}>
+                                            <mask id={`mask-${id}`}>
+                                                <rect x={imageSvgBounds.x} y={imageSvgBounds.y} width={imageSvgBounds.width} height={imageSvgBounds.height} fill="white" />
+                                                {data.d && (
+                                                    <path d={data.d} fill="black" />
+                                                )}
+                                            </mask>
+                                            <rect
+                                                x={imageSvgBounds.x}
+                                                y={imageSvgBounds.y}
+                                                width={imageSvgBounds.width}
+                                                height={imageSvgBounds.height}
+                                                fill={fill}
+                                                mask={`url(#mask-${id})`}
+                                                style={{ pointerEvents: 'none' }}
+                                            />
+                                            {/* Original path for interaction and handles */}
                                             {data.d && (
-                                                <path d={data.d} {...commonProps} onMouseDown={mouseDownHandler} />
+                                                <path
+                                                    d={data.d}
+                                                    fill={isSelected ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 0, 255, 0.2)"}
+                                                    stroke={isSelected ? "red" : "blue"}
+                                                    strokeWidth={isSelected ? Math.max(1, imageSvgBounds.width / 500) : Math.max(0.5, imageSvgBounds.width / 1000)}
+                                                    vectorEffect="non-scaling-stroke"
+                                                    style={{ cursor: 'move', pointerEvents: 'auto' }}
+                                                    onMouseDown={(e) => handleMouseDown(e, 'move', id)}
+                                                />
                                             )}
-                                            {isActive && renderHandles(id, bx, by, bw, bh)}
+                                            {isSelected && renderHandles(id, data.x || 0, data.y || 0, data.width || 0, data.height || 0)}
                                         </g>
                                     );
                                 })}
@@ -514,22 +573,19 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                         </svg>
                     </div>
 
-                    {/* Toolbar for Shapes */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-800 p-2 rounded-lg shadow-lg border flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => addShape('rect')} title="Rectangle">
-                            <Square className="w-5 h-5" />
+                    {/* Zoom Controls */}
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-background/90 backdrop-blur-md p-1.5 rounded-full border shadow-md">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} title="Zoom Out">
+                            <ZoomOut className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addShape('circle')} title="Circle/Ellipse">
-                            <Circle className="w-5 h-5" />
+                        <div className="text-[11px] font-mono font-medium w-12 text-center select-none text-foreground/80">
+                            {Math.round(zoom * 100)}%
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setZoom(z => Math.min(3, z + 0.1))} title="Zoom In">
+                            <ZoomIn className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addShape('triangle')} title="Triangle">
-                            <Triangle className="w-5 h-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addShape('star')} title="Star">
-                            <Star className="w-5 h-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addShape('polygon')} title="Polygon">
-                            <Hexagon className="w-5 h-5" />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full ml-1" onClick={() => setZoom(1)} title="Fit to Screen" disabled={zoom === 1}>
+                            <Maximize2 className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
@@ -540,7 +596,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                         <div className="px-4 pt-4 shrink-0">
                             <TabsList className="w-full grid grid-cols-2">
                                 <TabsTrigger value="resource">Resource</TabsTrigger>
-                                <TabsTrigger value="mask" disabled={!clip.templateData}>Mask Shapes</TabsTrigger>
+                                <TabsTrigger value="mask" disabled={!localClip.templateData}>Mask Shapes</TabsTrigger>
                             </TabsList>
                         </div>
 
@@ -548,11 +604,60 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                              <TabsContent value="resource" className="absolute inset-0 mt-0">
                                 <ScrollArea className="h-full w-full" type="always">
                                     <div className="flex flex-col p-4 gap-4">
-                                    <div className="space-y-4 shrink-0">
-                                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-                                            <Upload className="w-4 h-4" />
-                                            Source & Transform
-                                        </div>
+                                        <div className="space-y-4 shrink-0">
+                                            {/* 크기 정보 패널 위치 이동 (캔버스 위 -> 사이드바 상단) */}
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                                                <Monitor className="w-4 h-4" />
+                                                Dimensions Info
+                                            </div>
+                                            <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-2 relative">
+                                                <div className="flex items-center justify-between px-3 py-1.5 bg-blue-600/10 text-blue-700 dark:text-blue-300 border border-blue-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                                    <span className="font-medium flex items-center gap-1"><Monitor className="w-3.5 h-3.5" />Preview Output:</span>
+                                                    <span className="font-mono font-semibold tabular-nums">
+                                                        {Math.round(imageSvgBounds.width)} × {Math.round(imageSvgBounds.height)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-600/10 text-emerald-700 dark:text-emerald-300 border border-emerald-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                                    <span className="font-medium flex items-center gap-1"><Hexagon className="w-3.5 h-3.5" />Shape Bound:</span>
+                                                    <span className="font-mono font-semibold tabular-nums">
+                                                        {(() => {
+                                                            let sw = 0, sh = 0;
+                                                            if (localClip.templateData) {
+                                                                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                                                                Object.values(localClip.templateData).forEach((d: any) => {
+                                                                    if (d.x !== undefined && d.width !== undefined) {
+                                                                        minX = Math.min(minX, d.x);
+                                                                        minY = Math.min(minY, d.y);
+                                                                        maxX = Math.max(maxX, d.x + d.width);
+                                                                        maxY = Math.max(maxY, d.y + d.height);
+                                                                    }
+                                                                });
+                                                                if (minX !== Infinity) { sw = maxX - minX; sh = maxY - minY; }
+                                                            }
+                                                            return sw > 0 ? `${Math.round(sw)} × ${Math.round(sh)}` : '0 × 0';
+                                                        })()}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col gap-1 px-3 py-1.5 bg-amber-600/10 text-amber-700 dark:text-amber-300 border border-amber-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-medium flex items-center gap-1"><ImagePlus className="w-3.5 h-3.5" />Native File Size:</span>
+                                                        <span className="font-mono font-semibold tabular-nums">
+                                                            {naturalDimensions.width} × {naturalDimensions.height}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between border-t border-amber-600/10 pt-1 mt-0.5">
+                                                        <span className="font-medium flex items-center gap-1 opacity-80"><Monitor className="w-3 h-3 ml-0.5" />Modal Viewport:</span>
+                                                        <span className="font-mono font-semibold tabular-nums opacity-90">
+                                                            {Math.round(imageSvgBounds.width)} × {Math.round(imageSvgBounds.height)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 mt-6">
+                                                <Upload className="w-4 h-4" />
+                                                Source & Transform
+                                            </div>
                                         <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
                                             {/* File Upload / Swap */}
                                             <div className="space-y-2">
@@ -644,51 +749,51 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                     </div>
                                     
                                     <div className="space-y-2">
-                                         <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
                                             <ImageIcon className="w-4 h-4" />
                                             Asset Library
-                                         </div>
-                                         <div className="p-2 grid grid-cols-2 gap-2 border rounded-md bg-muted/10">
-                                                 {assets.map((asset, i) => (
-                                                     <Card
-                                                         key={i}
-                                                         className="overflow-hidden cursor-pointer hover:border-primary group relative transition-all active:scale-95"
-                                                         onClick={() => {
-                                                             setResourceSrc(asset.src);
-                                                             setResourceType(asset.type);
-                                                         }}
-                                                     >
-                                                         <CardContent className="p-0 aspect-video relative bg-black/5 flex items-center justify-center">
-                                                             {asset.type === 'video' ? (
-                                                                 asset.thumbnail ? (
-                                                                     <img src={asset.thumbnail} className="w-full h-full object-cover" />
-                                                                 ) : (
-                                                                     <video src={asset.src} className="w-full h-full object-cover" />
-                                                                 )
-                                                             ) : (
-                                                                 <img src={asset.src} className="w-full h-full object-cover" />
-                                                             )}
-                                                             
-                                                             <div className={cn(
-                                                                 "absolute inset-0 transition-opacity flex items-center justify-center text-white text-[10px] font-bold bg-black/40",
-                                                                 resourceSrc === asset.src ? "opacity-100 ring-4 ring-primary ring-inset" : "opacity-0 group-hover:opacity-100"
-                                                             )}>
-                                                                 {resourceSrc === asset.src ? "SELECTED" : "USE THIS"}
-                                                             </div>
-                                                             
-                                                             {asset.type === 'video' && (
-                                                                 <div className="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-black/60 text-white text-[8px] font-bold flex items-center gap-1">
-                                                                     <Film className="w-2 h-2" /> VID
-                                                                 </div>
-                                                             )}
-                                                         </CardContent>
-                                                     </Card>
-                                                 ))}
-                                             </div>
+                                        </div>
+                                        <div className="p-2 grid grid-cols-2 gap-2 border rounded-md bg-muted/10">
+                                            {assets.map((asset, i) => (
+                                                <Card
+                                                    key={i}
+                                                    className="overflow-hidden cursor-pointer hover:border-primary group relative transition-all active:scale-95"
+                                                    onClick={() => {
+                                                        setResourceSrc(asset.src);
+                                                        setResourceType(asset.type);
+                                                    }}
+                                                >
+                                                    <CardContent className="p-0 aspect-video relative bg-black/5 flex items-center justify-center">
+                                                        {asset.type === 'video' ? (
+                                                            asset.thumbnail ? (
+                                                                <img src={asset.thumbnail} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <video src={asset.src} className="w-full h-full object-cover" />
+                                                            )
+                                                        ) : (
+                                                            <img src={asset.src} className="w-full h-full object-cover" />
+                                                        )}
+                                                        
+                                                        <div className={cn(
+                                                            "absolute inset-0 transition-opacity flex items-center justify-center text-white text-[10px] font-bold bg-black/40",
+                                                            resourceSrc === asset.src ? "opacity-100 ring-4 ring-primary ring-inset" : "opacity-0 group-hover:opacity-100"
+                                                        )}>
+                                                            {resourceSrc === asset.src ? "SELECTED" : "USE THIS"}
+                                                        </div>
+                                                        
+                                                        {asset.type === 'video' && (
+                                                            <div className="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-black/60 text-white text-[8px] font-bold flex items-center gap-1">
+                                                                <Film className="w-2 h-2" /> VID
+                                                            </div>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                    </div>
                                 </ScrollArea>
-                             </TabsContent>
+                            </TabsContent>
 
                             <TabsContent value="mask" className="mt-0 h-full overflow-y-auto custom-scrollbar p-4">
                                 <div className="space-y-4">
@@ -696,10 +801,30 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         <Maximize2 className="w-4 h-4" />
                                         Shape Geometry
                                     </div>
+
+                                    {/* Toolbar for Shapes moved here */}
+                                    <div className="bg-muted/30 p-2 rounded-lg border flex gap-2 justify-center">
+                                        <Button variant="outline" size="icon" onClick={() => addShape('rect')} title="Rectangle">
+                                            <Square className="w-5 h-5" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => addShape('circle')} title="Circle/Ellipse">
+                                            <Circle className="w-5 h-5" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => addShape('triangle')} title="Triangle">
+                                            <Triangle className="w-5 h-5" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => addShape('star')} title="Star">
+                                            <Star className="w-5 h-5" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => addShape('polygon')} title="Polygon">
+                                            <Hexagon className="w-5 h-5" />
+                                        </Button>
+                                    </div>
+
                                     <div className="space-y-4">
 
 
-                                        {clip.templateData && Object.entries(clip.templateData).map(([id, data]: [string, any]) => (
+                                        {localClip.templateData && Object.entries(localClip.templateData).map(([id, data]: [string, any]) => (
                                             <div key={id} className={cn(
                                                 "p-4 rounded-lg border space-y-4 transition-colors",
                                                 activeComponentId === id ? "bg-primary/5 border-primary/20" : "bg-muted/30 hover:bg-muted/50"
@@ -731,14 +856,14 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                                     max={20}
                                                                     step={1}
                                                                     onValueChange={([val]) => {
-                                                                        const newData = { ...clip.templateData };
+                                                                        const newData = { ...localClip.templateData };
                                                                         const current = newData[id];
                                                                         const newProps = { ...current, sides: val };
                                                                         const { x, y, width, height } = newProps;
                                                                         
                                                                         const newD = getPolygonPath(x, y, width, height, val);
                                                                         newData[id] = { ...newProps, d: newD };
-                                                                        onUpdate({ templateData: newData });
+                                                                        setLocalClip(prev => ({ ...prev, templateData: newData }));
                                                                     }}
                                                                     className="flex-1"
                                                                 />
@@ -756,7 +881,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                                     value={data[prop]}
                                                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                                         const val = Number(e.target.value);
-                                                                        const newData = { ...clip.templateData };
+                                                                        const newData = { ...localClip.templateData };
                                                                         const current = newData[id];
                                                                         const newProps = { ...current, [prop]: val };
 
@@ -771,7 +896,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                                         else if (shapeType === 'polygon') newD = getPolygonPath(x, y, width, height, current.sides || 5);
 
                                                                         newData[id] = { ...newProps, d: newD };
-                                                                        onUpdate({ templateData: newData });
+                                                                        setLocalClip(prev => ({ ...prev, templateData: newData }));
                                                                     }}
                                                                 />
                                                             </div>
