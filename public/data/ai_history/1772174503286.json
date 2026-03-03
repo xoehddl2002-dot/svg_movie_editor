@@ -1,0 +1,109 @@
+{
+  "id": "ai-hist-1772174503286",
+  "prompt": "울창한 정원이 있는 현대식 주택을 기하학적으로 그려줘",
+  "type": "full",
+  "svg": "<svg width=\"1920\" height=\"1080\" viewBox=\"0 0 1920 1080\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n  <!-- Sky Background -->\n  <rect id=\"svg_1\" width=\"1920\" height=\"1080\" fill=\"#E0F7FA\"/>\n  \n  <!-- Ground Area -->\n  <rect id=\"svg_2\" x=\"0\" y=\"750\" width=\"1920\" height=\"330\" fill=\"#81C784\"/>\n  \n  <!-- Geometric Sun -->\n  <circle id=\"svg_3\" cx=\"1650\" cy=\"200\" r=\"80\" fill=\"#FFD54F\"/>\n\n  <!-- Modern House Group -->\n  <g id=\"svg_4\">\n    <!-- Main Structure -->\n    <rect x=\"900\" y=\"400\" width=\"650\" height=\"450\" fill=\"#FFFFFF\"/>\n    <rect x=\"850\" y=\"400\" width=\"150\" height=\"450\" fill=\"#A1887F\"/>\n    <!-- Roof -->\n    <rect x=\"830\" y=\"360\" width=\"750\" height=\"40\" fill=\"#37474F\"/>\n    <!-- Windows -->\n    <rect x=\"1050\" y=\"450\" width=\"400\" height=\"250\" fill=\"#B2EBF2\" fill-opacity=\"0.6\" stroke=\"#455A64\" stroke-width=\"4\"/>\n    <rect x=\"1070\" y=\"470\" width=\"180\" height=\"210\" fill=\"#E1F5FE\" fill-opacity=\"0.4\"/>\n    <rect x=\"1270\" y=\"470\" width=\"160\" height=\"210\" fill=\"#E1F5FE\" fill-opacity=\"0.4\"/>\n    <!-- Door -->\n    <rect x=\"915\" y=\"620\" width=\"90\" height=\"230\" fill=\"#4E342E\"/>\n    <circle cx=\"985\" cy=\"735\" r=\"5\" fill=\"#FFD54F\"/>\n    <!-- Terrace/Line Detail -->\n    <rect x=\"850\" y=\"810\" width=\"700\" height=\"40\" fill=\"#CFD8DC\"/>\n  </g>\n\n  <!-- Lush Garden Group 1 (Triangular Trees) -->\n  <g id=\"svg_5\">\n    <rect x=\"200\" y=\"700\" width=\"30\" height=\"100\" fill=\"#5D4037\"/>\n    <path d=\"M215 450L330 720H100L215 450Z\" fill=\"#2E7D32\"/>\n    <rect x=\"400\" y=\"720\" width=\"25\" height=\"80\" fill=\"#5D4037\"/>\n    <path d=\"M412.5 550L500 750H325L412.5 550Z\" fill=\"#388E3C\"/>\n  </g>\n\n  <!-- Lush Garden Group 2 (Circular Trees) -->\n  <g id=\"svg_6\">\n    <rect x=\"600\" y=\"680\" width=\"40\" height=\"150\" fill=\"#5D4037\"/>\n    <circle cx=\"620\" cy=\"550\" r=\"130\" fill=\"#4CAF50\"/>\n    <circle cx=\"560\" cy=\"500\" r=\"80\" fill=\"#81C784\"/>\n    <circle cx=\"680\" cy=\"520\" r=\"90\" fill=\"#66BB6A\"/>\n  </g>\n\n  <!-- Pathway Group -->\n  <g id=\"svg_7\">\n    <rect x=\"915\" y=\"850\" width=\"90\" height=\"230\" fill=\"#90A4AE\"/>\n    <rect x=\"0\" y=\"950\" width=\"1920\" height=\"50\" fill=\"#78909C\"/>\n  </g>\n\n  <!-- Geometric Bushes -->\n  <g id=\"svg_8\">\n    <circle cx=\"850\" cy=\"800\" r=\"60\" fill=\"#1B5E20\"/>\n    <circle cx=\"800\" cy=\"820\" r=\"50\" fill=\"#2E7D32\"/>\n    <circle cx=\"1550\" cy=\"810\" r=\"70\" fill=\"#1B5E20\"/>\n    <circle cx=\"1620\" cy=\"830\" r=\"50\" fill=\"#2E7D32\"/>\n  </g>\n\n  <!-- Clouds -->\n  <g id=\"svg_9\">\n    <rect x=\"300\" y=\"150\" width=\"200\" height=\"40\" rx=\"20\" fill=\"white\"/>\n    <rect x=\"350\" y=\"120\" width=\"150\" height=\"40\" rx=\"20\" fill=\"white\"/>\n    <rect x=\"1100\" y=\"100\" width=\"250\" height=\"50\" rx=\"25\" fill=\"white\"/>\n  </g>\n\n  <!-- Text Elements -->\n  <text id=\"svg_10\" x=\"100\" y=\"150\" font-family=\"NotoSansKR-Bold\" font-size=\"80\" fill=\"#263238\">현대식 주택</text>\n  <text id=\"svg_11\" x=\"100\" y=\"250\" font-family=\"NotoSansKR-Medium\" font-size=\"50\" fill=\"#37474F\">기하학적 정원</text>\n</svg>",
+  "json": {
+    "item": {
+      "svg_1": {
+        "id": "svg_1",
+        "nodeName": "rect",
+        "shapes_id": "svg_1",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_2": {
+        "id": "svg_2",
+        "nodeName": "rect",
+        "shapes_id": "svg_2",
+        "editor_move": "false",
+        "editor_scale": "false",
+        "editor_rotate": "false"
+      },
+      "svg_3": {
+        "id": "svg_3",
+        "nodeName": "circle",
+        "shapes_id": "svg_3",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_4": {
+        "id": "svg_4",
+        "nodeName": "g",
+        "shapes_id": "svg_4",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_5": {
+        "id": "svg_5",
+        "nodeName": "g",
+        "shapes_id": "svg_5",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_6": {
+        "id": "svg_6",
+        "nodeName": "g",
+        "shapes_id": "svg_6",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_7": {
+        "id": "svg_7",
+        "nodeName": "g",
+        "shapes_id": "svg_7",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_8": {
+        "id": "svg_8",
+        "nodeName": "g",
+        "shapes_id": "svg_8",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_9": {
+        "id": "svg_9",
+        "nodeName": "g",
+        "shapes_id": "svg_9",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true"
+      },
+      "svg_10": {
+        "id": "svg_10",
+        "nodeName": "text",
+        "shapes_id": "svg_10",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      },
+      "svg_11": {
+        "id": "svg_11",
+        "nodeName": "text",
+        "shapes_id": "svg_11",
+        "editor_move": "true",
+        "editor_scale": "true",
+        "editor_rotate": "true",
+        "attr_rock": "false"
+      }
+    },
+    "font-list": {
+      "NotoSansKR-Bold": [
+        "svg_10"
+      ],
+      "NotoSansKR-Medium": [
+        "svg_11"
+      ]
+    }
+  },
+  "date": 1772174503286
+}
