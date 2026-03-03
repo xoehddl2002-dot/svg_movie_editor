@@ -17,6 +17,9 @@ export interface Clip {
     volume?: number
     fontFamily?: string
     fontSize?: number
+    lineHeight?: number // 줄 간격 배율 (기본값 1.2)
+    textAlign?: 'left' | 'center' | 'right' // 텍스트 정렬 (기본값 'center')
+    textCurve?: number // 곡선 강도 (0=직선, 양수=위로 볼록, 음수=아래로 볼록)
     text?: string
     width?: number
     height?: number

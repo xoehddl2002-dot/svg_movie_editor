@@ -6,19 +6,15 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Settings, X, Trash2, Info } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { loadFont } from "@/utils/fonts"
-import { useState, useEffect } from "react"
+import { Settings, X, Trash2 } from "lucide-react"
 
-const DEFAULT_FILTER = { brightness: 1, contrast: 1, saturate: 1, blur: 0 }
+// 단일 타입 조건의 속성 편집 컴포넌트 (각 Tab 파일로 분리)
+import { TextProperties } from "./TextProperties"
+import { ShapeProperties } from "./ShapeProperties"
+import { MaskProperties } from "./MaskProperties"
 
-interface ColorPickerProps {
-    value?: string
-    onChange: (value: string) => void
-}
-
-function ColorPicker({ value, onChange }: ColorPickerProps) {
+// 템플릿 요소 편집용 ColorPicker (templateData 섹션에서 사용)
+function ColorPicker({ value, onChange }: { value?: string; onChange: (value: string) => void }) {
     const presets = ['none', '#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
 
     return (
@@ -63,83 +59,8 @@ function ColorPicker({ value, onChange }: ColorPickerProps) {
     )
 }
 
-interface ClipPropertiesProps {
-    clip: Clip
-}
-
 export function ClipProperties({ clip }: { clip: Clip }) {
     const { setSelectedClipId, updateClip, removeClip, setEditingClipId } = useStore()
-
-    return (
-        <ClipPropertiesContent clip={clip} updateClip={updateClip} setSelectedClipId={setSelectedClipId} removeClip={removeClip} setEditingClipId={setEditingClipId} />
-    )
-}
-
-function VideoTrimSlider({ clip, updateClip }: { clip: Clip, updateClip: (id: string, updates: Partial<Clip>) => void }) {
-    const [sourceDuration, setSourceDuration] = useState<number>(0);
-
-    useEffect(() => {
-        const loadMetadata = () => {
-            const video = document.createElement('video');
-            video.src = clip.src;
-            video.preload = 'metadata';
-            video.onloadedmetadata = () => {
-                if (isFinite(video.duration)) {
-                    setSourceDuration(video.duration);
-                }
-            };
-        };
-        loadMetadata();
-    }, [clip.src]);
-
-    const start = clip.mediaStart || 0;
-    const end = start + (clip.duration || 0);
-    // Use sourceDuration if available, otherwise fallback to reasonable max
-    const max = sourceDuration || Math.max(end + 10, 60);
-
-    return (
-        <div className="space-y-3">
-            <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Start: {start.toFixed(1)}s</span>
-                <span>End: {end.toFixed(1)}s</span>
-            </div>
-            <Slider
-                value={[start, end]}
-                max={max}
-                step={0.1}
-                min={0}
-                minStepsBetweenThumbs={0.1}
-                onValueChange={([newStart, newEnd]) => {
-                    // Constraint: End must be > Start. Slider handles this but we ensure min duration.
-                    const duration = newEnd - newStart;
-                    if (duration < 0.1) return;
-
-                    updateClip(clip.id, {
-                        mediaStart: newStart,
-                        duration: duration
-                    });
-                }}
-                className="py-4"
-            />
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-                <span>0s</span>
-                <span>{max.toFixed(1)}s</span>
-            </div>
-        </div>
-    );
-}
-
-function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip, setEditingClipId }: any) {
-    const [fonts, setFonts] = useState<string[]>([])
-
-    useEffect(() => {
-        fetch('/api/fonts')
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setFonts(data)
-            })
-            .catch(err => console.error('Failed to fetch fonts:', err))
-    }, [])
 
     return (
         <div className="p-4 space-y-6">
@@ -154,6 +75,7 @@ function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip
             <Separator />
 
             <div className="space-y-4">
+                {/* 클립 이름 (공통) */}
                 <div className="space-y-2">
                     <Label>Name</Label>
                     <Input
@@ -162,6 +84,7 @@ function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip
                     />
                 </div>
 
+                {/* Advanced Editor 버튼 — 다중 타입 조건 (mask || audio) */}
                 {(clip.type === 'mask' || clip.type === 'audio') && (
                     <Button
                         variant="outline"
@@ -173,7 +96,7 @@ function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip
                     </Button>
                 )}
 
-                {/* Timing */}
+                {/* Timing (공통) */}
                 <div className="space-y-4">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase">Timing</Label>
                     <div className="space-y-2">
@@ -190,7 +113,7 @@ function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip
                     </div>
                 </div>
 
-                {/* Position & Size */}
+                {/* Transform — 다중 타입 조건 (mask || text || shape || icon) */}
                 {(clip.type === 'mask' || clip.type === 'text' || clip.type === 'shape' || clip.type === 'icon') && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Transform</Label>
@@ -253,74 +176,12 @@ function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip
                     </div>
                 )}
 
-                {/* Text Properties */}
+                {/* Text Properties — 단일 타입 조건 → TextProperties 컴포넌트 */}
                 {clip.type === 'text' && (
-                    <div className="space-y-4">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Typography</Label>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label>Content</Label>
-                                <span className="text-[10px] font-mono text-muted-foreground">
-                                    {(clip.text || '').length} / {clip.max_length ?? 15}
-                                </span>
-                            </div>
-                            <Input
-                                value={clip.text || ''}
-                                maxLength={clip.max_length ?? 15}
-                                onChange={(e) => updateClip(clip.id, { text: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Font Family</Label>
-                            <Select
-                                value={clip.fontFamily || ""}
-                                onValueChange={async (font) => {
-                                    await loadFont({
-                                        family: font,
-                                        url: `/assets/font/${font}.woff`
-                                    });
-                                    updateClip(clip.id, { fontFamily: font });
-                                }}
-                            >
-                                <SelectTrigger className="w-full text-xs h-8">
-                                    <SelectValue placeholder="Select a font" />
-                                </SelectTrigger>
-                                <SelectContent side="bottom" position="popper" className="bg-transparent backdrop-blur-md shadow-lg border-white/10 prevent-deselect">
-                                    {fonts.map(font => (
-                                        <SelectItem 
-                                            key={font} 
-                                            value={font} 
-                                            style={{ fontFamily: `"${font}"` }}
-                                            className="focus:bg-white/10 focus:text-white cursor-pointer transition-colors"
-                                        >
-                                            {font}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Font Size</Label>
-                            <Slider
-                                value={[clip.fontSize || 120]}
-                                min={10}
-                                max={200}
-                                step={1}
-                                onValueChange={(val) => updateClip(clip.id, { fontSize: val[0] })}
-                            />
-                            <div className="text-right text-xs text-muted-foreground">{clip.fontSize || 120}px</div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Color</Label>
-                            <ColorPicker
-                                value={clip.color}
-                                onChange={(color) => updateClip(clip.id, { color })}
-                            />
-                        </div>
-                    </div>
+                    <TextProperties clip={clip} updateClip={updateClip} />
                 )}
 
-                {/* Video/Audio Properties */}
+                {/* Volume — 다중 타입 조건 (audio || mask+video) */}
                 {(clip.type === 'audio' || (clip.type === 'mask' && (clip.src.match(/\.(mp4|webm|mov|m4v)$/i) || clip.src.startsWith('blob:video/')))) && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Audio</Label>
@@ -336,82 +197,17 @@ function ClipPropertiesContent({ clip, updateClip, setSelectedClipId, removeClip
                     </div>
                 )}
 
-                {/* Video Trim/Mask */}
-                {clip.type === 'mask' && (clip.src.match(/\.(mp4|webm|mov|m4v)$/i) || clip.src.startsWith('blob:video/')) && (
-                    <div className="space-y-4">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Video Edit</Label>
-                        <VideoTrimSlider clip={clip} updateClip={updateClip} />
-                    </div>
-                )}
-
-                {/* Image Edit (Mask & Filter) */}
+                {/* Mask Properties — 단일 타입 조건 → MaskProperties 컴포넌트 */}
                 {clip.type === 'mask' && (
-                    <div className="space-y-4">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Image/Video Mask & Filter</Label>
-
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Label>Filters</Label>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-6 text-xs px-2"
-                                    onClick={() => updateClip(clip.id, { filter: clip.filter ? undefined : DEFAULT_FILTER })}
-                                >
-                                    {clip.filter ? 'Reset' : 'Enable'}
-                                </Button>
-                            </div>
-                            {clip.filter && (
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs">Brightness ({clip.filter.brightness})</Label>
-                                        <Slider
-                                            value={[clip.filter.brightness]} min={0} max={2} step={0.1}
-                                            onValueChange={(val) => updateClip(clip.id, { filter: { ...clip.filter!, brightness: val[0] } })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs">Contrast ({clip.filter.contrast})</Label>
-                                        <Slider
-                                            value={[clip.filter.contrast]} min={0} max={2} step={0.1}
-                                            onValueChange={(val) => updateClip(clip.id, { filter: { ...clip.filter!, contrast: val[0] } })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs">Saturation ({clip.filter.saturate})</Label>
-                                        <Slider
-                                            value={[clip.filter.saturate]} min={0} max={2} step={0.1}
-                                            onValueChange={(val) => updateClip(clip.id, { filter: { ...clip.filter!, saturate: val[0] } })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs">Blur ({clip.filter.blur}px)</Label>
-                                        <Slider
-                                            value={[clip.filter.blur]} min={0} max={10} step={0.5}
-                                            onValueChange={(val) => updateClip(clip.id, { filter: { ...clip.filter!, blur: val[0] } })}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <MaskProperties clip={clip} updateClip={updateClip} />
                 )}
 
-                {/* Shape Properties */}
+                {/* Shape Properties — 단일 타입 조건 → ShapeProperties 컴포넌트 */}
                 {clip.type === 'shape' && (
-                    <div className="space-y-4">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Appearance</Label>
-                        <div className="space-y-2">
-                            <Label>Color</Label>
-                            <ColorPicker
-                                value={clip.color}
-                                onChange={(color) => updateClip(clip.id, { color })}
-                            />
-                        </div>
-                    </div>
+                    <ShapeProperties clip={clip} updateClip={updateClip} />
                 )}
 
-                {/* Template Properties (Dynamic SVG Elements) */}
+                {/* Template Properties (templateData 기반, 타입 무관) */}
                 {clip.templateData && (
                     <div className="space-y-4">
                         <Label className="text-xs font-semibold text-muted-foreground uppercase">Template Elements</Label>
