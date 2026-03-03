@@ -86,38 +86,61 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     } | null>(null);
 
     const [isResourceLoaded, setIsResourceLoaded] = useState(false);
+    // 리소스가 처음 로드된 것인지(기존 클립) vs 교체된 것인지 구분
+    const isInitialLoad = useRef(true);
 
-    // Load resource and set coordinate system based on clip dimensions
+    // Load resource and set coordinate system based on resource dimensions
     useEffect(() => {
         setIsResourceLoaded(false);
         if (!resourceSrc) return;
 
-        // Use clip's width/height as the coordinate system so mask shapes
-        // match the PreviewPlayer display exactly.
-        const clipW = clip.width || 100;
-        const clipH = clip.height || 100;
+        const applyDimensions = (natW: number, natH: number) => {
+            const isInitial = isInitialLoad.current;
+            isInitialLoad.current = false;
 
-        const onLoaded = () => {
-            setImageSvgBounds({ x: 0, y: 0, width: clipW, height: clipH });
+            let useW: number, useH: number;
+
+            if (isInitial) {
+                // 최초 로드: 기존 viewBox 좌표계 사용 (템플릿 마스크 shape과 일치해야 함)
+                if (clip.viewBox) {
+                    const parts = clip.viewBox.split(/[ ,]+/).filter(Boolean).map(Number);
+                    if (parts.length === 4) {
+                        useW = parts[2];
+                        useH = parts[3];
+                    } else {
+                        useW = clip.width || natW;
+                        useH = clip.height || natH;
+                    }
+                } else {
+                    useW = clip.width || natW;
+                    useH = clip.height || natH;
+                }
+            } else {
+                // 리소스 교체: 새 리소스의 자연 크기로 조정
+                useW = natW;
+                useH = natH;
+            }
+
+            setImageSvgBounds({ x: 0, y: 0, width: useW, height: useH });
             setIsResourceLoaded(true);
 
-            // Set viewBox to clip dimensions so coordinates match PreviewPlayer
-            onUpdate({ viewBox: `0 0 ${clipW} ${clipH}` });
+            if (!isInitial) {
+                // 리소스 교체 시에만 clip 크기 + viewBox 업데이트
+                onUpdate({ width: useW, height: useH, viewBox: `0 0 ${useW} ${useH}` });
+            }
         };
 
         if (resourceType === 'image') {
             const img = new Image();
-            img.onload = onLoaded;
-            // Handle loading error or verify src exists?
+            img.onload = () => applyDimensions(img.naturalWidth, img.naturalHeight);
             img.onerror = () => {
                  console.warn("Failed to load image resource:", resourceSrc);
-                 // Proceed anyway to allow changing it?
                  setIsResourceLoaded(true); 
             };
             img.src = resourceSrc;
         } else if (resourceType === 'video') {
             const vid = document.createElement('video');
-            vid.onloadedmetadata = onLoaded;
+            vid.onloadedmetadata = () => applyDimensions(vid.videoWidth, vid.videoHeight);
             vid.onerror = () => {
                  console.warn("Failed to load video resource:", resourceSrc);
                  setIsResourceLoaded(true);
@@ -415,8 +438,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                     <div className="absolute inset-0 pattern-grid-lg opacity-5 pointer-events-none" />
 
                     <div
-                        className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 max-w-full max-h-full overflow-hidden flex items-center justify-center"
-                        style={{ aspectRatio: `${imageSvgBounds.width} / ${imageSvgBounds.height}`, width: 'auto', height: 'auto' }}
+                        className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 w-full h-full overflow-hidden flex items-center justify-center"
                     >
                         <svg
                             ref={svgRef}

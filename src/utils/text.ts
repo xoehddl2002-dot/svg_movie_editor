@@ -11,10 +11,12 @@ export const getTextDimensions = (clip: Clip): { width: number; height: number }
     const textContent = clip.text || 'Text';
     const textLines = textContent.split('\n');
     const fontFamily = clip.fontFamily || 'sans-serif';
+    // 줄 간격 배율 — 사용자 설정값 우선, 없으면 1.2 기본
+    const lineHeightFactor = clip.lineHeight ?? 1.2;
 
     let maxLineMeasuredWidth = 0;
     // 폰트별 실제 라인 높이 (fontBoundingBoxAscent + fontBoundingBoxDescent)
-    let measuredLineHeight = fontSize * 1.2; // 폴백 기본값
+    let measuredLineHeight = fontSize * lineHeightFactor; // 폴백 기본값
 
     try {
         const canvas = document.createElement('canvas');
@@ -29,9 +31,10 @@ export const getTextDimensions = (clip: Clip): { width: number; height: number }
                 maxLineMeasuredWidth = Math.max(maxLineMeasuredWidth, metrics.width);
 
                 // fontBoundingBox 메트릭으로 폰트 고유의 정확한 라인 높이 계산
+                // lineHeightFactor를 적용하여 줄 간격 반영
                 if (metrics.fontBoundingBoxAscent !== undefined &&
                     metrics.fontBoundingBoxDescent !== undefined) {
-                    const lineH = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+                    const lineH = (metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent) * (lineHeightFactor / 1.2);
                     measuredLineHeight = Math.max(measuredLineHeight, lineH);
                 }
             });
@@ -53,10 +56,18 @@ export const getTextDimensions = (clip: Clip): { width: number; height: number }
         });
     }
 
-    // textShadow, 렌더링 차이 등을 보정하기 위한 소량의 여유 패딩
-    const PADDING = fontSize * 0.125;
-    const width = maxLineMeasuredWidth + PADDING;
-    const height = textLines.length * measuredLineHeight;
+    // textShadow, bold, 폰트 오버행 등을 보정하기 위한 여유 패딩
+    const H_PADDING = fontSize * 0.3;
+    const V_PADDING = fontSize * 0.15;
+    const width = maxLineMeasuredWidth + H_PADDING;
+    let height = textLines.length * measuredLineHeight + V_PADDING;
+
+    // 곡선 텍스트 사용 시 곡선 높이만큼 추가 공간 필요
+    // 쿼드라틱 베지어의 최대 수직 편차는 제어점 편차의 1/2
+    const curveAmount = clip.textCurve || 0;
+    if (curveAmount !== 0) {
+        height += Math.abs(curveAmount) / 2;
+    }
 
     return { width, height };
 };

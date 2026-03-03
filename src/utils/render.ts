@@ -526,25 +526,92 @@ export const renderFrame = async (
                 }
 
             } else if (clip.type === 'text') {
-                // ... text logic ...
                 const fontSize = clip.fontSize || 120
                 const text = clip.text || 'Text'
                 const color = clip.color || 'white'
                 const fontFamily = clip.fontFamily || 'sans-serif'
+                const curveAmount = clip.textCurve || 0
 
                 ctx.font = `bold ${fontSize}px "${fontFamily}"`
                 ctx.fillStyle = color
-                ctx.textAlign = 'center'
                 ctx.textBaseline = 'middle'
 
                 const lines = text.split('\n')
-                const lineHeight = fontSize * 1.2
-                const totalHeight = lines.length * lineHeight
+                // 줄 간격 배율 — 사용자 설정값 우선, 없으면 1.2 기본
+                const lineHeightFactor = clip.lineHeight ?? 1.2
+                const lineHeight = fontSize * lineHeightFactor
 
-                lines.forEach((line, i) => {
-                    const yOffset = (i * lineHeight) - (totalHeight / 2) + (lineHeight / 2)
-                    ctx.fillText(line, w / 2, h / 2 + yOffset)
-                })
+                if (curveAmount !== 0) {
+                    // 곡선 텍스트: 베지어 커브를 따라 글자별로 배치
+                    const baseY = curveAmount > 0 ? Math.abs(curveAmount) / 2 + fontSize : fontSize
+
+                    lines.forEach((line, lineIdx) => {
+                        const cy = baseY + lineIdx * lineHeight
+                        // 쿼드라틱 베지어 제어점
+                        const p0 = { x: 0, y: cy }
+                        const p1 = { x: w / 2, y: cy - curveAmount } // 제어점
+                        const p2 = { x: w, y: cy }
+
+                        // 각 글자의 너비 계산
+                        const charWidths = Array.from(line).map(ch => ctx.measureText(ch).width)
+                        const totalWidth = charWidths.reduce((sum, cw) => sum + cw, 0)
+
+                        // 정렬에 따른 시작 t 오프셋 계산
+                        const align = clip.textAlign || 'center'
+                        let startT: number
+                        if (align === 'left') {
+                            startT = 0
+                        } else if (align === 'right') {
+                            startT = 1 - (totalWidth / w)
+                        } else {
+                            startT = 0.5 - (totalWidth / w) / 2
+                        }
+
+                        // 베지어 커브 위의 점 계산 함수
+                        const bezierPoint = (t: number) => ({
+                            x: (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x,
+                            y: (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y,
+                        })
+                        // 접선 각도 계산 함수
+                        const bezierAngle = (t: number) => {
+                            const dx = 2 * (1 - t) * (p1.x - p0.x) + 2 * t * (p2.x - p1.x)
+                            const dy = 2 * (1 - t) * (p1.y - p0.y) + 2 * t * (p2.y - p1.y)
+                            return Math.atan2(dy, dx)
+                        }
+
+                        // 글자별 배치
+                        ctx.textAlign = 'center'
+                        let currentT = startT
+                        Array.from(line).forEach((ch, charIdx) => {
+                            const charT = currentT + (charWidths[charIdx] / 2) / w
+                            const safedT = Math.max(0, Math.min(1, charT))
+                            const pt = bezierPoint(safedT)
+                            const angle = bezierAngle(safedT)
+
+                            ctx.save()
+                            ctx.translate(pt.x, pt.y)
+                            ctx.rotate(angle)
+                            ctx.fillText(ch, 0, 0)
+                            ctx.restore()
+
+                            currentT += charWidths[charIdx] / w
+                        })
+                    })
+                } else {
+                    // 직선 텍스트
+                    // 텍스트 정렬 — 사용자 설정값 우선, 없으면 'center' 기본
+                    const align = clip.textAlign || 'center'
+                    ctx.textAlign = align
+                    const totalHeight = lines.length * lineHeight
+
+                    // 정렬에 따른 x 좌표 계산
+                    const textX = align === 'left' ? 0 : align === 'right' ? w : w / 2
+
+                    lines.forEach((line, i) => {
+                        const yOffset = (i * lineHeight) - (totalHeight / 2) + (lineHeight / 2)
+                        ctx.fillText(line, textX, h / 2 + yOffset)
+                    })
+                }
             }
 
         } catch (drawErr) {

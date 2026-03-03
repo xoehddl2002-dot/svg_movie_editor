@@ -746,7 +746,57 @@ export function PreviewPlayer() {
                 case 'text':
                     const fontSize = clip.fontSize || 120;
                     const textContent = clip.text || 'Text';
+                    // 줄 간격 배율 — 사용자 설정값 우선, 없으면 1.2 기본
+                    const lineHeightFactor = clip.lineHeight ?? 1.2;
+                    const curveAmount = clip.textCurve || 0;
 
+                    // 곡선 텍스트: SVG 네이티브 <text> + <textPath> 사용
+                    if (curveAmount !== 0) {
+                        const textLines = textContent.split('\n');
+                        const lineHeight = fontSize * lineHeightFactor;
+                        // 곡선 경로의 기준 y — 베지어 최대 수직 편차는 제어점의 1/2
+                        const baseY = curveAmount > 0 ? Math.abs(curveAmount) / 2 + fontSize : fontSize;
+
+                        // textAnchor 매핑 (textAlign → SVG text-anchor)
+                        const anchorMap = { left: 'start', center: 'middle', right: 'end' } as const;
+                        const textAnchor = anchorMap[clip.textAlign || 'center'] || 'middle';
+                        // startOffset 매핑
+                        const offsetMap = { left: '0%', center: '50%', right: '100%' } as const;
+                        const startOffset = offsetMap[clip.textAlign || 'center'] || '50%';
+
+                        return (
+                            <g opacity={clip.opacity ?? 1}>
+                                <defs>
+                                    {textLines.map((_, lineIdx) => {
+                                        const pathId = `curve-${clip.id}-${lineIdx}`;
+                                        const cy = baseY + lineIdx * lineHeight;
+                                        // 쿼드라틱 베지어: 시작(0,cy) → 제어점(w/2, cy-curve) → 끝(w,cy)
+                                        const pathD = `M 0,${cy} Q ${w / 2},${cy - curveAmount} ${w},${cy}`;
+                                        return <path key={pathId} id={pathId} d={pathD} fill="none" />;
+                                    })}
+                                </defs>
+                                {textLines.map((line, lineIdx) => {
+                                    const pathId = `curve-${clip.id}-${lineIdx}`;
+                                    return (
+                                        <text
+                                            key={lineIdx}
+                                            fontSize={fontSize}
+                                            fill={clip.color || 'white'}
+                                            fontFamily={`"${clip.fontFamily || 'sans-serif'}"`}
+                                            fontWeight="bold"
+                                            textAnchor={textAnchor}
+                                        >
+                                            <textPath href={`#${pathId}`} startOffset={startOffset}>
+                                                {line}
+                                            </textPath>
+                                        </text>
+                                    );
+                                })}
+                            </g>
+                        )
+                    }
+
+                    // 직선 텍스트: foreignObject + HTML div 사용
                     return (
                         <foreignObject
                             x={0}
@@ -759,16 +809,15 @@ export function PreviewPlayer() {
                                 style={{
                                     width: '100%',
                                     height: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
+                                    display: 'block',
                                     fontSize: `${fontSize}px`,
                                     color: clip.color || 'white',
                                     fontFamily: `"${clip.fontFamily || 'sans-serif'}"`,
                                     fontWeight: 'bold',
                                     textShadow: '0 0.2px 0.4px rgba(0,0,0,0.5)',
-                                    whiteSpace: 'nowrap',
-                                    textAlign: 'center'
+                                    whiteSpace: 'pre',
+                                    textAlign: clip.textAlign || 'center',
+                                    lineHeight: lineHeightFactor
                                 }}
                             >
                                 {textContent}
