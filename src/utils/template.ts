@@ -469,7 +469,7 @@ export const processTemplate = async (template: TemplateData, defaultDuration: n
                 }
 
                 const serialized = new XMLSerializer().serializeToString(element);
-                const svgContent = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='${bboxString}'>${defsString}${serialized}</svg>`;
+                const svgContent = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='${bboxString}' width='${width}' height='${height}'>${defsString}${serialized}</svg>`;
                 src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
             }
 

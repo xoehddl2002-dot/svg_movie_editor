@@ -7,6 +7,13 @@
 ## demo
 https://svg-movie-editor.vercel.app/
 
+
+FFmpeg 프로세싱 과정에서 발생하는 가용 메모리 초과 이슈(OOM)로 인해
+몇몇 다운로드 기능을 비활성화하였습니다. (export mp4,export gif)
+이는 Stateless한 서버리스 환경의 특성이며,
+프로덕션 레벨에서는 분산 컴퓨팅 자원을 활용한 해결이 가능합니다.
+
+
 ---
 
 ## 📌 프로젝트 배경
