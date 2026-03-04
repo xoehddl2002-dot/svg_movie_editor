@@ -599,18 +599,63 @@ export const renderFrame = async (
                     })
                 } else {
                     // 직선 텍스트
-                    // 텍스트 정렬 — 사용자 설정값 우선, 없으면 'center' 기본
-                    const align = clip.textAlign || 'center'
-                    ctx.textAlign = align
-                    const totalHeight = lines.length * lineHeight
+                    const textLines = lines;
+                    const totalHeight = textLines.length * lineHeight
 
-                    // 정렬에 따른 x 좌표 계산
-                    const textX = align === 'left' ? 0 : align === 'right' ? w : w / 2
+                    if (clip.isVertical) {
+                        // 세로쓰기 (가장 왼쪽 줄부터 오른쪽으로 진행 - 좌->우)
+                        ctx.textAlign = 'center' // 가로축 중앙 정렬
+                        ctx.textBaseline = 'middle' // 세로축 중앙 정렬
 
-                    lines.forEach((line, i) => {
-                        const yOffset = (i * lineHeight) - (totalHeight / 2) + (lineHeight / 2)
-                        ctx.fillText(line, textX, h / 2 + yOffset)
-                    })
+                        // 줄 간 수평 간격 (폰트 크기 기반)
+                        const verticalLineSpacing = fontSize * lineHeightFactor;
+                        const totalVerticalWidth = textLines.length * verticalLineSpacing;
+
+                        // 정렬(textAlign)에 따른 시작 x 좌표 결정
+                        let startX;
+                        const align = clip.textAlign || 'center';
+                        if (align === 'left') {
+                            startX = verticalLineSpacing / 2;
+                        } else if (align === 'right') {
+                            startX = w - totalVerticalWidth + verticalLineSpacing / 2;
+                        } else {
+                            // center
+                            startX = (w - totalVerticalWidth) / 2 + verticalLineSpacing / 2;
+                        }
+
+                        textLines.forEach((line, lineIdx) => {
+                            // 세로쓰기는 왼쪽 줄부터 오른쪽으로 배치 (좌->우)
+                            const xOffset = startX + lineIdx * verticalLineSpacing;
+
+                            let currentY = 0;
+                            // 글자별 높이 측정 (대략적으로 fontSize + 약간의 간격)
+                            const charHeight = fontSize * 1.05;
+                            const letterSpacingPx = (clip.letterSpacing ?? 0) * fontSize;
+                            const effectiveCharHeight = charHeight + letterSpacingPx;
+                            
+                            // 선의 총 높이는 문자 개수 * (글자 높이 + 자간) - 마지막 자간
+                            const lineTotalHeight = line.length * effectiveCharHeight - letterSpacingPx;
+                            const startY = (h - lineTotalHeight) / 2 + charHeight / 2; // 중앙 정렬된 시작 Y 좌표
+
+                            Array.from(line).forEach((ch) => {
+                                ctx.fillText(ch, xOffset, startY + currentY);
+                                currentY += effectiveCharHeight;
+                            })
+                        })
+                    } else {
+                        // 가로쓰기
+                        // 텍스트 정렬 — 사용자 설정값 우선, 없으면 'center' 기본
+                        const align = clip.textAlign || 'center'
+                        ctx.textAlign = align
+                        
+                        // 정렬에 따른 x 좌표 계산
+                        const textX = align === 'left' ? 0 : align === 'right' ? w : w / 2
+    
+                        textLines.forEach((line, i) => {
+                            const yOffset = (i * lineHeight) - (totalHeight / 2) + (lineHeight / 2)
+                            ctx.fillText(line, textX, h / 2 + yOffset)
+                        })
+                    }
                 }
             }
 

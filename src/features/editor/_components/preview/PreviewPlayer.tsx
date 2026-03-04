@@ -13,7 +13,8 @@ const getMediaStyle = (clip: Clip): React.CSSProperties => {
         width: '100%',
         height: '100%',
         objectFit: clip.type === 'mask' ? 'contain' : 'fill',
-        pointerEvents: 'none'
+        pointerEvents: 'none',
+        transformOrigin: 'center'
     }
 }
 
@@ -719,15 +720,21 @@ export function PreviewPlayer() {
                                 {renderMaskDefs()}
                                 <foreignObject {...commonProps} mask={hasMask ? `url(#${maskId})` : undefined}>
                                     <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-                                        <DynamicSvg
-                                            src={clip.src}
-                                            templateData={clip.templateData}
-                                            fill={clip.color}
-                                            mask={clip.mask}
-                                            filter={clip.filter}
-                                            onLoad={() => handleReady(clip.id)}
-                                            forceCheck={forceCheck}
-                                        />
+                                        <div style={{ 
+                                            width: '100%', 
+                                            height: '100%', 
+                                            transformOrigin: 'center'
+                                        }}>
+                                            <DynamicSvg
+                                                src={clip.src}
+                                                templateData={clip.templateData}
+                                                fill={clip.color}
+                                                mask={clip.mask}
+                                                filter={clip.filter}
+                                                onLoad={() => handleReady(clip.id)}
+                                                forceCheck={forceCheck}
+                                            />
+                                        </div>
                                     </div>
                                 </foreignObject>
                             </g>
@@ -809,15 +816,19 @@ export function PreviewPlayer() {
                                 style={{
                                     width: '100%',
                                     height: '100%',
-                                    display: 'block',
                                     fontSize: `${fontSize}px`,
                                     color: clip.color || 'white',
                                     fontFamily: `"${clip.fontFamily || 'sans-serif'}"`,
                                     fontWeight: 'bold',
                                     textShadow: '0 0.2px 0.4px rgba(0,0,0,0.5)',
                                     whiteSpace: 'pre',
-                                    textAlign: clip.textAlign || 'center',
-                                    lineHeight: lineHeightFactor
+                                    lineHeight: lineHeightFactor,
+                                    writingMode: clip.isVertical ? 'vertical-lr' : undefined,
+                                    textOrientation: clip.isVertical ? 'upright' : undefined,
+                                    letterSpacing: clip.letterSpacing !== undefined ? `${clip.letterSpacing}em` : undefined,
+                                    display: 'flex',
+                                    justifyContent: clip.isVertical ? 'flex-start' : (clip.textAlign === 'left' ? 'flex-start' : clip.textAlign === 'right' ? 'flex-end' : 'center'),
+                                    alignItems: 'center'
                                 }}
                             >
                                 {textContent}

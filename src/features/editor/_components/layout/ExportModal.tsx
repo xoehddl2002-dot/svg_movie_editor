@@ -24,8 +24,10 @@ export function ExportModal() {
 
     const handleExport = async () => {
         console.log(`[Export Debug] Handle Export Clicked. Format: ${format}, FPS: ${fps}`)
+        
+        const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
         if (format === 'mp4') {
-            const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
             if (process.env.NODE_ENV === 'production' && !isLocal) {
                 alert("Video export is currently disabled in the deployment environment due to server memory constraints. Please run locally to export video.")
                 return
@@ -33,6 +35,10 @@ export function ExportModal() {
             await exportVideo(fps)
             setIsOpen(false)
         } else if (format === 'gif') {
+            if (process.env.NODE_ENV === 'production' && !isLocal) {
+                alert("GIF export is currently disabled in the deployment environment due to server memory constraints. Please run locally to export GIF.")
+                return
+            }
             await exportGif(fps)
             setIsOpen(false)
         } else {

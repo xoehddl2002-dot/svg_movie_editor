@@ -149,6 +149,18 @@ export function TextProperties({ clip, updateClip }: TextPropertiesProps) {
                 />
                 <div className="text-right text-xs text-muted-foreground">{(clip.lineHeight ?? 1.2).toFixed(1)}</div>
             </div>
+            {/* 자간 */}
+            <div className="space-y-2">
+                <Label>Letter Spacing</Label>
+                <Slider
+                    value={[clip.letterSpacing ?? 0]}
+                    min={-0.5}
+                    max={1}
+                    step={0.05}
+                    onValueChange={(val) => updateClip(clip.id, { letterSpacing: val[0] })}
+                />
+                <div className="text-right text-xs text-muted-foreground">{(clip.letterSpacing ?? 0).toFixed(2)} em</div>
+            </div>
             {/* 텍스트 정렬 */}
             <div className="space-y-2">
                 <Label>Text Align</Label>
@@ -168,6 +180,20 @@ export function TextProperties({ clip, updateClip }: TextPropertiesProps) {
                             </Button>
                         );
                     })}
+                </div>
+            </div>
+            {/* 텍스트 세로쓰기 */}
+            <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                    <Label>Vertical Text</Label>
+                    <Button
+                        variant={clip.isVertical ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-6 text-xs px-2"
+                        onClick={() => updateClip(clip.id, { isVertical: !clip.isVertical })}
+                    >
+                        {clip.isVertical ? 'On' : 'Off'}
+                    </Button>
                 </div>
             </div>
             {/* 텍스트 곡선 */}

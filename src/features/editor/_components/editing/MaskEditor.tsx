@@ -86,10 +86,9 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     } | null>(null);
 
     const [isResourceLoaded, setIsResourceLoaded] = useState(false);
-    // 원본 리소스의 자연 크기 (natural dimensions) 추적
     const [naturalDimensions, setNaturalDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-    const [zoom, setZoom] = useState(1);
-    // 리소스가 처음 로드된 것인지(기존 클립) vs 교체된 것인지 구분
+    const [zoom, setZoom] = useState(0.9);
+    // 리소스가처음 로드된 것인지(기존 클립) vs 교체된 것인지 구분
     const isInitialLoad = useRef(true);
 
     // Local state to prevent premature saving on Cancel
@@ -273,6 +272,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
             const pt = getSVGPoint(e);
             const start = startRef.current;
+            // We reverted the full overlay scaling. Mouse coordinates map 1:1 again relative to the absolute mask canvas.
             const dx = pt.x - start.mouseX;
             const dy = pt.y - start.mouseY;
 
@@ -362,7 +362,6 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
             flipH,
             flipV,
             src: resourceSrc,
-            // type: resourceType as any // No longer needed, type is always 'mask'
         };
 
         if (rotationChanged) {
@@ -486,12 +485,11 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
                     <div
                         className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 w-full h-full flex items-center justify-center transition-transform duration-200"
-                        style={{ transform: `scale(${zoom})` }}
                     >
                         <svg
                             ref={svgRef}
-                            viewBox={`${imageSvgBounds.x} ${imageSvgBounds.y} ${imageSvgBounds.width} ${imageSvgBounds.height}`}
-                            className="w-full h-full overflow-visible"
+                            viewBox={`${imageSvgBounds.x + (imageSvgBounds.width * (1 - 1/zoom)) / 2} ${imageSvgBounds.y + (imageSvgBounds.height * (1 - 1/zoom)) / 2} ${imageSvgBounds.width / zoom} ${imageSvgBounds.height / zoom}`}
+                            className="w-full h-full overflow-hidden"
                             preserveAspectRatio="xMidYMid meet"
                         >
                             {/* 1. Background (Image or Video) */}
@@ -530,11 +528,14 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                 )}
                             </g>
 
-                            {/* 2. Mask Shapes Overlay — no rotation/flip, those are resource-only */}
+                            {/* 2. Mask Shapes Overlay */}
                             <g>
                                 {localClip.templateData && Object.entries(localClip.templateData).map(([id, data]: [string, any]) => {
                                     const isSelected = id === activeComponentId;
                                     const fill = isSelected ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,0.6)';
+
+                                    const handleStrokeWidth = Math.max(1, imageSvgBounds.width / 500);
+                                    const unselectedStrokeWidth = Math.max(0.5, imageSvgBounds.width / 1000);
 
                                     return (
                                         <g key={id}>
@@ -559,7 +560,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                     d={data.d}
                                                     fill={isSelected ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 0, 255, 0.2)"}
                                                     stroke={isSelected ? "red" : "blue"}
-                                                    strokeWidth={isSelected ? Math.max(1, imageSvgBounds.width / 500) : Math.max(0.5, imageSvgBounds.width / 1000)}
+                                                    strokeWidth={isSelected ? handleStrokeWidth : unselectedStrokeWidth}
                                                     vectorEffect="non-scaling-stroke"
                                                     style={{ cursor: 'move', pointerEvents: 'auto' }}
                                                     onMouseDown={(e) => handleMouseDown(e, 'move', id)}
@@ -574,17 +575,17 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                     </div>
 
                     {/* Zoom Controls */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-background/90 backdrop-blur-md p-1.5 rounded-full border shadow-md">
+                    <div className="hidden absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-background/90 backdrop-blur-md p-1.5 rounded-full border shadow-md">
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} title="Zoom Out">
                             <ZoomOut className="w-4 h-4" />
                         </Button>
                         <div className="text-[11px] font-mono font-medium w-12 text-center select-none text-foreground/80">
                             {Math.round(zoom * 100)}%
                         </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setZoom(z => Math.min(3, z + 0.1))} title="Zoom In">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setZoom(z => Math.min(5, z + 0.1))} title="Zoom In">
                             <ZoomIn className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full ml-1" onClick={() => setZoom(1)} title="Fit to Screen" disabled={zoom === 1}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full ml-1" onClick={() => setZoom(0.9)} title="Fit to Screen (90%)" disabled={zoom === 0.9}>
                             <Maximize2 className="w-4 h-4" />
                         </Button>
                     </div>
