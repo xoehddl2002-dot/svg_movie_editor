@@ -263,7 +263,13 @@ export const renderFrame = async (
     // Get Active Clips
     const activeClips = tracks
         .flatMap((track, trackIndex) => track.clips.map(clip => ({ ...clip, trackOrder: trackIndex })))
-        .filter(clip => projectTime >= clip.start && projectTime < clip.start + clip.duration)
+        .filter(clip => {
+            const clipEnd = clip.start + clip.duration
+            if (projectTime >= clip.start && projectTime < clipEnd) return true
+            // Allow rendering the last frame if we are exactly at the end of the clip
+            if (projectTime === clipEnd) return true
+            return false
+        })
         .sort((a, b) => b.trackOrder - a.trackOrder)
 
     // Draw Loop

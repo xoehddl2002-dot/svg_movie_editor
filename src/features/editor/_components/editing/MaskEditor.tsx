@@ -9,7 +9,7 @@ import { Image as ImageIcon, Film, Maximize2, Crop as MaskIcon, FlipHorizontal, 
 import { Clip } from "@/features/editor/store/useStore"
 import { cn } from "@/lib/utils"
 import { getRectPath, getEllipsePath, getTrianglePath, getStarPath, getPolygonPath } from "@/features/editor/utils/shapeUtils"
-import { transformPath } from "@/utils/svg/pathUtils"
+import { transformPath, getBoundsFromPathD } from "@/utils/svg/pathUtils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -93,6 +93,33 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
     // Local state to prevent premature saving on Cancel
     const [localClip, setLocalClip] = useState<Partial<Clip>>(clip);
+
+    // Sync incoming changes from the store if the user modifies the clip in the timeline/preview while the editor is open
+    useEffect(() => {
+        setLocalClip(prev => {
+            // Only update if something relevant actually changed to prevent infinite loops
+            if (JSON.stringify(prev.templateData) !== JSON.stringify(clip.templateData) || prev.viewBox !== clip.viewBox || prev.width !== clip.width || prev.height !== clip.height) {
+                return {
+                    ...prev,
+                    templateData: clip.templateData,
+                    viewBox: clip.viewBox,
+                    width: clip.width,
+                    height: clip.height,
+                };
+            }
+            return prev;
+        });
+
+        // Also sync the bounds if width/height changed from outside
+        setImageSvgBounds(prev => {
+            const newW = clip.width || 100;
+            const newH = clip.height || 100;
+            if (prev.width !== newW || prev.height !== newH) {
+                return { x: 0, y: 0, width: newW, height: newH };
+            }
+            return prev;
+        });
+    }, [clip.templateData, clip.viewBox, clip.width, clip.height]);
 
     // Initial check: Ensure at least one shape exists (Wait for resource load)
     useEffect(() => {
@@ -200,12 +227,11 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
             setImageSvgBounds({ x: 0, y: 0, width: useW, height: useH });
             setIsResourceLoaded(true);
 
-            // Self-heal corrupted dimensions on initial load
-            if (isInitial && (useW !== localClip.width || useH !== localClip.height)) {
+            // Removed destructive self-healing that overwrites localClip.width/height
+            // with native viewBox sizes, which destroys user scaling from PreviewPlayer.
+            if (isInitial && !localClip.viewBox) {
                 setLocalClip(prev => ({
                     ...prev,
-                    width: useW,
-                    height: useH,
                     viewBox: `0 0 ${useW} ${useH}`
                 }));
             }
@@ -484,13 +510,20 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                     <div className="absolute inset-0 pattern-grid-lg opacity-5 pointer-events-none" />
 
                     <div
-                        className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 w-full h-full flex items-center justify-center transition-transform duration-200"
+                        className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 flex items-center justify-center transition-transform duration-200"
+                        style={{
+                            aspectRatio: imageSvgBounds.height ? `${imageSvgBounds.width} / ${imageSvgBounds.height}` : 'auto',
+                            width: '100%',
+                            maxHeight: '100%',
+                            // A CSS trick to make aspect ratio fit inside a flex container without breaking its bounds
+                            objectFit: 'contain'
+                        }}
                     >
                         <svg
                             ref={svgRef}
                             viewBox={`${imageSvgBounds.x + (imageSvgBounds.width * (1 - 1/zoom)) / 2} ${imageSvgBounds.y + (imageSvgBounds.height * (1 - 1/zoom)) / 2} ${imageSvgBounds.width / zoom} ${imageSvgBounds.height / zoom}`}
                             className="w-full h-full overflow-hidden"
-                            preserveAspectRatio="xMidYMid meet"
+                            preserveAspectRatio="none"
                         >
                             {/* 1. Background (Image or Video) */}
                             <g style={{
@@ -509,7 +542,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         <video
                                             ref={videoRef}
                                             src={resourceSrc}
-                                            className="w-full h-full object-contain"
+                                            className="w-full h-full object-fill"
                                             controls={false}
                                             muted
                                             autoPlay
@@ -523,7 +556,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         y={imageSvgBounds.y}
                                         width={imageSvgBounds.width}
                                         height={imageSvgBounds.height}
-                                        preserveAspectRatio="xMidYMid meet"
+                                        preserveAspectRatio="none"
                                     />
                                 )}
                             </g>
@@ -615,7 +648,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                 <div className="flex items-center justify-between px-3 py-1.5 bg-blue-600/10 text-blue-700 dark:text-blue-300 border border-blue-600/20 rounded-md text-[11px] whitespace-nowrap">
                                                     <span className="font-medium flex items-center gap-1"><Monitor className="w-3.5 h-3.5" />Preview Output:</span>
                                                     <span className="font-mono font-semibold tabular-nums">
-                                                        {Math.round(imageSvgBounds.width)} × {Math.round(imageSvgBounds.height)}
+                                                        {Math.round(localClip.width || 100)} × {Math.round(localClip.height || 100)}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-600/10 text-emerald-700 dark:text-emerald-300 border border-emerald-600/20 rounded-md text-[11px] whitespace-nowrap">
@@ -626,11 +659,14 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                             if (localClip.templateData) {
                                                                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                                                                 Object.values(localClip.templateData).forEach((d: any) => {
-                                                                    if (d.x !== undefined && d.width !== undefined) {
-                                                                        minX = Math.min(minX, d.x);
-                                                                        minY = Math.min(minY, d.y);
-                                                                        maxX = Math.max(maxX, d.x + d.width);
-                                                                        maxY = Math.max(maxY, d.y + d.height);
+                                                                    if (d.d) {
+                                                                        const bounds = getBoundsFromPathD(d.d);
+                                                                        if (bounds.width > 0 && bounds.height > 0) {
+                                                                            minX = Math.min(minX, bounds.x);
+                                                                            minY = Math.min(minY, bounds.y);
+                                                                            maxX = Math.max(maxX, bounds.x + bounds.width);
+                                                                            maxY = Math.max(maxY, bounds.y + bounds.height);
+                                                                        }
                                                                     }
                                                                 });
                                                                 if (minX !== Infinity) { sw = maxX - minX; sh = maxY - minY; }

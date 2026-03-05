@@ -6,13 +6,15 @@ import React, { useEffect, useRef, useState } from "react"
 import { DynamicSvg } from "./DynamicSvg"
 import { TransformControls } from "./TransformControls"
 import { getTextDimensions } from '@/utils/text'
+import { transformPath } from '@/utils/svg/pathUtils'
 
 const getMediaStyle = (clip: Clip): React.CSSProperties => {
     // Only handle sizing here, transforms are moved to parent G
     return {
         width: '100%',
         height: '100%',
-        objectFit: clip.type === 'mask' ? 'contain' : 'fill',
+        // Changed to 'fill' so the image stretches exactly like the SVG mask paths do when scaling
+        objectFit: 'fill',
         pointerEvents: 'none',
         transformOrigin: 'center'
     }
@@ -645,8 +647,8 @@ export function PreviewPlayer() {
         }
 
         const commonProps = {
-            x: 0,
-            y: 0,
+            x: x,
+            y: y,
             width: w,
             height: h,
             opacity: clip.opacity ?? 1,
@@ -670,22 +672,27 @@ export function PreviewPlayer() {
                 }
             }
 
-            // Scale mask to fit current dimensions
-            // Protect against division by zero
             const safeVbw = vbw === 0 ? 100 : vbw;
             const safeVbh = vbh === 0 ? 100 : vbh;
 
             const sx = w / safeVbw;
             const sy = h / safeVbh;
 
+            // Instead of `<g transform>`, we calculate dx and dy
+            // transform="translate(x, y) scale(sx, sy) translate(-vbx, -vby)"
+            // so dx = x - vbx * sx, dy = y - vby * sy
+            const dx = x - (vbx * sx);
+            const dy = y - (vby * sy);
+
             return (
                 <defs>
                     <mask id={maskId}>
                         <rect x="0" y="0" width="100%" height="100%" fill="black" />
-                        <g transform={`scale(${sx}, ${sy}) translate(${-vbx}, ${-vby})`}>
-                            {Object.values(clip.templateData).map((data: any, index: number) => (
-                                <path key={data.id || index} d={data.d} fill="white" />
-                            ))}
+                        <g>
+                            {Object.values(clip.templateData).map((data: any, index: number) => {
+                                const transformedD = data.d ? transformPath(data.d, dx, dy, sx, sy) : undefined;
+                                return <path key={data.id || index} d={transformedD} fill="white" />;
+                            })}
                         </g>
                     </mask>
                 </defs>
@@ -776,9 +783,9 @@ export function PreviewPlayer() {
                                 <defs>
                                     {textLines.map((_, lineIdx) => {
                                         const pathId = `curve-${clip.id}-${lineIdx}`;
-                                        const cy = baseY + lineIdx * lineHeight;
-                                        // 쿼드라틱 베지어: 시작(0,cy) → 제어점(w/2, cy-curve) → 끝(w,cy)
-                                        const pathD = `M 0,${cy} Q ${w / 2},${cy - curveAmount} ${w},${cy}`;
+                                        const cy = y + baseY + lineIdx * lineHeight;
+                                        // 쿼드라틱 베지어: 시작(x,cy) → 제어점(x+w/2, cy-curve) → 끝(x+w,cy)
+                                        const pathD = `M ${x},${cy} Q ${x + w / 2},${cy - curveAmount} ${x + w},${cy}`;
                                         return <path key={pathId} id={pathId} d={pathD} fill="none" />;
                                     })}
                                 </defs>
@@ -806,8 +813,8 @@ export function PreviewPlayer() {
                     // 직선 텍스트: foreignObject + HTML div 사용
                     return (
                         <foreignObject
-                            x={0}
-                            y={0}
+                            x={x}
+                            y={y}
                             width={w}
                             height={h}
                             opacity={clip.opacity ?? 1}
@@ -840,8 +847,8 @@ export function PreviewPlayer() {
                     if (clip.type === 'icon' || (clip.src && (clip.src.toLowerCase().split('?')[0].endsWith('.svg') || clip.src.includes('blob:') || clip.src.startsWith('data:image/svg+xml')))) {
                         return (
                             <foreignObject
-                                x={0}
-                                y={0}
+                                x={x}
+                                y={y}
                                 width={w}
                                 height={h}
                                 style={{ opacity: clip.opacity ?? 1 }}
@@ -860,8 +867,8 @@ export function PreviewPlayer() {
                         return <rect {...commonProps} fill={clip.color || 'white'} />
                     }
                     if (clip.src === 'Circle') {
-                        const cx = w / 2
-                        const cy = h / 2
+                        const cx = x + w / 2
+                        const cy = y + h / 2
                         const rRadius = Math.min(w, h) / 2
                         return (
                             <circle
@@ -891,16 +898,25 @@ export function PreviewPlayer() {
             }
         }
 
-        const rotationCenterX = w / 2;
-        const rotationCenterY = h / 2;
+        const rotationCenterX = x + w / 2;
+        const rotationCenterY = y + h / 2;
 
         if (clip.type === 'audio') {
             return renderInner();
         }
 
+        let mainTransform = '';
+        if (r !== 0) mainTransform += `rotate(${r}, ${rotationCenterX}, ${rotationCenterY})`;
+        mainTransform = mainTransform.trim();
+
+        const hasFlip = flipH || flipV;
+        const flipTransform = hasFlip 
+            ? `translate(${rotationCenterX}, ${rotationCenterY}) scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) translate(${-rotationCenterX}, ${-rotationCenterY})`
+            : undefined;
+
         return (
             <g
-                transform={`translate(${x}, ${y}) rotate(${r}, ${rotationCenterX}, ${rotationCenterY})`}
+                transform={mainTransform || undefined}
                 onMouseDown={(e) => {
                     e.stopPropagation();
                     setSelectedClipId(clip.id);
@@ -916,10 +932,12 @@ export function PreviewPlayer() {
                 className="cursor-pointer"
             >
                 {/* Apply flip transforms here on the container group of content */}
-                <g transform={`translate(${w / 2}, ${h / 2}) scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) translate(${-w / 2}, ${-h / 2})`}>
+                <g transform={flipTransform}>
                     {renderInner()}
                 </g>
                 <rect
+                    x={x}
+                    y={y}
                     width={w}
                     height={h}
                     fill="transparent"

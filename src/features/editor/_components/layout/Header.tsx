@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { LayoutTemplate, Settings, Save, Upload } from "lucide-react"
 import { ExportModal } from "./ExportModal"
+import { ExportedResultsModal } from "./ExportedResultsModal"
 import { AIMagicEditModal } from "./AIMagicEditModal"
 import { useStore } from "@/features/editor/store/useStore"
 import { useRef } from "react"
@@ -99,6 +100,10 @@ export function Header() {
                     <Upload className="h-4 w-4" />
                     Load
                 </Button>
+
+                <div className="w-px h-6 bg-border mx-2" />
+
+                <ExportedResultsModal />
 
                 <div className="w-px h-6 bg-border mx-2" />
 

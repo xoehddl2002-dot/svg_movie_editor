@@ -57,20 +57,25 @@ export async function POST(req: Request) {
         // Prepare prompt parts including the image
         const promptParts: any[] = [systemPrompt];
 
-        const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+        const base64Data = base64Image.replace(/^data:image\/[^;]+;base64,/, "");
         
         let mimeType = "image/png"; 
-        const mimeMatch = base64Image.match(/^data:(image\/\w+);base64,/);
+        const mimeMatch = base64Image.match(/^data:(image\/[^;]+);base64,/);
         if(mimeMatch) {
             mimeType = mimeMatch[1];
         }
 
-        promptParts.push({
-            inlineData: {
-                data: base64Data,
-                mimeType: mimeType
-            }
-        });
+        if (mimeType === 'image/svg+xml') {
+            const svgText = Buffer.from(base64Data, 'base64').toString('utf-8');
+            promptParts.push("Here is the SVG code of the image:\n```svg\n" + svgText + "\n```");
+        } else {
+            promptParts.push({
+                inlineData: {
+                    data: base64Data,
+                    mimeType: mimeType
+                }
+            });
+        }
 
         const result = await model.generateContent(promptParts);
         const response = await result.response;
