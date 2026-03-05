@@ -151,9 +151,37 @@ export const matrixTransformPath = (d: string, m: DOMMatrix | SVGMatrix): string
                 cx = x; cy = y;
             }
             newCmd = 'Q';
+        } else if (upperCmd === 'A') {
+            // A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+            for (let i = 0; i < params.length; i += 7) {
+                let rx = params[i];
+                let ry = params[i + 1];
+                let xAxisRotation = params[i + 2];
+                let largeArcFlag = params[i + 3];
+                let sweepFlag = params[i + 4];
+                let x = params[i + 5];
+                let y = params[i + 6];
+
+                if (isRelative) {
+                    x += cx; y += cy;
+                }
+
+                // Scale radii (simplified for non-rotated scale matrices)
+                // If matrix has rotation, exact rx/ry calculation is complex, but for MaskEditor sx/sy scale it's sufficient:
+                const scaleX = Math.sqrt(m.a * m.a + m.b * m.b);
+                const scaleY = Math.sqrt(m.c * m.c + m.d * m.d);
+                rx = Math.abs(rx * scaleX);
+                ry = Math.abs(ry * scaleY);
+
+                const p = tp(x, y);
+
+                newParams.push(+(rx).toFixed(2), +(ry).toFixed(2), xAxisRotation, largeArcFlag, sweepFlag, p.x, p.y);
+                cx = x; cy = y;
+            }
+            newCmd = 'A';
         } else {
              // Fallback: just return as is (might break if relative vs absolute mix but better than nothing)
-             // For robust implementation of other commands (S, T, A), more logic needed.
+             // For robust implementation of other commands (S, T), more logic needed.
              // Mask shapes are typically simple.
              newCmd = command;
              newParams.push(...params);

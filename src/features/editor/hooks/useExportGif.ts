@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '@/features/editor/store/useStore'
 import { renderFrame, prefetchVideoFrames } from '@/utils/render'
+import { saveExportedProject } from '@/features/editor/utils/projectAutoSave'
 
 interface UseExportGifReturn {
     exportGif: (fps: number) => Promise<void>
@@ -16,7 +17,7 @@ export const useExportGif = (): UseExportGifReturn => {
     const [progress, setProgress] = useState(0)
     const [status, setStatus] = useState<'idle' | 'rendering' | 'encoding' | 'completed' | 'error'>('idle')
     const [abortController, setAbortController] = useState<AbortController | null>(null)
-    const { tracks, duration, projectWidth, projectHeight } = useStore()
+    const { tracks, duration, projectWidth, projectHeight, aspectRatio, currentTime } = useStore()
 
     // Prevent closing/refreshing while exporting
     useEffect(() => {
@@ -143,6 +144,18 @@ export const useExportGif = (): UseExportGifReturn => {
             link.click()
             document.body.removeChild(link)
             URL.revokeObjectURL(url)
+
+            // 5. Save project to IndexedDB along with the video blob
+            await saveExportedProject({
+                tracks,
+                duration,
+                aspectRatio,
+                projectWidth,
+                projectHeight,
+                currentTime,
+                resultData: gifBlob,
+                resultType: 'gif'
+            }).catch(e => console.error("Failed to auto-save to IDB", e))
 
             console.log(`GIF export successful (${(gifBlob.size / 1024 / 1024).toFixed(1)} MB)`)
             setProgress(100)

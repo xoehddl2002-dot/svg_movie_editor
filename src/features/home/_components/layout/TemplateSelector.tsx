@@ -15,6 +15,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { ExportedResultsModal } from "@/features/editor/_components/layout/ExportedResultsModal"
 
 // 프리셋 템플릿 타입 정의
 interface TemplateItem {
@@ -438,6 +439,8 @@ export function TemplateSelector() {
                         <Upload className="h-5 w-5" />
                         Load Project
                     </Button>
+                    
+                    <ExportedResultsModal inHomeContext />
 
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

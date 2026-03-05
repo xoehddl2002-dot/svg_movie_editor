@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore, type Clip } from '@/features/editor/store/useStore';
 import { getTextDimensions } from '@/utils/text';
+import { transformPath } from '@/utils/svg/pathUtils';
 
 interface TransformControlsProps {
     clip: Clip;
@@ -253,6 +254,52 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
         };
 
         const handleMouseUp = () => {
+            if (mode && mode.startsWith('scale') && clip.type === 'mask') {
+                const finalW = clip.width || 100;
+                const finalH = clip.height || 100;
+
+                if (clip.templateData && Object.keys(clip.templateData).length > 0) {
+                    let vbx = 0, vby = 0, vbw = 100, vbh = 100;
+                    if (clip.viewBox) {
+                        const parts = clip.viewBox.split(/[ ,]+/).filter(Boolean).map(Number);
+                        if (parts.length === 4) {
+                            [vbx, vby, vbw, vbh] = parts;
+                        }
+                    }
+
+                    const safeVbw = vbw === 0 ? 100 : vbw;
+                    const safeVbh = vbh === 0 ? 100 : vbh;
+                    
+                    const sx = finalW / safeVbw;
+                    const sy = finalH / safeVbh;
+
+                    const newTemplateData: any = {};
+                    for (const id in clip.templateData) {
+                        const sd = clip.templateData[id];
+                        // We ONLY scale the coordinates. The mask is relative to the clip's viewBox,
+                        // so translations of the clip on the main canvas (clip.x/y) do not affect internal shape coordinates.
+                        const newX = (sd.x || 0) * sx;
+                        const newY = (sd.y || 0) * sy;
+                        const newWidth = (sd.width || 0) * sx;
+                        const newHeight = (sd.height || 0) * sy;
+
+                        newTemplateData[id] = {
+                            ...sd,
+                            x: newX,
+                            y: newY,
+                            width: newWidth,
+                            height: newHeight,
+                            d: sd.d ? transformPath(sd.d, 0, 0, sx, sy) : undefined
+                        };
+                    }
+
+                    updateClip(clip.id, {
+                        templateData: newTemplateData,
+                        viewBox: `0 0 ${finalW} ${finalH}`
+                    });
+                }
+            }
+
             setMode(null);
             startRef.current = null;
         };
@@ -309,8 +356,13 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
                     const maskSx = w / safeVbw;
                     const maskSy = h / safeVbh;
 
+                    const hasTransform = maskSx !== 1 || maskSy !== 1 || vbx !== 0 || vby !== 0;
+                    const transformStr = hasTransform 
+                        ? `translate(${displayX}, ${displayY}) scale(${maskSx}, ${maskSy}) translate(${-vbx}, ${-vby})`
+                        : `translate(${displayX}, ${displayY})`;
+
                     return (
-                        <g transform={`translate(${displayX}, ${displayY}) scale(${maskSx}, ${maskSy}) translate(${-vbx}, ${-vby})`}>
+                        <g transform={transformStr}>
                             {Object.entries(clip.templateData).map(([id, data]: [string, any]) => (
                                 <path
                                     key={id}

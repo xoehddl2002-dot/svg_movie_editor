@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '@/features/editor/store/useStore'
 import { renderFrame, prefetchVideoFrames } from '@/utils/render'
+import { saveExportedProject } from '@/features/editor/utils/projectAutoSave'
 
 interface UseExportVideoReturn {
     exportVideo: (fps: number) => Promise<void>
@@ -16,7 +17,7 @@ export const useExportVideo = (): UseExportVideoReturn => {
     const [progress, setProgress] = useState(0)
     const [status, setStatus] = useState<'idle' | 'rendering' | 'encoding' | 'completed' | 'error'>('idle')
     const [abortController, setAbortController] = useState<AbortController | null>(null)
-    const { tracks, duration, projectWidth, projectHeight } = useStore()
+    const { tracks, duration, projectWidth, projectHeight, aspectRatio, currentTime } = useStore()
 
     // Prevent closing/refreshing while exporting
     useEffect(() => {
@@ -144,6 +145,18 @@ export const useExportVideo = (): UseExportVideoReturn => {
             link.click()
 
             console.log('MP4 export successful')
+            // 5. Save project to IndexedDB along with the video blob
+            await saveExportedProject({
+                tracks,
+                duration,
+                aspectRatio,
+                projectWidth,
+                projectHeight,
+                currentTime,
+                resultData: videoBlob,
+                resultType: 'mp4'
+            }).catch(e => console.error("Failed to auto-save to IDB", e))
+
             setStatus('completed')
 
         } catch (error: any) {

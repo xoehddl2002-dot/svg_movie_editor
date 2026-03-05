@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useStore } from '@/features/editor/store/useStore'
 import { renderFrame } from '@/utils/render'
+import { saveExportedProject } from '@/features/editor/utils/projectAutoSave'
 
 interface UseExportImageReturn {
     exportImage: () => Promise<void>
@@ -14,7 +15,7 @@ export const useExportImage = (): UseExportImageReturn => {
     const [isExporting, setIsExporting] = useState(false)
     const [progress, setProgress] = useState(0)
     const [status, setStatus] = useState<'idle' | 'rendering' | 'encoding' | 'completed' | 'error'>('idle')
-    const { tracks, currentTime, projectWidth, projectHeight } = useStore()
+    const { tracks, currentTime, projectWidth, projectHeight, duration, aspectRatio } = useStore()
 
     const exportImage = async () => {
         setIsExporting(true)
@@ -34,6 +35,19 @@ export const useExportImage = (): UseExportImageReturn => {
             setStatus('encoding')
 
             const dataUrl = canvas.toDataURL('image/png')
+
+            // Auto-save the project with the generated image dataUrl
+            await saveExportedProject({
+                tracks,
+                duration,
+                aspectRatio,
+                projectWidth,
+                projectHeight,
+                currentTime,
+                resultData: dataUrl,
+                resultType: 'png'
+            }).catch(e => console.error("Failed to auto-save to IDB", e));
+
             const link = document.createElement('a')
             link.download = `canvas-export-${Date.now()}.png`
             link.href = dataUrl
