@@ -51,7 +51,10 @@ export interface Clip {
         saturate: number // 1 is normal
         blur: number // 0 is none
     }
-    imageScale?: number // scale factor for inner image zoom (1 is normal)
+    imageScale?: number // scale factor for inner image zoom (1 is normal) X-axis
+    imageScaleY?: number // scale factor for inner image zoom (1 is normal) Y-axis
+    imageX?: number // x offset for inner image inside mask
+    imageY?: number // y offset for inner image inside mask
     templateData?: any // Metadata for complex templates (JSON)
     // Editor controls from template
     editor_move?: boolean

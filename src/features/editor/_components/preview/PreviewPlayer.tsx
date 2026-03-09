@@ -13,10 +13,11 @@ const getMediaStyle = (clip: Clip): React.CSSProperties => {
     return {
         width: '100%',
         height: '100%',
-        // Changed to 'fill' so the image stretches exactly like the SVG mask paths do when scaling
-        objectFit: 'fill',
+        // Use 'cover' for masked images to maintain aspect ratio, otherwise 'fill' to stretch to bounding box
+        objectFit: clip.type === 'mask' ? 'cover' : 'fill',
         pointerEvents: 'none',
-        transformOrigin: 'center'
+        transformOrigin: 'center',
+        transform: `translate(${clip.imageX || 0}px, ${clip.imageY || 0}px) scale(${clip.imageScale || 1}, ${clip.imageScaleY ?? clip.imageScale ?? 1})`
     }
 }
 
@@ -730,7 +731,8 @@ export function PreviewPlayer() {
                                         <div style={{ 
                                             width: '100%', 
                                             height: '100%', 
-                                            transformOrigin: 'center'
+                                            transformOrigin: 'center',
+                                            transform: `translate(${clip.imageX || 0}px, ${clip.imageY || 0}px) scale(${clip.imageScale || 1}, ${clip.imageScaleY ?? clip.imageScale ?? 1})`
                                         }}>
                                             <DynamicSvg
                                                 src={clip.src}
