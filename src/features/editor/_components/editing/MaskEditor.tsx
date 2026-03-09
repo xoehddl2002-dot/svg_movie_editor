@@ -5,11 +5,11 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Image as ImageIcon, Film, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, MousePointer2, Square, Circle, Triangle, Star, Hexagon, Upload } from "lucide-react"
+import { Image as ImageIcon, Film, Maximize2, Crop as MaskIcon, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, MousePointer2, Square, Circle, Triangle, Star, Hexagon, Upload, Info, Monitor, Scan, ImagePlus, ZoomIn, ZoomOut } from "lucide-react"
 import { Clip } from "@/features/editor/store/useStore"
 import { cn } from "@/lib/utils"
 import { getRectPath, getEllipsePath, getTrianglePath, getStarPath, getPolygonPath } from "@/features/editor/utils/shapeUtils"
-import { transformPath } from "@/utils/svg/pathUtils"
+import { transformPath, getBoundsFromPathD } from "@/utils/svg/pathUtils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -19,7 +19,7 @@ interface MaskEditorProps {
     onClose: () => void
 }
 
-type TransformMode = 'move' | 'rotate' | 'scale-n' | 'scale-s' | 'scale-e' | 'scale-w' | 'scale-nw' | 'scale-ne' | 'scale-sw' | 'scale-se' | null;
+type TransformMode = 'move' | 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se' | null;
 
 export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
@@ -28,9 +28,30 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     const [flipV, setFlipV] = useState(clip.flipV || false)
     const [rotation, setRotation] = useState(clip.rotation || 0)
     const [rotationChanged, setRotationChanged] = useState(false)
+    const [imageX, setImageX] = useState(clip.imageX || 0)
+    const [imageY, setImageY] = useState(clip.imageY || 0)
+    const [imageScale, setImageScale] = useState(clip.imageScale || 1)
+    const [imageScaleY, setImageScaleY] = useState(clip.imageScaleY ?? (clip.imageScale || 1))
 
-    // Resource state
-    const [resourceSrc, setResourceSrc] = useState(clip.src)
+    // Helper to extract the raw <image> href from a data:image/svg+xml URI (stripping masks)
+    const extractRawImageFromSVG = (src: string): string => {
+        if (!src.startsWith('data:image/svg+xml')) return src;
+        try {
+            const svgStr = decodeURIComponent(src.split(',')[1] || '');
+            const match = svgStr.match(/<image[^>]*href=["']([^"']+)["'][^>]*>/i) || 
+                          svgStr.match(/<image[^>]*href=["']([^"']+)["'][^>]*\/>/i);
+            if (match && match[1]) {
+                // Return the raw extracted image (could be base64 png/jpeg or external URL)
+                return match[1];
+            }
+        } catch (e) {
+            console.warn("Failed to parse svg string", e);
+        }
+        return src;
+    };
+
+    // Resource state - extract raw image immediately if it's an SVG data URI
+    const [resourceSrc, setResourceSrc] = useState(extractRawImageFromSVG(clip.src))
 
     // Internal helper to determine type from src
     const getMediaType = (src: string): 'video' | 'image' => {
@@ -72,22 +93,97 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const [imageSvgBounds, setImageSvgBounds] = useState({ x: 0, y: 0, width: clip.width || 100, height: clip.height || 100 })
     const [activeComponentId, setActiveComponentId] = useState<string | null>(null)
+    const [activeTab, setActiveTab] = useState<string>("resource")
 
     // Interaction state
     const [mode, setMode] = useState<TransformMode>(null)
     const startRef = useRef<{
         mouseX: number;
         mouseY: number;
-        shapeX: number;
-        shapeY: number;
-        shapeW: number;
-        shapeH: number;
-        data?: any;
+        imageStartX: number;
+        imageStartY: number;
+        imageStartScale: number;
+        imageStartScaleY: number;
+        shapeStartX: number;
+        shapeStartY: number;
+        shapeStartWidth: number;
+        shapeStartHeight: number;
+        shapeStartD?: string;
+        handle: TransformMode;
     } | null>(null);
 
     const [isResourceLoaded, setIsResourceLoaded] = useState(false);
-    // 리소스가 처음 로드된 것인지(기존 클립) vs 교체된 것인지 구분
+    const [naturalDimensions, setNaturalDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+    const [zoom, setZoom] = useState(0.9);
+    // 리소스가처음 로드된 것인지(기존 클립) vs 교체된 것인지 구분
     const isInitialLoad = useRef(true);
+
+    // Local state to prevent premature saving on Cancel
+    const [localClip, setLocalClip] = useState<Partial<Clip>>(clip);
+
+    // Sync incoming changes from the store if the user modifies the clip in the timeline/preview while the editor is open
+    useEffect(() => {
+        setLocalClip(prev => {
+            // Only update if something relevant actually changed to prevent infinite loops
+            if (JSON.stringify(prev.templateData) !== JSON.stringify(clip.templateData) || prev.viewBox !== clip.viewBox || prev.width !== clip.width || prev.height !== clip.height) {
+                return {
+                    ...prev,
+                    templateData: clip.templateData,
+                    viewBox: clip.viewBox,
+                    width: clip.width,
+                    height: clip.height,
+                };
+            }
+            return prev;
+        });
+
+        // Also sync the bounds if width/height changed from outside
+        setImageSvgBounds(prev => {
+            const newW = clip.width || 100;
+            const newH = clip.height || 100;
+            if (prev.width !== newW || prev.height !== newH) {
+                return { x: 0, y: 0, width: newW, height: newH };
+            }
+            return prev;
+        });
+    }, [clip.templateData, clip.viewBox, clip.width, clip.height]);
+
+    // Initial check: Ensure at least one shape exists (Wait for resource load)
+    useEffect(() => {
+        if (!isResourceLoaded) return;
+
+        // If no template data exists, initialize with a full-size rect
+        if (!localClip.templateData || Object.keys(localClip.templateData).length === 0) {
+            const w = imageSvgBounds.width;
+            const h = imageSvgBounds.height;
+            const pathD = getRectPath(0, 0, w, h);
+            const newData = {
+                "shape-1": {
+                    type: "path",
+                    d: pathD,
+                    fill: "white",
+                    id: "shape-1",
+                    "data-shape-type": "rect",
+                    x: 0,
+                    y: 0,
+                    width: w,
+                    height: h
+                }
+            };
+            setLocalClip(prev => ({
+                ...prev,
+                templateData: newData,
+                viewBox: `0 0 ${w} ${h}`
+            }));
+            setActiveComponentId("shape-1");
+        } else if (localClip.templateData && !activeComponentId) {
+            // Auto-select first shape
+            const ids = Object.keys(localClip.templateData);
+            if (ids.length > 0) {
+                setActiveComponentId(ids[0]);
+            }
+        }
+    }, [isResourceLoaded, imageSvgBounds, localClip.templateData]);
 
     // Load resource and set coordinate system based on resource dimensions
     useEffect(() => {
@@ -95,38 +191,28 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         if (!resourceSrc) return;
 
         const applyDimensions = (natW: number, natH: number) => {
+            let actW = natW;
+            let actH = natH;
+
+            setNaturalDimensions({ width: actW, height: actH });
+            
             const isInitial = isInitialLoad.current;
             isInitialLoad.current = false;
 
-            let useW: number, useH: number;
-
-            if (isInitial) {
-                // 최초 로드: 기존 viewBox 좌표계 사용 (템플릿 마스크 shape과 일치해야 함)
-                if (clip.viewBox) {
-                    const parts = clip.viewBox.split(/[ ,]+/).filter(Boolean).map(Number);
-                    if (parts.length === 4) {
-                        useW = parts[2];
-                        useH = parts[3];
-                    } else {
-                        useW = clip.width || natW;
-                        useH = clip.height || natH;
-                    }
-                } else {
-                    useW = clip.width || natW;
-                    useH = clip.height || natH;
-                }
-            } else {
-                // 리소스 교체: 새 리소스의 자연 크기로 조정
-                useW = natW;
-                useH = natH;
-            }
+            // In the new conceptual model, the MaskEditor's boundary (the previewOutput) 
+            // is ALWAYS fixed to the clip's width and height from the timeline.
+            // We do NOT resize the mask box based on the loaded image's natural size or SVG viewBox.
+            const useW = localClip.width || 100;
+            const useH = localClip.height || 100;
 
             setImageSvgBounds({ x: 0, y: 0, width: useW, height: useH });
             setIsResourceLoaded(true);
 
-            if (!isInitial) {
-                // 리소스 교체 시에만 clip 크기 + viewBox 업데이트
-                onUpdate({ width: useW, height: useH, viewBox: `0 0 ${useW} ${useH}` });
+            if (isInitial && !localClip.viewBox) {
+                setLocalClip(prev => ({
+                    ...prev,
+                    viewBox: `0 0 ${useW} ${useH}`
+                }));
             }
         };
 
@@ -149,43 +235,6 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         }
     }, [resourceSrc, resourceType]);
 
-    // Initial check: Ensure at least one shape exists (Wait for resource load)
-    useEffect(() => {
-        if (!isResourceLoaded) return;
-
-        // If no template data exists, initialize with a full-size rect
-        if (!clip.templateData || Object.keys(clip.templateData).length === 0) {
-            const w = imageSvgBounds.width;
-            const h = imageSvgBounds.height;
-            const pathD = getRectPath(0, 0, w, h);
-            const newData = {
-                "shape-1": {
-                    type: "path",
-                    d: pathD,
-                    fill: "white",
-                    id: "shape-1",
-                    "data-shape-type": "rect",
-                    x: 0,
-                    y: 0,
-                    width: w,
-                    height: h
-                }
-            };
-            onUpdate({
-                templateData: newData,
-                // Ensure viewBox is synced here as well just in case
-                viewBox: `0 0 ${w} ${h}`
-            });
-            setActiveComponentId("shape-1");
-        } else if (clip.templateData && !activeComponentId) {
-            // Auto-select first shape
-            const ids = Object.keys(clip.templateData);
-            if (ids.length > 0) {
-                setActiveComponentId(ids[0]);
-            }
-        }
-    }, [isResourceLoaded, imageSvgBounds, clip.templateData]);
-
     const getSVGPoint = (e: React.MouseEvent | MouseEvent) => {
         if (!svgRef.current) return { x: 0, y: 0 };
         const svg = svgRef.current;
@@ -195,103 +244,107 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
         return pt.matrixTransform(svg.getScreenCTM()?.inverse());
     };
 
-    const handleMouseDown = (e: React.MouseEvent, m: TransformMode, id: string) => {
-        e.stopPropagation();
-        e.preventDefault();
-
-        if (!clip.templateData || !clip.templateData[id]) return;
-
-        setActiveComponentId(id);
-        const data = clip.templateData[id];
-        const pt = getSVGPoint(e);
-
-        let sx = data.x || 0;
-        let sy = data.y || 0;
-        let sw = data.width || 100;
-        let sh = data.height || 100;
-
-        startRef.current = {
-            mouseX: pt.x,
-            mouseY: pt.y,
-            shapeX: sx,
-            shapeY: sy,
-            shapeW: sw,
-            shapeH: sh,
-            data: data
-        };
-        setMode(m);
-    };
-
+    // Removed old shape handleMouseDown
+    
     useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!mode || !startRef.current || !activeComponentId || !clip.templateData) return;
+        const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+            if (!mode || !startRef.current) return;
 
-            const pt = getSVGPoint(e);
-            const start = startRef.current;
-            const dx = pt.x - start.mouseX;
-            const dy = pt.y - start.mouseY;
+            const isTouchEvent = 'touches' in e;
+            const clientX = isTouchEvent ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+            const clientY = isTouchEvent ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
 
-            let newX = start.shapeX;
-            let newY = start.shapeY;
-            let newW = start.shapeW;
-            let newH = start.shapeH;
+            const pt = getSVGPoint({ clientX, clientY } as any);
+            const dx = pt.x - startRef.current.mouseX;
+            const dy = pt.y - startRef.current.mouseY;
 
-            if (mode === 'move') {
-                newX = start.shapeX + dx;
-                newY = start.shapeY + dy;
-            } else if (mode.startsWith('scale')) {
-                if (mode.includes('e')) newW = Math.max(1, start.shapeW + dx);
-                if (mode.includes('s')) newH = Math.max(1, start.shapeH + dy);
-                if (mode.includes('w')) {
-                    const delta = Math.min(dx, start.shapeW - 1);
-                    newX = start.shapeX + delta;
-                    newW = start.shapeW - delta;
+            if (activeTab === 'resource') {
+                if (mode === 'move') {
+                    setImageX(startRef.current.imageStartX + dx);
+                    setImageY(startRef.current.imageStartY + dy);
+                } else {
+                    // Determine actual width/height of the unscaled image from imageSvgBounds & naturalDimensions
+                    let w = imageSvgBounds.width;
+                    let h = imageSvgBounds.height;
+                    if (naturalDimensions.width > 0 && naturalDimensions.height > 0) {
+                        const containerRatio = imageSvgBounds.width / imageSvgBounds.height;
+                        const imageRatio = naturalDimensions.width / naturalDimensions.height;
+                        if (containerRatio > imageRatio) h = imageSvgBounds.width / imageRatio;
+                        else w = imageSvgBounds.height * imageRatio;
+                    }
+
+                    const signX = mode.includes('e') ? 1 : mode.includes('w') ? -1 : 0;
+                    const signY = mode.includes('s') ? 1 : mode.includes('n') ? -1 : 0;
+                    
+                    // We calculate scale change based on how much the edge moved relative to the center origin.
+                    // Because origin is center, a change of dx on the right edge means the total width changed by 2 * dx.
+                    // newScale = newTotalWidth / baseWidth
+                    
+                    let sx = startRef.current.imageStartScale;
+                    let sy = startRef.current.imageStartScaleY;
+
+                    if (signX !== 0 && w > 0) {
+                        sx = Math.max(0.01, sx + (dx * signX) / w);
+                    }
+                    if (signY !== 0 && h > 0) {
+                        sy = Math.max(0.01, sy + (dy * signY) / h);
+                    }
+
+                    setImageScale(sx);
+                    setImageScaleY(sy);
+
+                    const diffW = w * sx - w * startRef.current.imageStartScale;
+                    const diffH = h * sy - h * startRef.current.imageStartScaleY;
+                    setImageX(startRef.current.imageStartX + (signX * diffW / 2));
+                    setImageY(startRef.current.imageStartY + (signY * diffH / 2));
                 }
-                if (mode.includes('n')) {
-                    const delta = Math.min(dy, start.shapeH - 1);
-                    newY = start.shapeY + delta;
-                    newH = start.shapeH - delta;
-                }
-            }
-
-            // Update templateData
-            const newData = { ...clip.templateData };
-            const currentItem = newData[activeComponentId];
-            const shapeType = currentItem['data-shape-type'] || 'rect';
-
-            let newD = currentItem.d;
-            if (shapeType === 'rect') {
-                newD = getRectPath(newX, newY, newW, newH, currentItem.rx || 0, currentItem.ry || 0);
-            } else if (shapeType === 'circle' || shapeType === 'ellipse') {
-                newD = getEllipsePath(newX, newY, newW, newH);
-            } else if (shapeType === 'triangle') {
-                newD = getTrianglePath(newX, newY, newW, newH);
-            } else if (shapeType === 'star') {
-                newD = getStarPath(newX, newY, newW, newH);
-            } else if (shapeType === 'polygon' || shapeType === 'path') {
-                // For polygon and path, preserve the shape by transforming the existing path data
-                // Calculate transform relative to start state (using start.data.d as base)
-                const sX = newW / (start.shapeW || 1);
-                const sY = newH / (start.shapeH || 1);
+            } else if (activeTab === 'mask' && activeComponentId) {
+                const { shapeStartX, shapeStartY, shapeStartWidth, shapeStartHeight } = startRef.current;
                 
-                const dX = newX - (start.shapeX * sX);
-                const dY = newY - (start.shapeY * sY);
-                
-                if (start.data && start.data.d) {
-                   newD = transformPath(start.data.d, dX, dY, sX, sY);
+                let newX = shapeStartX;
+                let newY = shapeStartY;
+                let newW = shapeStartWidth;
+                let newH = shapeStartHeight;
+
+                if (mode === 'move') {
+                    newX += dx;
+                    newY += dy;
+                } else {
+                    if (mode.includes('e')) newW += dx;
+                    if (mode.includes('w')) { newX += dx; newW -= dx; }
+                    if (mode.includes('s')) newH += dy;
+                    if (mode.includes('n')) { newY += dy; newH -= dy; }
                 }
+
+                // Minimum dimensions
+                newW = Math.max(10, newW);
+                newH = Math.max(10, newH);
+
+                setLocalClip(prev => {
+                    const newData = { ...prev.templateData };
+                    const current = newData[activeComponentId];
+                    if (!current) return prev;
+
+                    const shapeType = current['data-shape-type'] || 'rect';
+                    let newD = current.d;
+                    if (shapeType === 'rect') {
+                        newD = getRectPath(newX, newY, newW, newH, current.rx || 0, current.ry || 0);
+                    } else if (shapeType === 'circle') {
+                        newD = getEllipsePath(newX, newY, newW, newH);
+                    } else if (startRef.current?.shapeStartD) {
+                        // For Triangles, Stars, Polygons, and custom Paths, deform the raw SVG path directly
+                        // This preserves irregular polygons and complex imported paths
+                        const sx = shapeStartWidth > 0 ? newW / shapeStartWidth : 1;
+                        const sy = shapeStartHeight > 0 ? newH / shapeStartHeight : 1;
+                        const tx = newX - shapeStartX * sx;
+                        const ty = newY - shapeStartY * sy;
+                        newD = transformPath(startRef.current.shapeStartD, tx, ty, sx, sy);
+                    }
+
+                    newData[activeComponentId] = { ...current, x: newX, y: newY, width: newW, height: newH, d: newD };
+                    return { ...prev, templateData: newData };
+                });
             }
-
-            newData[activeComponentId] = {
-                ...currentItem,
-                x: Math.round(newX * 100) / 100,
-                y: Math.round(newY * 100) / 100,
-                width: Math.round(newW * 100) / 100,
-                height: Math.round(newH * 100) / 100,
-                d: newD
-            };
-
-            onUpdate({ templateData: newData });
         };
 
         const handleMouseUp = () => {
@@ -301,31 +354,156 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
         if (mode) {
             window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('touchmove', handleMouseMove, { passive: false });
             window.addEventListener('mouseup', handleMouseUp);
+            window.addEventListener('touchend', handleMouseUp);
         }
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('touchmove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('touchend', handleMouseUp);
         };
-    }, [mode, activeComponentId, clip.templateData, onUpdate]);
+    }, [mode, activeTab, activeComponentId]);
+
+    const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent, handle: TransformMode, shapeId?: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (handle === 'move') {
+            if (activeTab === 'mask' && !shapeId && activeComponentId) {
+                // Clicking outside deselected shapes is fine
+                setActiveComponentId(null);
+                return;
+            }
+        }
+
+        if (shapeId && activeTab === 'mask') {
+            setActiveComponentId(shapeId);
+        }
+
+        const isTouchEvent = 'touches' in e;
+        const clientX = isTouchEvent ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = isTouchEvent ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
+
+        const pt = getSVGPoint({ clientX, clientY } as any);
+
+        let shapeX = 0, shapeY = 0, shapeW = 0, shapeH = 0;
+        let shapeD = '';
+        if (activeTab === 'mask' && (shapeId || activeComponentId)) {
+            const targetId = shapeId || activeComponentId;
+            const data = localClip.templateData?.[targetId!];
+            if (data) {
+                if (data.d) shapeD = data.d;
+                // Prioritize derived bounds from D if available to prevent drift
+                if (data.d) {
+                    const bounds = getBoundsFromPathD(data.d);
+                    if (bounds.width > 0) {
+                        shapeX = bounds.x;
+                        shapeY = bounds.y;
+                        shapeW = bounds.width;
+                        shapeH = bounds.height;
+                    } else {
+                        shapeX = data.x || 0;
+                        shapeY = data.y || 0;
+                        shapeW = data.width || 0;
+                        shapeH = data.height || 0;
+                    }
+                } else {
+                    shapeX = data.x || 0;
+                    shapeY = data.y || 0;
+                    shapeW = data.width || 0;
+                    shapeH = data.height || 0;
+                }
+                if (!shapeId) setActiveComponentId(targetId);
+            }
+        }
+
+        startRef.current = {
+            mouseX: pt.x,
+            mouseY: pt.y,
+            imageStartX: imageX,
+            imageStartY: imageY,
+            imageStartScale: imageScale,
+            imageStartScaleY: imageScaleY,
+            shapeStartX: shapeX,
+            shapeStartY: shapeY,
+            shapeStartWidth: shapeW,
+            shapeStartHeight: shapeH,
+            shapeStartD: shapeD,
+            handle
+        };
+        setMode(handle);
+    };
+
+    const renderHandles = (x: number, y: number, w: number, h: number, strokeColor: string) => {
+        const handleSize = Math.max(8, imageSvgBounds.width / 50) / zoom;
+        const hs = handleSize / 2;
+        const unselectedStrokeWidth = Math.max(0.5, imageSvgBounds.width / 1000);
+
+        const positions = [
+            { pos: 'nw' as TransformMode, cx: x, cy: y, cursor: 'nwse-resize' },
+            { pos: 'n' as TransformMode, cx: x + w / 2, cy: y, cursor: 'ns-resize' },
+            { pos: 'ne' as TransformMode, cx: x + w, cy: y, cursor: 'nesw-resize' },
+            { pos: 'e' as TransformMode, cx: x + w, cy: y + h / 2, cursor: 'ew-resize' },
+            { pos: 'se' as TransformMode, cx: x + w, cy: y + h, cursor: 'nwse-resize' },
+            { pos: 's' as TransformMode, cx: x + w / 2, cy: y + h, cursor: 'ns-resize' },
+            { pos: 'sw' as TransformMode, cx: x, cy: y + h, cursor: 'nesw-resize' },
+            { pos: 'w' as TransformMode, cx: x, cy: y + h / 2, cursor: 'ew-resize' },
+        ];
+
+        return (
+            <g>
+                <rect
+                    x={x} y={y} width={w} height={h}
+                    fill="transparent"
+                    stroke={strokeColor}
+                    strokeWidth={unselectedStrokeWidth * 4}
+                    strokeDasharray="4,4"
+                    vectorEffect="non-scaling-stroke"
+                    style={{ pointerEvents: 'none' }}
+                />
+                {positions.map((p) => (
+                    <rect
+                        key={p.pos}
+                        x={p.cx - hs}
+                        y={p.cy - hs}
+                        width={handleSize}
+                        height={handleSize}
+                        fill="white"
+                        stroke={strokeColor}
+                        strokeWidth={unselectedStrokeWidth * 4}
+                        vectorEffect="non-scaling-stroke"
+                        style={{ cursor: p.cursor, pointerEvents: 'all' }}
+                        onMouseDown={(e) => handleInteractionStart(e, p.pos)}
+                        onTouchStart={(e) => handleInteractionStart(e, p.pos)}
+                    />
+                ))}
+            </g>
+        );
+    };
 
 
     const handleSave = () => {
         const updates: Partial<Clip> = {
+            ...localClip,
             flipH,
             flipV,
             src: resourceSrc,
-            // type: resourceType as any // No longer needed, type is always 'mask'
-        }
+            imageX,
+            imageY,
+            imageScale,
+            imageScaleY
+        };
 
         if (rotationChanged) {
             updates.rotation = rotation;
         }
 
-        onUpdate(updates)
-        onClose()
-    }
+        onUpdate(updates);
+        onClose();
+    };
 
     const rotateLeft = () => {
         setRotation(r => ((r - 90) % 360 + 360) % 360)
@@ -367,44 +545,17 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
             }
         };
 
-        onUpdate({
+        setLocalClip(prev => ({
+            ...prev,
             templateData: newData,
             viewBox: `${imageSvgBounds.x} ${imageSvgBounds.y} ${imageSvgBounds.width} ${imageSvgBounds.height}`
-        });
+        }));
         setActiveComponentId(id);
     };
 
 
 
-    const renderHandles = (id: string, x: number, y: number, w: number, h: number) => {
-        // Adjust handle size based on the image size so they aren't too small or too big
-        const handleSize = Math.max(imageSvgBounds.width / 50, 8);
-        const half = handleSize / 2;
-        const strokeWidth = Math.max(1, imageSvgBounds.width / 500);
-
-        const ControlRect = ({ cx, cy, m, cursor }: { cx: number, cy: number, m: TransformMode, cursor: string }) => (
-            <rect
-                x={cx - half} y={cy - half} width={handleSize} height={handleSize}
-                fill="white" stroke="#00d9ff" strokeWidth={strokeWidth}
-                style={{ cursor, pointerEvents: 'auto' }}
-                onMouseDown={(e) => handleMouseDown(e, m, id)}
-            />
-        );
-
-        return (
-            <g>
-                <rect x={x} y={y} width={w} height={h} fill="none" stroke="#00d9ff" strokeWidth={strokeWidth} style={{ pointerEvents: 'none' }} />
-                <ControlRect cx={x} cy={y} m="scale-nw" cursor="nwse-resize" />
-                <ControlRect cx={x + w} cy={y} m="scale-ne" cursor="nesw-resize" />
-                <ControlRect cx={x} cy={y + h} m="scale-sw" cursor="nesw-resize" />
-                <ControlRect cx={x + w} cy={y + h} m="scale-se" cursor="nwse-resize" />
-                <ControlRect cx={x + w / 2} cy={y} m="scale-n" cursor="ns-resize" />
-                <ControlRect cx={x + w / 2} cy={y + h} m="scale-s" cursor="ns-resize" />
-                <ControlRect cx={x} cy={y + h / 2} m="scale-w" cursor="ew-resize" />
-                <ControlRect cx={x + w} cy={y + h / 2} m="scale-e" cursor="ew-resize" />
-            </g>
-        );
-    };
+    // Removed renderHandles since mask shape size is fixed and original image is dragged instead
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -434,113 +585,190 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
             <div className="flex flex-1 overflow-hidden bg-white dark:bg-zinc-950">
                 {/* Left: Preview Area */}
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center p-8 border-r overflow-hidden relative group">
+                <div className="flex-1 bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center p-12 border-r overflow-hidden relative group">
                     <div className="absolute inset-0 pattern-grid-lg opacity-5 pointer-events-none" />
 
                     <div
-                        className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 w-full h-full overflow-hidden flex items-center justify-center"
+                        className="relative shadow-2xl rounded-sm ring-1 ring-border bg-black/50 flex items-center justify-center transition-transform duration-200"
+                        style={{
+                            aspectRatio: imageSvgBounds.height ? `${imageSvgBounds.width} / ${imageSvgBounds.height}` : 'auto',
+                            width: '100%',
+                            maxHeight: '100%',
+                            // A CSS trick to make aspect ratio fit inside a flex container without breaking its bounds
+                            objectFit: 'contain'
+                        }}
                     >
                         <svg
                             ref={svgRef}
-                            viewBox={`${imageSvgBounds.x} ${imageSvgBounds.y} ${imageSvgBounds.width} ${imageSvgBounds.height}`}
-                            className="w-full h-full"
+                            viewBox={`${imageSvgBounds.x + (imageSvgBounds.width * (1 - 1/zoom)) / 2} ${imageSvgBounds.y + (imageSvgBounds.height * (1 - 1/zoom)) / 2} ${imageSvgBounds.width / zoom} ${imageSvgBounds.height / zoom}`}
+                            className="absolute inset-0 w-full h-full overflow-hidden"
                             preserveAspectRatio="xMidYMid meet"
+                            onMouseDown={(e) => handleInteractionStart(e, 'move')}
+                            onTouchStart={(e) => handleInteractionStart(e, 'move')}
+                            style={{ cursor: mode === 'move' ? 'grabbing' : 'grab' }}
                         >
                             {/* 1. Background (Image or Video) */}
-                            <g style={{
-                                transform: `scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1}) rotate(${rotation}deg)`,
-                                transformOrigin: 'center',
-                                transition: 'transform 0.3s ease-in-out',
-                                opacity: 0.7
-                            }}>
-                                {resourceType === 'video' ? (
-                                    <foreignObject
-                                        x={imageSvgBounds.x}
-                                        y={imageSvgBounds.y}
-                                        width={imageSvgBounds.width}
-                                        height={imageSvgBounds.height}
-                                    >
-                                        <video
-                                            ref={videoRef}
-                                            src={resourceSrc}
-                                            className="w-full h-full object-contain"
-                                            controls={false}
-                                            muted
-                                            autoPlay
-                                            loop
-                                        />
-                                    </foreignObject>
-                                ) : (
-                                    <image
-                                        href={resourceSrc}
-                                        x={imageSvgBounds.x}
-                                        y={imageSvgBounds.y}
-                                        width={imageSvgBounds.width}
-                                        height={imageSvgBounds.height}
-                                        preserveAspectRatio="xMidYMid meet"
-                                    />
-                                )}
-                            </g>
+                            {(() => {
+                                // Calculate actual dimensions to mimic object-fit: cover but with exact width/height/x/y
+                                let w = imageSvgBounds.width;
+                                let h = imageSvgBounds.height;
+                                let objX = imageSvgBounds.x;
+                                let objY = imageSvgBounds.y;
 
-                            {/* 2. Mask Shapes Overlay — no rotation/flip, those are resource-only */}
-                            <g>
-                                {clip.templateData && Object.entries(clip.templateData).map(([id, data]: [string, any]) => {
-                                    const isActive = id === activeComponentId;
-                                    const bx = data.x || 0;
-                                    const by = data.y || 0;
-                                    const bw = data.width || 0;
-                                    const bh = data.height || 0;
+                                if (naturalDimensions.width > 0 && naturalDimensions.height > 0) {
+                                    const containerRatio = imageSvgBounds.width / imageSvgBounds.height;
+                                    const imageRatio = naturalDimensions.width / naturalDimensions.height;
 
-                                    const commonProps = {
-                                        fill: isActive ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 0, 255, 0.2)",
-                                        stroke: isActive ? "red" : "blue",
-                                        strokeWidth: isActive ? Math.max(1, imageSvgBounds.width / 500) : Math.max(0.5, imageSvgBounds.width / 1000),
-                                        vectorEffect: "non-scaling-stroke" as any,
-                                        style: { cursor: 'move', pointerEvents: 'auto' } as React.CSSProperties
-                                    };
+                                    if (containerRatio > imageRatio) {
+                                        // Container is wider than image (relative to height) -> fit to width
+                                        w = imageSvgBounds.width;
+                                        h = imageSvgBounds.width / imageRatio;
+                                        objY = imageSvgBounds.y - (h - imageSvgBounds.height) / 2;
+                                    } else {
+                                        // Container is taller than image (relative to width) -> fit to height
+                                        h = imageSvgBounds.height;
+                                        w = imageSvgBounds.height * imageRatio;
+                                        objX = imageSvgBounds.x - (w - imageSvgBounds.width) / 2;
+                                    }
+                                }
 
-                                    const mouseDownHandler = (e: React.MouseEvent) => handleMouseDown(e, 'move', id);
+                                return (
+                                    <g style={{
+                                        transform: `translate(${imageX}px, ${imageY}px) scale(${imageScale * (flipH ? -1 : 1)}, ${imageScaleY * (flipV ? -1 : 1)}) rotate(${rotation}deg)`,
+                                        transformOrigin: 'center',
+                                        transition: mode === 'move' ? 'none' : 'transform 0.3s ease-in-out',
+                                        opacity: 1
+                                    }}>
+                                        {resourceType === 'video' ? (
+                                            <foreignObject
+                                                x={objX}
+                                                y={objY}
+                                                width={w}
+                                                height={h}
+                                            >
+                                                <video
+                                                    ref={videoRef}
+                                                    src={resourceSrc}
+                                                    className="w-full h-full object-cover"
+                                                    controls={false}
+                                                    muted
+                                                    autoPlay
+                                                    loop
+                                                />
+                                            </foreignObject>
+                                        ) : (
+                                            <image
+                                                href={resourceSrc}
+                                                x={objX}
+                                                y={objY}
+                                                width={w}
+                                                height={h}
+                                                preserveAspectRatio="none"
+                                            />
+                                        )}
+                                        {activeTab === 'resource' && renderHandles(objX, objY, w, h, "#3b82f6")}
+                                    </g>
+                                );
+                            })()}
+
+                            {/* 2. Mask Shapes Overlay */}
+                            <g style={{ pointerEvents: 'none' }}>
+                                {localClip.templateData && Object.entries(localClip.templateData).map(([id, data]: [string, any]) => {
+                                    const fill = 'rgba(0,0,0,0.6)';
+
+                                    const unselectedStrokeWidth = Math.max(0.5, imageSvgBounds.width / 1000);
 
                                     return (
                                         <g key={id}>
+                                            <mask id={`mask-${id}`}>
+                                                <rect x={imageSvgBounds.x} y={imageSvgBounds.y} width={imageSvgBounds.width} height={imageSvgBounds.height} fill="white" />
+                                                {data.d && (
+                                                    <path d={data.d} fill="black" />
+                                                )}
+                                            </mask>
+                                            <rect
+                                                x={imageSvgBounds.x}
+                                                y={imageSvgBounds.y}
+                                                width={imageSvgBounds.width}
+                                                height={imageSvgBounds.height}
+                                                fill={activeTab === 'resource' ? 'transparent' : fill}
+                                                mask={activeTab === 'resource' ? undefined : `url(#mask-${id})`}
+                                            />
+                                            {/* Original path border for interaction */}
                                             {data.d && (
-                                                <path d={data.d} {...commonProps} onMouseDown={mouseDownHandler} />
+                                                <path
+                                                    d={data.d}
+                                                    fill={activeTab === 'mask' ? "transparent" : "none"}
+                                                    stroke="#ff0000"
+                                                    strokeWidth={unselectedStrokeWidth * 2}
+                                                    vectorEffect="non-scaling-stroke"
+                                                    style={{ pointerEvents: activeTab === 'mask' ? 'all' : 'none', cursor: activeTab === 'mask' ? 'move' : 'default' }}
+                                                    onMouseDown={(e) => handleInteractionStart(e, 'move', id)}
+                                                    onTouchStart={(e) => handleInteractionStart(e, 'move', id)}
+                                                />
                                             )}
-                                            {isActive && renderHandles(id, bx, by, bw, bh)}
+                                            {/* Render Handles for Mask Object */}
+                                            {activeTab === 'mask' && activeComponentId === id && (() => {
+                                                let bx = data.x || 0;
+                                                let by = data.y || 0;
+                                                let bw = data.width || 0;
+                                                let bh = data.height || 0;
+
+                                                if (data.d) {
+                                                    const bounds = getBoundsFromPathD(data.d);
+                                                    if (bounds.width > 0) {
+                                                        bx = bounds.x;
+                                                        by = bounds.y;
+                                                        bw = bounds.width;
+                                                        bh = bounds.height;
+                                                    }
+                                                }
+                                                return renderHandles(bx, by, bw, bh, "#ef4444");
+                                            })()}
                                         </g>
                                     );
                                 })}
                             </g>
+                            
+                            {/* 3. Preview Output Border */}
+                            <rect 
+                                x={imageSvgBounds.x} 
+                                y={imageSvgBounds.y} 
+                                width={imageSvgBounds.width} 
+                                height={imageSvgBounds.height} 
+                                fill="none" 
+                                stroke="#00ffff" 
+                                strokeWidth={Math.max(2, imageSvgBounds.width / 500)} 
+                                strokeDasharray="5,5"
+                                style={{ pointerEvents: 'none' }}
+                            />
                         </svg>
                     </div>
 
-                    {/* Toolbar for Shapes */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-800 p-2 rounded-lg shadow-lg border flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => addShape('rect')} title="Rectangle">
-                            <Square className="w-5 h-5" />
+                    {/* Zoom Controls */}
+                    <div className="hidden absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-background/90 backdrop-blur-md p-1.5 rounded-full border shadow-md">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} title="Zoom Out">
+                            <ZoomOut className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addShape('circle')} title="Circle/Ellipse">
-                            <Circle className="w-5 h-5" />
+                        <div className="text-[11px] font-mono font-medium w-12 text-center select-none text-foreground/80">
+                            {Math.round(zoom * 100)}%
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setZoom(z => Math.min(5, z + 0.1))} title="Zoom In">
+                            <ZoomIn className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addShape('triangle')} title="Triangle">
-                            <Triangle className="w-5 h-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addShape('star')} title="Star">
-                            <Star className="w-5 h-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => addShape('polygon')} title="Polygon">
-                            <Hexagon className="w-5 h-5" />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full ml-1" onClick={() => setZoom(0.9)} title="Fit to Screen (90%)" disabled={zoom === 0.9}>
+                            <Maximize2 className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
 
                 {/* Right: Properties Panel */}
                 <div className="w-[400px] shrink-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden border-l">
-                    <Tabs defaultValue="resource" className="flex-1 flex flex-col">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
                         <div className="px-4 pt-4 shrink-0">
                             <TabsList className="w-full grid grid-cols-2">
                                 <TabsTrigger value="resource">Resource</TabsTrigger>
-                                <TabsTrigger value="mask" disabled={!clip.templateData}>Mask Shapes</TabsTrigger>
+                                <TabsTrigger value="mask" disabled={!localClip.templateData}>Mask Shapes</TabsTrigger>
                             </TabsList>
                         </div>
 
@@ -548,11 +776,63 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                              <TabsContent value="resource" className="absolute inset-0 mt-0">
                                 <ScrollArea className="h-full w-full" type="always">
                                     <div className="flex flex-col p-4 gap-4">
-                                    <div className="space-y-4 shrink-0">
-                                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-                                            <Upload className="w-4 h-4" />
-                                            Source & Transform
-                                        </div>
+                                        <div className="space-y-4 shrink-0">
+                                            {/* 크기 정보 패널 위치 이동 (캔버스 위 -> 사이드바 상단) */}
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                                                <Monitor className="w-4 h-4" />
+                                                Dimensions Info
+                                            </div>
+                                            <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-2 relative">
+                                                <div className="flex items-center justify-between px-3 py-1.5 bg-blue-600/10 text-blue-700 dark:text-blue-300 border border-blue-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                                    <span className="font-medium flex items-center gap-1"><Monitor className="w-3.5 h-3.5" />Preview Output:</span>
+                                                    <span className="font-mono font-semibold tabular-nums">
+                                                        {Math.round(localClip.width || 100)} × {Math.round(localClip.height || 100)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-600/10 text-emerald-700 dark:text-emerald-300 border border-emerald-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                                    <span className="font-medium flex items-center gap-1"><Hexagon className="w-3.5 h-3.5" />Shape Bound:</span>
+                                                    <span className="font-mono font-semibold tabular-nums">
+                                                        {(() => {
+                                                            let sw = 0, sh = 0;
+                                                            if (localClip.templateData) {
+                                                                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                                                                Object.values(localClip.templateData).forEach((d: any) => {
+                                                                    if (d.d) {
+                                                                        const bounds = getBoundsFromPathD(d.d);
+                                                                        if (bounds.width > 0 && bounds.height > 0) {
+                                                                            minX = Math.min(minX, bounds.x);
+                                                                            minY = Math.min(minY, bounds.y);
+                                                                            maxX = Math.max(maxX, bounds.x + bounds.width);
+                                                                            maxY = Math.max(maxY, bounds.y + bounds.height);
+                                                                        }
+                                                                    }
+                                                                });
+                                                                if (minX !== Infinity) { sw = maxX - minX; sh = maxY - minY; }
+                                                            }
+                                                            return sw > 0 ? `${Math.round(sw)} × ${Math.round(sh)}` : '0 × 0';
+                                                        })()}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col gap-1 px-3 py-1.5 bg-amber-600/10 text-amber-700 dark:text-amber-300 border border-amber-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-medium flex items-center gap-1"><ImagePlus className="w-3.5 h-3.5" />Native File Size:</span>
+                                                        <span className="font-mono font-semibold tabular-nums">
+                                                            {naturalDimensions.width} × {naturalDimensions.height}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between border-t border-amber-600/10 pt-1 mt-0.5">
+                                                        <span className="font-medium flex items-center gap-1 opacity-80"><Monitor className="w-3 h-3 ml-0.5" />Modal Viewport:</span>
+                                                        <span className="font-mono font-semibold tabular-nums opacity-90">
+                                                            {Math.round(imageSvgBounds.width)} × {Math.round(imageSvgBounds.height)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 mt-6">
+                                                <Upload className="w-4 h-4" />
+                                                Source & Transform
+                                            </div>
                                         <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
                                             {/* File Upload / Swap */}
                                             <div className="space-y-2">
@@ -644,51 +924,52 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                     </div>
                                     
                                     <div className="space-y-2">
-                                         <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
                                             <ImageIcon className="w-4 h-4" />
                                             Asset Library
-                                         </div>
-                                         <div className="p-2 grid grid-cols-2 gap-2 border rounded-md bg-muted/10">
-                                                 {assets.map((asset, i) => (
-                                                     <Card
-                                                         key={i}
-                                                         className="overflow-hidden cursor-pointer hover:border-primary group relative transition-all active:scale-95"
-                                                         onClick={() => {
-                                                             setResourceSrc(asset.src);
-                                                             setResourceType(asset.type);
-                                                         }}
-                                                     >
-                                                         <CardContent className="p-0 aspect-video relative bg-black/5 flex items-center justify-center">
-                                                             {asset.type === 'video' ? (
-                                                                 asset.thumbnail ? (
-                                                                     <img src={asset.thumbnail} className="w-full h-full object-cover" />
-                                                                 ) : (
-                                                                     <video src={asset.src} className="w-full h-full object-cover" />
-                                                                 )
-                                                             ) : (
-                                                                 <img src={asset.src} className="w-full h-full object-cover" />
-                                                             )}
-                                                             
-                                                             <div className={cn(
-                                                                 "absolute inset-0 transition-opacity flex items-center justify-center text-white text-[10px] font-bold bg-black/40",
-                                                                 resourceSrc === asset.src ? "opacity-100 ring-4 ring-primary ring-inset" : "opacity-0 group-hover:opacity-100"
-                                                             )}>
-                                                                 {resourceSrc === asset.src ? "SELECTED" : "USE THIS"}
-                                                             </div>
-                                                             
-                                                             {asset.type === 'video' && (
-                                                                 <div className="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-black/60 text-white text-[8px] font-bold flex items-center gap-1">
-                                                                     <Film className="w-2 h-2" /> VID
-                                                                 </div>
-                                                             )}
-                                                         </CardContent>
-                                                     </Card>
-                                                 ))}
-                                             </div>
+                                        </div>
+                                        <div className="p-2 grid grid-cols-2 gap-2 border rounded-md bg-muted/10">
+                                            {assets.map((asset, i) => (
+                                                <Card
+                                                    key={i}
+                                                    className="overflow-hidden cursor-pointer hover:border-primary group relative transition-all active:scale-95"
+                                                    onClick={() => {
+                                                        const rawSrc = extractRawImageFromSVG(asset.src);
+                                                        setResourceSrc(rawSrc);
+                                                        setResourceType(asset.type);
+                                                    }}
+                                                >
+                                                    <CardContent className="p-0 aspect-video relative bg-black/5 flex items-center justify-center">
+                                                        {asset.type === 'video' ? (
+                                                            asset.thumbnail ? (
+                                                                <img src={asset.thumbnail} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <video src={asset.src} className="w-full h-full object-cover" />
+                                                            )
+                                                        ) : (
+                                                            <img src={asset.src} className="w-full h-full object-cover" />
+                                                        )}
+                                                        
+                                                        <div className={cn(
+                                                            "absolute inset-0 transition-opacity flex items-center justify-center text-white text-[10px] font-bold bg-black/40",
+                                                            resourceSrc === asset.src ? "opacity-100 ring-4 ring-primary ring-inset" : "opacity-0 group-hover:opacity-100"
+                                                        )}>
+                                                            {resourceSrc === asset.src ? "SELECTED" : "USE THIS"}
+                                                        </div>
+                                                        
+                                                        {asset.type === 'video' && (
+                                                            <div className="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-black/60 text-white text-[8px] font-bold flex items-center gap-1">
+                                                                <Film className="w-2 h-2" /> VID
+                                                            </div>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                    </div>
                                 </ScrollArea>
-                             </TabsContent>
+                            </TabsContent>
 
                             <TabsContent value="mask" className="mt-0 h-full overflow-y-auto custom-scrollbar p-4">
                                 <div className="space-y-4">
@@ -696,10 +977,30 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                         <Maximize2 className="w-4 h-4" />
                                         Shape Geometry
                                     </div>
+
+                                    {/* Toolbar for Shapes moved here */}
+                                    <div className="bg-muted/30 p-2 rounded-lg border flex gap-2 justify-center">
+                                        <Button variant="outline" size="icon" onClick={() => addShape('rect')} title="Rectangle">
+                                            <Square className="w-5 h-5" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => addShape('circle')} title="Circle/Ellipse">
+                                            <Circle className="w-5 h-5" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => addShape('triangle')} title="Triangle">
+                                            <Triangle className="w-5 h-5" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => addShape('star')} title="Star">
+                                            <Star className="w-5 h-5" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => addShape('polygon')} title="Polygon">
+                                            <Hexagon className="w-5 h-5" />
+                                        </Button>
+                                    </div>
+
                                     <div className="space-y-4">
 
 
-                                        {clip.templateData && Object.entries(clip.templateData).map(([id, data]: [string, any]) => (
+                                        {localClip.templateData && Object.entries(localClip.templateData).map(([id, data]: [string, any]) => (
                                             <div key={id} className={cn(
                                                 "p-4 rounded-lg border space-y-4 transition-colors",
                                                 activeComponentId === id ? "bg-primary/5 border-primary/20" : "bg-muted/30 hover:bg-muted/50"
@@ -731,14 +1032,14 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                                     max={20}
                                                                     step={1}
                                                                     onValueChange={([val]) => {
-                                                                        const newData = { ...clip.templateData };
+                                                                        const newData = { ...localClip.templateData };
                                                                         const current = newData[id];
                                                                         const newProps = { ...current, sides: val };
                                                                         const { x, y, width, height } = newProps;
                                                                         
                                                                         const newD = getPolygonPath(x, y, width, height, val);
                                                                         newData[id] = { ...newProps, d: newD };
-                                                                        onUpdate({ templateData: newData });
+                                                                        setLocalClip(prev => ({ ...prev, templateData: newData }));
                                                                     }}
                                                                     className="flex-1"
                                                                 />
@@ -756,22 +1057,29 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                                     value={data[prop]}
                                                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                                         const val = Number(e.target.value);
-                                                                        const newData = { ...clip.templateData };
+                                                                        const newData = { ...localClip.templateData };
                                                                         const current = newData[id];
                                                                         const newProps = { ...current, [prop]: val };
 
                                                                         const shapeType = current['data-shape-type'] || 'rect';
                                                                         let newD = current.d;
                                                                         const { x, y, width, height } = newProps;
-
-                                                                        if (shapeType === 'rect') newD = getRectPath(x, y, width, height, current.rx || 0, current.ry || 0);
-                                                                        else if (shapeType === 'circle') newD = getEllipsePath(x, y, width, height);
-                                                                        else if (shapeType === 'triangle') newD = getTrianglePath(x, y, width, height);
-                                                                        else if (shapeType === 'star') newD = getStarPath(x, y, width, height);
-                                                                        else if (shapeType === 'polygon') newD = getPolygonPath(x, y, width, height, current.sides || 5);
-
+                                                                        if (shapeType === 'rect') {
+                                                                            newD = getRectPath(x, y, width, height, current.rx || 0, current.ry || 0);
+                                                                        } else if (shapeType === 'circle') {
+                                                                            newD = getEllipsePath(x, y, width, height);
+                                                                        } else if (current.d) {
+                                                                            const oldW = current.width || 1;
+                                                                            const oldH = current.height || 1;
+                                                                            const sx = width / oldW;
+                                                                            const sy = height / oldH;
+                                                                            const tx = x - (current.x || 0) * sx;
+                                                                            const ty = y - (current.y || 0) * sy;
+                                                                            newD = transformPath(current.d, tx, ty, sx, sy);
+                                                                        }
+                                                                        
                                                                         newData[id] = { ...newProps, d: newD };
-                                                                        onUpdate({ templateData: newData });
+                                                                        setLocalClip(prev => ({ ...prev, templateData: newData }));
                                                                     }}
                                                                 />
                                                             </div>

@@ -18,8 +18,10 @@ export interface Clip {
     fontFamily?: string
     fontSize?: number
     lineHeight?: number // 줄 간격 배율 (기본값 1.2)
+    letterSpacing?: number // 자간 (em 단위, 기본값 0)
     textAlign?: 'left' | 'center' | 'right' // 텍스트 정렬 (기본값 'center')
     textCurve?: number // 곡선 강도 (0=직선, 양수=위로 볼록, 음수=아래로 볼록)
+    isVertical?: boolean // 세로쓰기 여부 (텍스트 클립 전용)
     text?: string
     width?: number
     height?: number
@@ -49,6 +51,10 @@ export interface Clip {
         saturate: number // 1 is normal
         blur: number // 0 is none
     }
+    imageScale?: number // scale factor for inner image zoom (1 is normal) X-axis
+    imageScaleY?: number // scale factor for inner image zoom (1 is normal) Y-axis
+    imageX?: number // x offset for inner image inside mask
+    imageY?: number // y offset for inner image inside mask
     templateData?: any // Metadata for complex templates (JSON)
     // Editor controls from template
     editor_move?: boolean
