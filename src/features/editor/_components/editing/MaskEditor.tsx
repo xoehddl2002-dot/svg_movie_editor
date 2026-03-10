@@ -603,9 +603,17 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                             viewBox={`${imageSvgBounds.x + (imageSvgBounds.width * (1 - 1/zoom)) / 2} ${imageSvgBounds.y + (imageSvgBounds.height * (1 - 1/zoom)) / 2} ${imageSvgBounds.width / zoom} ${imageSvgBounds.height / zoom}`}
                             className="absolute inset-0 w-full h-full overflow-hidden"
                             preserveAspectRatio="xMidYMid meet"
-                            onMouseDown={(e) => handleInteractionStart(e, 'move')}
-                            onTouchStart={(e) => handleInteractionStart(e, 'move')}
-                            style={{ cursor: mode === 'move' ? 'grabbing' : 'grab' }}
+                            onMouseDown={(e) => {
+                                if (activeTab === 'mask') {
+                                    handleInteractionStart(e, 'move');
+                                }
+                            }}
+                            onTouchStart={(e) => {
+                                if (activeTab === 'mask') {
+                                    handleInteractionStart(e, 'move');
+                                }
+                            }}
+                            style={{ cursor: mode === 'move' ? 'grabbing' : 'default' }}
                         >
                             {/* 1. Background (Image or Video) */}
                             {(() => {
@@ -636,7 +644,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                     <g style={{
                                         transform: `translate(${imageX}px, ${imageY}px) scale(${imageScale * (flipH ? -1 : 1)}, ${imageScaleY * (flipV ? -1 : 1)}) rotate(${rotation}deg)`,
                                         transformOrigin: 'center',
-                                        transition: mode === 'move' ? 'none' : 'transform 0.3s ease-in-out',
+                                        transition: mode ? 'none' : 'transform 0.3s ease-in-out',
                                         opacity: 1
                                     }}>
                                         {resourceType === 'video' ? (
@@ -654,6 +662,17 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                     muted
                                                     autoPlay
                                                     loop
+                                                    onMouseDown={(e) => {
+                                                        if (activeTab === 'resource') {
+                                                            handleInteractionStart(e, 'move');
+                                                        }
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        if (activeTab === 'resource') {
+                                                            handleInteractionStart(e, 'move');
+                                                        }
+                                                    }}
+                                                    style={{ cursor: activeTab === 'resource' ? (mode ? 'grabbing' : 'grab') : 'default' }}
                                                 />
                                             </foreignObject>
                                         ) : (
@@ -664,6 +683,17 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                 width={w}
                                                 height={h}
                                                 preserveAspectRatio="none"
+                                                onMouseDown={(e) => {
+                                                    if (activeTab === 'resource') {
+                                                        handleInteractionStart(e, 'move');
+                                                    }
+                                                }}
+                                                onTouchStart={(e) => {
+                                                    if (activeTab === 'resource') {
+                                                        handleInteractionStart(e, 'move');
+                                                    }
+                                                }}
+                                                style={{ cursor: activeTab === 'resource' ? (mode ? 'grabbing' : 'grab') : 'default' }}
                                             />
                                         )}
                                         {activeTab === 'resource' && renderHandles(objX, objY, w, h, "#3b82f6")}
@@ -681,16 +711,16 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                     return (
                                         <g key={id}>
                                             <mask id={`mask-${id}`}>
-                                                <rect x={imageSvgBounds.x} y={imageSvgBounds.y} width={imageSvgBounds.width} height={imageSvgBounds.height} fill="white" />
+                                                <rect x="-10000" y="-10000" width="20000" height="20000" fill="white" />
                                                 {data.d && (
                                                     <path d={data.d} fill="black" />
                                                 )}
                                             </mask>
                                             <rect
-                                                x={imageSvgBounds.x}
-                                                y={imageSvgBounds.y}
-                                                width={imageSvgBounds.width}
-                                                height={imageSvgBounds.height}
+                                                x="-10000"
+                                                y="-10000"
+                                                width="20000"
+                                                height="20000"
                                                 fill={activeTab === 'resource' ? 'transparent' : fill}
                                                 mask={activeTab === 'resource' ? undefined : `url(#mask-${id})`}
                                             />
@@ -702,7 +732,10 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                     stroke="#ff0000"
                                                     strokeWidth={unselectedStrokeWidth * 2}
                                                     vectorEffect="non-scaling-stroke"
-                                                    style={{ pointerEvents: activeTab === 'mask' ? 'all' : 'none', cursor: activeTab === 'mask' ? 'move' : 'default' }}
+                                                    style={{ 
+                                                        pointerEvents: activeTab === 'mask' ? 'all' : 'none', 
+                                                        cursor: activeTab === 'mask' ? (mode ? 'grabbing' : 'grab') : 'default' 
+                                                    }}
                                                     onMouseDown={(e) => handleInteractionStart(e, 'move', id)}
                                                     onTouchStart={(e) => handleInteractionStart(e, 'move', id)}
                                                 />
@@ -764,7 +797,75 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
 
                 {/* Right: Properties Panel */}
                 <div className="w-[400px] shrink-0 flex flex-col bg-white dark:bg-zinc-950 overflow-hidden border-l">
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+                    <div className="px-4 pt-4 pb-2 border-b bg-muted/5 shrink-0">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 mb-3">
+                            <Monitor className="w-4 h-4" />
+                            Dimensions Info
+                        </div>
+                        <div className="flex flex-col gap-2 relative">
+                            <div className="flex items-center justify-between px-3 py-1.5 bg-cyan-600/10 text-cyan-700 dark:text-cyan-300 border border-cyan-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                <span className="font-medium flex items-center gap-1"><Monitor className="w-3.5 h-3.5" />Preview Output:</span>
+                                <span className="font-mono font-semibold tabular-nums">
+                                    {Math.round(localClip.width || 100)} × {Math.round(localClip.height || 100)}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between px-3 py-1.5 bg-red-600/10 text-red-700 dark:text-red-300 border border-red-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                <span className="font-medium flex items-center gap-1"><Hexagon className="w-3.5 h-3.5" />Shape Bound:</span>
+                                <span className="font-mono font-semibold tabular-nums">
+                                    {(() => {
+                                        let sw = 0, sh = 0;
+                                        if (localClip.templateData) {
+                                            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                                            Object.values(localClip.templateData).forEach((d: any) => {
+                                                if (d.d) {
+                                                    const bounds = getBoundsFromPathD(d.d);
+                                                    if (bounds.width > 0 && bounds.height > 0) {
+                                                        minX = Math.min(minX, bounds.x);
+                                                        minY = Math.min(minY, bounds.y);
+                                                        maxX = Math.max(maxX, bounds.x + bounds.width);
+                                                        maxY = Math.max(maxY, bounds.y + bounds.height);
+                                                    }
+                                                }
+                                            });
+                                            if (minX !== Infinity) { sw = maxX - minX; sh = maxY - minY; }
+                                        }
+                                        return sw > 0 ? `${Math.round(sw)} × ${Math.round(sh)}` : '0 × 0';
+                                    })()}
+                                </span>
+                            </div>
+                            <div className="flex flex-col gap-1 px-3 py-1.5 bg-blue-600/10 text-blue-700 dark:text-blue-300 border border-blue-600/20 rounded-md text-[11px] whitespace-nowrap">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-medium flex items-center gap-1"><ImagePlus className="w-3.5 h-3.5" />Native File Size:</span>
+                                    <span className="font-mono font-semibold tabular-nums">
+                                        {naturalDimensions.width} × {naturalDimensions.height}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between border-t border-blue-600/10 pt-1 mt-0.5">
+                                    <span className="font-medium flex items-center gap-1 opacity-80"><Monitor className="w-3 h-3 ml-0.5" />Modal Viewport:</span>
+                                    <span className="font-mono font-semibold tabular-nums opacity-90">
+                                        {(() => {
+                                            let vw = imageSvgBounds.width;
+                                            let vh = imageSvgBounds.height;
+                                            if (naturalDimensions.width > 0 && naturalDimensions.height > 0) {
+                                                const containerRatio = imageSvgBounds.width / imageSvgBounds.height;
+                                                const imageRatio = naturalDimensions.width / naturalDimensions.height;
+                                                if (containerRatio > imageRatio) {
+                                                    vw = imageSvgBounds.width;
+                                                    vh = imageSvgBounds.width / imageRatio;
+                                                } else {
+                                                    vh = imageSvgBounds.height;
+                                                    vw = imageSvgBounds.height * imageRatio;
+                                                }
+                                            }
+                                            return `${Math.round(vw)} × ${Math.round(vh)}`;
+                                        })()}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                         <div className="px-4 pt-4 shrink-0">
                             <TabsList className="w-full grid grid-cols-2">
                                 <TabsTrigger value="resource">Resource</TabsTrigger>
@@ -777,59 +878,7 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                 <ScrollArea className="h-full w-full" type="always">
                                     <div className="flex flex-col p-4 gap-4">
                                         <div className="space-y-4 shrink-0">
-                                            {/* 크기 정보 패널 위치 이동 (캔버스 위 -> 사이드바 상단) */}
                                             <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-                                                <Monitor className="w-4 h-4" />
-                                                Dimensions Info
-                                            </div>
-                                            <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-2 relative">
-                                                <div className="flex items-center justify-between px-3 py-1.5 bg-blue-600/10 text-blue-700 dark:text-blue-300 border border-blue-600/20 rounded-md text-[11px] whitespace-nowrap">
-                                                    <span className="font-medium flex items-center gap-1"><Monitor className="w-3.5 h-3.5" />Preview Output:</span>
-                                                    <span className="font-mono font-semibold tabular-nums">
-                                                        {Math.round(localClip.width || 100)} × {Math.round(localClip.height || 100)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-600/10 text-emerald-700 dark:text-emerald-300 border border-emerald-600/20 rounded-md text-[11px] whitespace-nowrap">
-                                                    <span className="font-medium flex items-center gap-1"><Hexagon className="w-3.5 h-3.5" />Shape Bound:</span>
-                                                    <span className="font-mono font-semibold tabular-nums">
-                                                        {(() => {
-                                                            let sw = 0, sh = 0;
-                                                            if (localClip.templateData) {
-                                                                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                                                                Object.values(localClip.templateData).forEach((d: any) => {
-                                                                    if (d.d) {
-                                                                        const bounds = getBoundsFromPathD(d.d);
-                                                                        if (bounds.width > 0 && bounds.height > 0) {
-                                                                            minX = Math.min(minX, bounds.x);
-                                                                            minY = Math.min(minY, bounds.y);
-                                                                            maxX = Math.max(maxX, bounds.x + bounds.width);
-                                                                            maxY = Math.max(maxY, bounds.y + bounds.height);
-                                                                        }
-                                                                    }
-                                                                });
-                                                                if (minX !== Infinity) { sw = maxX - minX; sh = maxY - minY; }
-                                                            }
-                                                            return sw > 0 ? `${Math.round(sw)} × ${Math.round(sh)}` : '0 × 0';
-                                                        })()}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-col gap-1 px-3 py-1.5 bg-amber-600/10 text-amber-700 dark:text-amber-300 border border-amber-600/20 rounded-md text-[11px] whitespace-nowrap">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="font-medium flex items-center gap-1"><ImagePlus className="w-3.5 h-3.5" />Native File Size:</span>
-                                                        <span className="font-mono font-semibold tabular-nums">
-                                                            {naturalDimensions.width} × {naturalDimensions.height}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between border-t border-amber-600/10 pt-1 mt-0.5">
-                                                        <span className="font-medium flex items-center gap-1 opacity-80"><Monitor className="w-3 h-3 ml-0.5" />Modal Viewport:</span>
-                                                        <span className="font-mono font-semibold tabular-nums opacity-90">
-                                                            {Math.round(imageSvgBounds.width)} × {Math.round(imageSvgBounds.height)}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 mt-6">
                                                 <Upload className="w-4 h-4" />
                                                 Source & Transform
                                             </div>
