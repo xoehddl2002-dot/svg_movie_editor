@@ -124,12 +124,47 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
     // Sync incoming changes from the store if the user modifies the clip in the timeline/preview while the editor is open
     useEffect(() => {
         setLocalClip(prev => {
+            let newTemplateData = clip.templateData;
+            let newViewBox = clip.viewBox;
+
+            // Normalize templateData and viewBox to match the current physical clip size 
+            // This fixes shapes becoming tiny/disconnected when clip is resized in timeline (where viewBox doesn't auto-update)
+            if (clip.templateData && newViewBox) {
+                const parts = newViewBox.split(/[ ,]+/).filter(Boolean).map(Number);
+                if (parts.length === 4) {
+                    const [vbX, vbY, vbW, vbH] = parts;
+                    const newW = clip.width || 100;
+                    const newH = clip.height || 100;
+
+                    if (vbW > 0 && vbH > 0 && (Math.abs(newW - vbW) > 1 || Math.abs(newH - vbH) > 1)) {
+                        const sx = newW / vbW;
+                        const sy = newH / vbH;
+
+                        newTemplateData = JSON.parse(JSON.stringify(clip.templateData)); // Deep copy
+                        for (const id in newTemplateData as any) {
+                            const shape = (newTemplateData as any)[id];
+                            if (shape.d) {
+                                // dx = -vbX * sx, dy = -vbY * sy (align relative to box local origin 0,0)
+                                const dx = -vbX * sx;
+                                const dy = -vbY * sy;
+                                shape.d = transformPath(shape.d, dx, dy, sx, sy);
+                                shape.x = (shape.x || 0) * sx + dx;
+                                shape.y = (shape.y || 0) * sy + dy;
+                                shape.width = (shape.width || 0) * sx;
+                                shape.height = (shape.height || 0) * sy;
+                            }
+                        }
+                        newViewBox = `0 0 ${newW} ${newH}`;
+                    }
+                }
+            }
+
             // Only update if something relevant actually changed to prevent infinite loops
-            if (JSON.stringify(prev.templateData) !== JSON.stringify(clip.templateData) || prev.viewBox !== clip.viewBox || prev.width !== clip.width || prev.height !== clip.height) {
+            if (JSON.stringify(prev.templateData) !== JSON.stringify(newTemplateData) || prev.viewBox !== newViewBox || prev.width !== clip.width || prev.height !== clip.height) {
                 return {
                     ...prev,
-                    templateData: clip.templateData,
-                    viewBox: clip.viewBox,
+                    templateData: newTemplateData,
+                    viewBox: newViewBox,
                     width: clip.width,
                     height: clip.height,
                 };

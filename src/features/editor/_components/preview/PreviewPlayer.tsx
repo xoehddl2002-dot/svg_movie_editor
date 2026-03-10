@@ -224,12 +224,18 @@ function ImageClip({ clip, onReady, forceCheck }: { clip: Clip, onReady?: (id: s
         checkReady()
     }, [forceCheck, onReady, clip.src])
 
+    const getFilterStyle = () => {
+        if (!clip.filter) return {}
+        const { brightness, contrast, saturate, blur } = clip.filter
+        return { filter: `brightness(${brightness}) contrast(${contrast}) saturate(${saturate}) blur(${blur}px)` }
+    }
+
     return (
         <img
             draggable={false}
             className="select-none"
             src={clip.src}
-            style={getMediaStyle(clip)}
+            style={{ ...getMediaStyle(clip), ...getFilterStyle() }}
             alt=""
             ref={imgRef}
             onLoad={() => {

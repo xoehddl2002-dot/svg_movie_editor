@@ -461,7 +461,79 @@ export const renderFrame = async (
                     if (img) drawSource = img;
                 }
 
-                if (drawSource) ctx.drawImage(drawSource, 0, 0, w, h)
+                if (drawSource) {
+                    // Apply filters
+                    if (clip.filter) {
+                        ctx.filter = `brightness(${clip.filter.brightness}) contrast(${clip.filter.contrast}) saturate(${clip.filter.saturate}) blur(${clip.filter.blur}px)`;
+                    }
+
+                    // Calculate "objectFit: cover" dimensions
+                    let sourceW = 0;
+                    let sourceH = 0;
+
+                    if (drawSource instanceof HTMLVideoElement) {
+                        sourceW = drawSource.videoWidth;
+                        sourceH = drawSource.videoHeight;
+                    } else if (drawSource instanceof HTMLImageElement) {
+                        sourceW = drawSource.naturalWidth;
+                        sourceH = drawSource.naturalHeight;
+                    }
+
+                    ctx.save();
+                    
+                    if (sourceW > 0 && sourceH > 0) {
+                        const sourceAspect = sourceW / sourceH;
+                        const destAspect = w / h;
+
+                        let renderW = w;
+                        let renderH = h;
+                        let renderX = 0;
+                        let renderY = 0;
+
+                        if (sourceAspect > destAspect) {
+                            // Source is wider, scale to height, crop width
+                            renderH = h;
+                            renderW = h * sourceAspect;
+                            renderX = (w - renderW) / 2;
+                        } else {
+                            // Source is taller, scale to width, crop height
+                            renderW = w;
+                            renderH = w / sourceAspect;
+                            renderY = (h - renderH) / 2;
+                        }
+
+                        // We translate to the center of the rendered dimensions so we can apply the clip's local scale
+                        // The user's inner pan (imageX, imageY) and scale (imageScale, imageScaleY) happen relative to the center
+                        const imgScaleX = clip.imageScale || 1;
+                        const imgScaleY = clip.imageScaleY ?? imgScaleX;
+                        const innerDx = clip.imageX || 0;
+                        const innerDy = clip.imageY || 0;
+                        
+                        // We translate by inner offsets, move around center, apply scale, then draw
+                        ctx.translate(renderX + renderW / 2 + innerDx, renderY + renderH / 2 + innerDy);
+                        ctx.scale(imgScaleX, imgScaleY);
+                        ctx.translate(-(renderX + renderW / 2), -(renderY + renderH / 2));
+                        
+                        ctx.drawImage(drawSource, renderX, renderY, renderW, renderH);
+
+                    } else {
+                        // Fallback if no natural dimensions could be read
+                        const imgScaleX = clip.imageScale || 1;
+                        const imgScaleY = clip.imageScaleY ?? imgScaleX;
+                        const innerDx = clip.imageX || 0;
+                        const innerDy = clip.imageY || 0;
+
+                        ctx.translate(w / 2 + innerDx, h / 2 + innerDy);
+                        ctx.scale(imgScaleX, imgScaleY);
+                        ctx.translate(-w / 2, -h / 2);
+
+                        ctx.drawImage(drawSource, 0, 0, w, h);
+                    }
+                    
+                    ctx.restore();
+                    // Reset filter
+                    ctx.filter = 'none';
+                }
 
             } else if (clip.type === 'icon') {
                 // Load SVG with dynamic color/template data
