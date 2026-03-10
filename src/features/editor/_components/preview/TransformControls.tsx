@@ -369,7 +369,7 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
                                     d={data.d}
                                     fill="transparent"
                                     stroke={controlColor}
-                                    strokeWidth={3 / Math.max(maskSx, maskSy)}
+                                    strokeWidth={3}
                                     vectorEffect="non-scaling-stroke"
                                     className={clip.editor_move !== false ? "cursor-move" : ""}
                                     onMouseDown={(e) => clip.editor_move !== false && handleMouseDown(e, 'move')}
@@ -388,6 +388,7 @@ export function TransformControls({ clip, projectWidth, projectHeight, svgRef }:
                     fill="transparent"
                     stroke={controlColor}
                     strokeWidth={3}
+                    vectorEffect="non-scaling-stroke"
                     className={clip.editor_move !== false ? "cursor-move" : ""}
                     onMouseDown={(e) => clip.editor_move !== false && handleMouseDown(e, 'move')}
                 />

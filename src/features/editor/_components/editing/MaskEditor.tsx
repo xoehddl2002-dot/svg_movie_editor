@@ -676,27 +676,50 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                 }
 
                                 return (
-                                    <g style={{
-                                        transform: `translate(${imageX}px, ${imageY}px) scale(${imageScale * (flipH ? -1 : 1)}, ${imageScaleY * (flipV ? -1 : 1)}) rotate(${rotation}deg)`,
-                                        transformOrigin: 'center',
-                                        transition: mode ? 'none' : 'transform 0.3s ease-in-out',
-                                        opacity: 1
-                                    }}>
-                                        {resourceType === 'video' ? (
-                                            <foreignObject
-                                                x={objX}
-                                                y={objY}
-                                                width={w}
-                                                height={h}
-                                            >
-                                                <video
-                                                    ref={videoRef}
-                                                    src={resourceSrc}
-                                                    className="w-full h-full object-cover"
-                                                    controls={false}
-                                                    muted
-                                                    autoPlay
-                                                    loop
+                                    <>
+                                        {/* Edit Resource (Image / Video) */}
+                                        <g style={{
+                                            transform: `translate(${imageX}px, ${imageY}px) scale(${imageScale * (flipH ? -1 : 1)}, ${imageScaleY * (flipV ? -1 : 1)}) rotate(${rotation}deg)`,
+                                            transformOrigin: 'center',
+                                            transition: mode ? 'none' : 'transform 0.3s ease-in-out',
+                                            opacity: 1
+                                        }}>
+                                            {resourceType === 'video' ? (
+                                                <foreignObject
+                                                    x={objX}
+                                                    y={objY}
+                                                    width={w}
+                                                    height={h}
+                                                >
+                                                    <video
+                                                        ref={videoRef}
+                                                        src={resourceSrc}
+                                                        className="w-full h-full object-cover"
+                                                        controls={false}
+                                                        muted
+                                                        autoPlay
+                                                        loop
+                                                        onMouseDown={(e) => {
+                                                            if (activeTab === 'resource') {
+                                                                handleInteractionStart(e, 'move');
+                                                            }
+                                                        }}
+                                                        onTouchStart={(e) => {
+                                                            if (activeTab === 'resource') {
+                                                                handleInteractionStart(e, 'move');
+                                                            }
+                                                        }}
+                                                        style={{ cursor: activeTab === 'resource' ? (mode ? 'grabbing' : 'grab') : 'default' }}
+                                                    />
+                                                </foreignObject>
+                                            ) : (
+                                                <image
+                                                    href={resourceSrc}
+                                                    x={objX}
+                                                    y={objY}
+                                                    width={w}
+                                                    height={h}
+                                                    preserveAspectRatio="none"
                                                     onMouseDown={(e) => {
                                                         if (activeTab === 'resource') {
                                                             handleInteractionStart(e, 'move');
@@ -709,30 +732,26 @@ export function MaskEditor({ clip, onUpdate, onClose }: MaskEditorProps) {
                                                     }}
                                                     style={{ cursor: activeTab === 'resource' ? (mode ? 'grabbing' : 'grab') : 'default' }}
                                                 />
-                                            </foreignObject>
-                                        ) : (
-                                            <image
-                                                href={resourceSrc}
-                                                x={objX}
-                                                y={objY}
-                                                width={w}
-                                                height={h}
-                                                preserveAspectRatio="none"
-                                                onMouseDown={(e) => {
-                                                    if (activeTab === 'resource') {
-                                                        handleInteractionStart(e, 'move');
-                                                    }
-                                                }}
-                                                onTouchStart={(e) => {
-                                                    if (activeTab === 'resource') {
-                                                        handleInteractionStart(e, 'move');
-                                                    }
-                                                }}
-                                                style={{ cursor: activeTab === 'resource' ? (mode ? 'grabbing' : 'grab') : 'default' }}
-                                            />
+                                            )}
+                                        </g>
+
+                                        {/* Bounding Box (Handles) */}
+                                        {activeTab === 'resource' && (
+                                            <g style={{
+                                                transform: `translate(${imageX}px, ${imageY}px) rotate(${rotation}deg)`,
+                                                transformOrigin: 'center',
+                                                transition: mode ? 'none' : 'transform 0.3s ease-in-out',
+                                            }}>
+                                                {renderHandles(
+                                                    objX + w / 2 - (w * imageScale) / 2,
+                                                    objY + h / 2 - (h * imageScaleY) / 2,
+                                                    w * imageScale,
+                                                    h * imageScaleY,
+                                                    "#3b82f6"
+                                                )}
+                                            </g>
                                         )}
-                                        {activeTab === 'resource' && renderHandles(objX, objY, w, h, "#3b82f6")}
-                                    </g>
+                                    </>
                                 );
                             })()}
 
